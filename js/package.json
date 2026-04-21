@@ -6,7 +6,7 @@
     "clsx": "^2.1.1",
     "flarum-tsconfig": "^1.0.2",
     "flarum-webpack-config": "^2.0.0",
-    "webpack": "^5.70.0",
+    "webpack": "^5.106.2",
     "webpack-cli": "^4.9.2"
   },
   "scripts": {
