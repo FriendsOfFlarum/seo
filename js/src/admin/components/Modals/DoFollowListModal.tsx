@@ -27,7 +27,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
   }
 
   title() {
-    return 'Do-follow list';
+    return app.translator.trans('fof-seo.admin.modals.dofollow.title');
   }
 
   className() {
@@ -80,7 +80,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
             <input
               type="text"
               bidi={this.newDomain}
-              placeholder={'Allow a domain'}
+              placeholder={app.translator.trans('fof-seo.admin.modals.dofollow.add_placeholder') as unknown as string}
               onkeydown={(e: KeyboardEvent) => {
                 if (e.keyCode === 13 && this.newDomain() !== '') {
                   e.preventDefault();
@@ -98,7 +98,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
         </div>
         <div style="padding: 25px 30px; text-align: center;">
           <Button type="submit" className="Button Button--primary" loading={this.loading}>
-            {this.hasChanges ? 'Save changes' : 'Close'}
+            {app.translator.trans(this.hasChanges ? 'fof-seo.admin.common.save_changes' : 'fof-seo.admin.common.close')}
           </Button>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
 
   addDomain() {
     if (this.domainDoFollowList().indexOf(this.newDomain()) >= 0) {
-      alert('This domain is already present in your do-follow list.');
+      alert(app.translator.trans('fof-seo.admin.modals.dofollow.duplicate_error') as unknown as string);
       this.newDomain('');
       return;
     }

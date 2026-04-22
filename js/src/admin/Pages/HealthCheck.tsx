@@ -42,13 +42,13 @@ export default class HealthCheck extends Page {
           .
         </p>
 
-        <p className="seo-intro">For optimal search engine results, make sure all checks are green.</p>
+        <p className="seo-intro">{app.translator.trans('fof-seo.admin.pages.health.legend')}</p>
 
         <table className="seo-check-table">
           <thead>
             <tr>
-              <td>Technique</td>
-              <td width="150">Status</td>
+              <td>{app.translator.trans('fof-seo.admin.pages.health.table.technique')}</td>
+              <td width="150">{app.translator.trans('fof-seo.admin.pages.health.table.status')}</td>
             </tr>
           </thead>
           <tbody>
@@ -71,23 +71,29 @@ export default class HealthCheck extends Page {
   forumDescription() {
     const description = this.settings.forum_description;
     let passed: PassState = typeof description !== 'undefined' && description !== '' ? true : 'must';
-    let reason = 'You did not set up a forum description yet!';
+    let reason: Mithril.Children = app.translator.trans('fof-seo.admin.pages.health.checks.description.reason_missing');
 
     if (passed === true && description!.length <= 20) {
       passed = false;
+      // TODO(i18n): two-sentence reason, leaving untranslated for now.
       reason = 'Your forum description is lower then 20 characters. Please expand it for better search results.';
     }
 
     if (passed === true && description!.indexOf('This is beta software') >= 0) {
       passed = 'must';
-      reason = 'You did not change the default forum description after installation!';
+      reason = app.translator.trans('fof-seo.admin.pages.health.checks.description.reason_default');
     }
 
     return (
       <tr>
         <td>
-          Your forum has a description
-          {this.notPassedError(passed, reason, 'Update description', this.getSettingUrl('description'))}
+          {app.translator.trans('fof-seo.admin.pages.health.checks.description.label')}
+          {this.notPassedError(
+            passed,
+            reason,
+            app.translator.trans('fof-seo.admin.pages.health.checks.description.button'),
+            this.getSettingUrl('description')
+          )}
         </td>
         {this.passed(passed)}
       </tr>
@@ -97,13 +103,18 @@ export default class HealthCheck extends Page {
   forumKeywords() {
     const keywords = this.settings.forum_keywords;
     const passed: PassState = typeof keywords !== 'undefined' && keywords !== '';
-    const reason = 'You did not set up a forum keywords yet!';
+    const reason = app.translator.trans('fof-seo.admin.pages.health.checks.keywords.reason');
 
     return (
       <tr>
         <td>
-          Your forum has keywords set up
-          {this.notPassedError(passed, reason, 'Update keywords', this.getSettingUrl('keywords'))}
+          {app.translator.trans('fof-seo.admin.pages.health.checks.keywords.label')}
+          {this.notPassedError(
+            passed,
+            reason,
+            app.translator.trans('fof-seo.admin.pages.health.checks.keywords.button'),
+            this.getSettingUrl('keywords')
+          )}
         </td>
         {this.passed(passed)}
       </tr>
@@ -116,11 +127,12 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          Your site has a secure connection available (SSL/TLS)
+          {app.translator.trans('fof-seo.admin.pages.health.checks.ssl.label')}
           {this.notPassedError(
             passed,
+            // TODO(i18n): multi-sentence reason, leaving untranslated for now.
             "Your forum does not force a SSL/TLS connection (a secure connection to your website). Most search engines won't index your website or lower your ranking if you have no secure connection available.",
-            'How to set up SSL',
+            app.translator.trans('fof-seo.admin.pages.health.checks.ssl.button'),
             app.route('extension', {
               id: 'fof-seo',
               page: 'ssl',
@@ -138,11 +150,11 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          Review discussion post crawl settings
+          {app.translator.trans('fof-seo.admin.pages.health.checks.crawl.label')}
           {this.notPassedError(
             passed,
-            'You will need to review this setting to pass.',
-            'Review post settings',
+            app.translator.trans('fof-seo.admin.pages.health.checks.crawl.reason'),
+            app.translator.trans('fof-seo.admin.pages.health.checks.crawl.button'),
             this.getSettingUrl('discussion-post')
           )}
         </td>
@@ -158,11 +170,12 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          Set Up a social media image
+          {app.translator.trans('fof-seo.admin.pages.health.checks.social_media.label')}
           {this.notPassedError(
             passed,
+            // TODO(i18n): multi-sentence reason, leaving untranslated for now.
             'You did not set a social media image for your forum. It is recommended to set one. Your favicon will now be used as preview on social media.',
-            'Update image',
+            app.translator.trans('fof-seo.admin.pages.health.checks.social_media.button'),
             this.getSettingUrl('social-media')
           )}
         </td>
@@ -178,11 +191,11 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          Your forum has a sitemap available
+          {app.translator.trans('fof-seo.admin.pages.health.checks.sitemap.label')}
           {this.notPassedError(
             passed,
-            'It is highly recommended to install the FriendsOfFlarum sitemap extension!',
-            'Read more about adding a sitemap',
+            app.translator.trans('fof-seo.admin.pages.health.checks.sitemap.reason'),
+            app.translator.trans('fof-seo.admin.pages.health.checks.sitemap.button'),
             app.route('extension', {
               id: 'fof-seo',
               page: 'sitemap',
@@ -198,9 +211,10 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
+          {/* TODO(i18n): sentence contains inline <b>, leaving untranslated. */}
           Your forum has a <b>robots.txt</b> available.{' '}
           <a href={app.forum.attribute<string>('baseUrl') + '/robots.txt'} target="_blank" className="robots-link">
-            Open robots.txt <i className="fas fa-external-link-alt"></i>
+            {app.translator.trans('fof-seo.admin.pages.health.checks.robots.open_link')} <i className="fas fa-external-link-alt"></i>
           </a>
         </td>
         {this.passed(true)}
@@ -212,7 +226,7 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          Your forum has <b>meta tags</b> available (generated by this plugin)
+          {app.translator.trans('fof-seo.admin.pages.health.checks.meta_tags.label')}
         </td>
         {this.passed(true)}
       </tr>
@@ -225,11 +239,11 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          Register your forum to search engines
+          {app.translator.trans('fof-seo.admin.pages.health.checks.search_engines.label')}
           {this.notPassedError(
             passed,
-            'You will need to review this to pass.',
-            'More information',
+            app.translator.trans('fof-seo.admin.pages.health.checks.search_engines.reason'),
+            app.translator.trans('fof-seo.admin.pages.health.checks.search_engines.button'),
             app.route('extension', {
               id: 'fof-seo',
               page: 'search-engines',
@@ -260,13 +274,19 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
+          {/* TODO(i18n): two-sentence label with embedded <b>date</b>, leaving untranslated. */}
           Review your SEO settings every two months. Next review needed on <b>{nextReviewDate.toDateString()}</b>
-          {this.notPassedError(passed, 'It is time to re-review your SEO settings.', 'Ok! I reviewed them!', () => {
-            const now = new Date();
-            const nextDate = Math.floor(new Date(now.getFullYear(), now.getMonth() + 2, 1).getTime() / 1000);
+          {this.notPassedError(
+            passed,
+            app.translator.trans('fof-seo.admin.pages.health.checks.review.reason'),
+            app.translator.trans('fof-seo.admin.pages.health.checks.review.button'),
+            () => {
+              const now = new Date();
+              const nextDate = Math.floor(new Date(now.getFullYear(), now.getMonth() + 2, 1).getTime() / 1000);
 
-            this.saveSingleSetting('seo_review_settings', nextDate);
-          })}
+              this.saveSingleSetting('seo_review_settings', nextDate);
+            }
+          )}
         </td>
         {this.passed(passed)}
       </tr>
@@ -291,7 +311,7 @@ export default class HealthCheck extends Page {
     if (passed === 'must') {
       return (
         <td className="row-must">
-          <i class="fas fa-exclamation-circle" /> Warning!
+          <i class="fas fa-exclamation-circle" /> {app.translator.trans('fof-seo.admin.pages.health.status.warning')}
         </td>
       );
     }
@@ -299,22 +319,22 @@ export default class HealthCheck extends Page {
     if (!passed) {
       return (
         <td className="row-warning">
-          <i class="fas fa-exclamation-circle" /> Warning!
+          <i class="fas fa-exclamation-circle" /> {app.translator.trans('fof-seo.admin.pages.health.status.warning')}
         </td>
       );
     }
 
     return (
       <td className="row-passed">
-        <i class="fas fa-check" /> All set!
+        <i class="fas fa-check" /> {app.translator.trans('fof-seo.admin.pages.health.status.passed')}
       </td>
     );
   }
 
   notPassedError(
     passed: PassState,
-    reason: string,
-    buttonText: string = 'Update setting',
+    reason: Mithril.Children,
+    buttonText: Mithril.Children = app.translator.trans('fof-seo.admin.pages.health.default_button'),
     url: string | (() => void) = app.route('seoSettings')
   ): Mithril.Children {
     if (passed === true) return null;
@@ -324,19 +344,18 @@ export default class HealthCheck extends Page {
         {reason}
 
         <div className="button-container">
-          {Button.component(
-            {
-              className: 'Button',
-              onclick: () => {
-                if (typeof url === 'string') {
-                  m.route.set(url);
-                } else {
-                  url();
-                }
-              },
-            },
-            buttonText
-          )}
+          <Button
+            className="Button"
+            onclick={() => {
+              if (typeof url === 'string') {
+                m.route.set(url);
+              } else {
+                url();
+              }
+            }}
+          >
+            {buttonText}
+          </Button>
         </div>
       </div>
     );

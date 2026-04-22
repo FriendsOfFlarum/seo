@@ -26,75 +26,41 @@ export default class SettingsPage extends ExtensionPage {
 
   menuButtons(page: string): Mithril.Children[] {
     return [
-      Button.component(
-        {
-          className: `Button ${page === 'health' ? 'item-selected' : ''}`,
-          onclick: () =>
-            m.route.set(
-              app.route('extension', {
-                id: 'fof-seo',
-              })
-            ),
-          icon: 'fas fa-heartbeat',
-        },
-        'Health check'
-      ),
-      Button.component(
-        {
-          className: `Button ${page === 'settings' ? 'item-selected' : ''}`,
-          onclick: () =>
-            m.route.set(
-              app.route('extension', {
-                id: 'fof-seo',
-                page: 'settings',
-              })
-            ),
-          icon: 'fas fa-cogs',
-        },
-        'SEO settings'
-      ),
-      Button.component(
-        {
-          className: `Button ${page === 'sitemap' ? 'item-selected' : ''}`,
-          onclick: () =>
-            m.route.set(
-              app.route('extension', {
-                id: 'fof-seo',
-                page: 'sitemap',
-              })
-            ),
-          icon: 'fas fa-sitemap',
-        },
-        'Sitemap information'
-      ),
-      Button.component(
-        {
-          className: `Button ${page === 'search-engines' ? 'item-selected' : ''}`,
-          onclick: () =>
-            m.route.set(
-              app.route('extension', {
-                id: 'fof-seo',
-                page: 'search-engines',
-              })
-            ),
-          icon: 'fas fa-search',
-        },
-        'Search engine information'
-      ),
-      Button.component(
-        {
-          className: `Button ${page === 'ssl' ? 'item-selected' : ''}`,
-          onclick: () =>
-            m.route.set(
-              app.route('extension', {
-                id: 'fof-seo',
-                page: 'ssl',
-              })
-            ),
-          icon: 'fas fa-shield-alt',
-        },
-        'Set up SSL'
-      ),
+      <Button
+        className={`Button ${page === 'health' ? 'item-selected' : ''}`}
+        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo' }))}
+        icon="fas fa-heartbeat"
+      >
+        {app.translator.trans('fof-seo.admin.header.health_check')}
+      </Button>,
+      <Button
+        className={`Button ${page === 'settings' ? 'item-selected' : ''}`}
+        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'settings' }))}
+        icon="fas fa-cogs"
+      >
+        {app.translator.trans('fof-seo.admin.header.seo_settings')}
+      </Button>,
+      <Button
+        className={`Button ${page === 'sitemap' ? 'item-selected' : ''}`}
+        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'sitemap' }))}
+        icon="fas fa-sitemap"
+      >
+        {app.translator.trans('fof-seo.admin.header.sitemap_info')}
+      </Button>,
+      <Button
+        className={`Button ${page === 'search-engines' ? 'item-selected' : ''}`}
+        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'search-engines' }))}
+        icon="fas fa-search"
+      >
+        {app.translator.trans('fof-seo.admin.header.search_engines_info')}
+      </Button>,
+      <Button
+        className={`Button ${page === 'ssl' ? 'item-selected' : ''}`}
+        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'ssl' }))}
+        icon="fas fa-shield-alt"
+      >
+        {app.translator.trans('fof-seo.admin.header.setup_ssl')}
+      </Button>,
     ];
   }
 

@@ -11,6 +11,8 @@ import clsx from 'clsx';
 import SeoMeta, { SeoImageSource } from '../Models/SeoMeta';
 import countKeywords from '../../admin/utils/countKeywords';
 
+declare const require: (id: string) => any;
+
 export interface MetaSeoModalAttrs extends IInternalModalAttrs {
   object?: {
     seoMeta?: () => SeoMeta;
@@ -24,8 +26,8 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
   initialLoading = false;
   loading = false;
   hasChanges = false;
-  closeText: string = 'Close';
-  closeInfoText: string | null = null;
+  closeText: Mithril.Children = app.translator.trans('fof-seo.forum.meta_seo.close.close');
+  closeInfoText: Mithril.Children = null;
 
   enableCustomTwitter = false;
   enableCustomOpenGraph = false;
@@ -66,13 +68,14 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
           Alert,
           {
             type: 'error',
-            title: 'This object is not a supported SeoMeta object',
+            title: app.translator.trans('fof-seo.forum.meta_seo.unsupported_object.title'),
             controls: [
               <a class="Button Button--link" href="https://community.v17.dev/knowledgebase/46" target="_blank">
-                Documentation
+                {app.translator.trans('fof-seo.forum.meta_seo.unsupported_object.docs_link')}
               </a>,
             ],
           },
+          // TODO(i18n): multi-sentence error body, leaving untranslated for now.
           'Please open this dialog using the objectType and objectId properties or register the object relationship instead.'
         );
 
@@ -122,7 +125,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
   }
 
   title() {
-    return 'SEO settings - Meta';
+    return app.translator.trans('fof-seo.forum.meta_seo.title');
   }
 
   className() {
@@ -146,7 +149,11 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
   content() {
     if (!this.initialized || this.initialLoading) {
-      return <div>{LoadingIndicator.component({})}</div>;
+      return (
+        <div>
+          <LoadingIndicator />
+        </div>
+      );
     }
 
     return (
@@ -155,38 +162,42 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
           <div className="Form">
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Auto update meta tags</div>
-                <div className="helpText">When enabled, this items meta tags are automatically updated when the object changes.</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.auto_update.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.auto_update.help')}</div>
               </div>
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
-                  {Switch.component(
-                    {
-                      state: this.autoUpdateData(),
-                      onchange: (value: boolean) => {
-                        this.autoUpdateData(value);
-                        this.updateHasChanges();
-                      },
-                    },
-                    'Update object SEO on change'
-                  )}
+                  <Switch
+                    state={this.autoUpdateData()}
+                    onchange={(value: boolean) => {
+                      this.autoUpdateData(value);
+                      this.updateHasChanges();
+                    }}
+                  >
+                    {app.translator.trans('fof-seo.forum.meta_seo.auto_update.switch')}
+                  </Switch>
                 </div>
               </div>
             </div>
 
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Meta title</div>
-                <div className="helpText">Title in search engines.</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.meta_title.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.meta_title.help')}</div>
               </div>
 
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
-                  <input className="FormControl" bidi={this.metaTitle} placeholder="Enter page title" disabled={this.autoUpdateData()} />
+                  <input
+                    className="FormControl"
+                    bidi={this.metaTitle}
+                    placeholder={app.translator.trans('fof-seo.forum.meta_seo.meta_title.placeholder') as unknown as string}
+                    disabled={this.autoUpdateData()}
+                  />
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> Managed
+                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -195,17 +206,22 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title"> Meta description</div>
-                <div className="helpText">Describes the item and shown in search engines.</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.meta_description.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.meta_description.help')}</div>
               </div>
 
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
-                  <textarea className="FormControl" bidi={this.description} placeholder="Add a few keywords" disabled={this.autoUpdateData()} />
+                  <textarea
+                    className="FormControl"
+                    bidi={this.description}
+                    placeholder={app.translator.trans('fof-seo.forum.meta_seo.keywords.placeholder') as unknown as string}
+                    disabled={this.autoUpdateData()}
+                  />
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> Managed
+                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -214,22 +230,27 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Keywords</div>
-                <div className="helpText">Enter one or more keywords that describes this item.</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.keywords.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.keywords.help')}</div>
               </div>
 
               <div className="SeoItemContent">
-                <textarea className="FormControl" bidi={this.keywords} placeholder="Add a few keywords" />
+                <textarea
+                  className="FormControl"
+                  bidi={this.keywords}
+                  placeholder={app.translator.trans('fof-seo.forum.meta_seo.keywords.placeholder') as unknown as string}
+                />
                 <div className={clsx('SeoItemContent-helpertext', countKeywords(this.keywords() ?? '') == false && 'invalid')}>
-                  <b>Note: Separate keywords with a comma.</b> Example: <i>flarum, web development, forum, apples, security</i>
+                  <b>{app.translator.trans('fof-seo.forum.meta_seo.keywords.comma_note')}</b>{' '}
+                  {app.translator.trans('fof-seo.forum.meta_seo.keywords.example')}
                 </div>
               </div>
             </div>
 
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Meta image</div>
-                <div className="helpText">Displays an image.</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.image.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.image.help')}</div>
               </div>
 
               <div className="SeoItemContent">
@@ -237,13 +258,13 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                   <input
                     className="FormControl"
                     bidi={this.openGraphImage}
-                    placeholder="Enter image URL"
+                    placeholder={app.translator.trans('fof-seo.forum.meta_seo.image.placeholder') as unknown as string}
                     disabled={this.autoUpdateData() && this.openGraphImageSource() === 'auto'}
                   />
 
                   {this.autoUpdateData() && this.openGraphImageSource() !== 'custom' && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> Managed
+                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
 
@@ -254,103 +275,8 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     })}
 
                   {this.openGraphImageSource() !== 'auto' && this.openGraphImageSource() !== 'custom' && (
-                    <div className="SeoItemContent-helpertext">Image source managed by {this.openGraphImageSource()}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="SeoItemContainer">
-              <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Robots</div>
-                <div className="helpText">Robot-crawling settings for this item.</div>
-              </div>
-
-              <div className="SeoItemContent">
-                <div class={clsx('SeoTags-dropdown-container', this.seoTagsOpened && 'SeoTags-dropdown-open')}>
-                  <div className="SeoTags" onclick={() => (this.seoTagsOpened = !this.seoTagsOpened)}>
-                    {this.returnTag(!this.robotsNoindex(), 'Allow indexing page', 'Page indexing not allowed')}
-                    {this.returnTag(!this.robotsNofollow(), 'Allow follow links', 'Link following not allowed')}
-                    {this.robotsNoarchive() && this.returnTag(false, '', 'Archiving pages not allowed')}
-                    {this.robotsNoimageindex() && this.returnTag(false, '', 'Image indexing not allowed')}
-                    {this.robotsNosnippet() && this.returnTag(false, '', 'Taking text-snippets not allowed')}
-                  </div>
-
-                  <div className="SeoTags-dropdown">
-                    {Switch.component(
-                      {
-                        state: !this.robotsNoindex(),
-                        onchange: (value: boolean) => {
-                          this.robotsNoindex(!value);
-                          this.updateHasChanges();
-                        },
-                      },
-                      'Allow indexing page'
-                    )}
-                    {Switch.component(
-                      {
-                        state: !this.robotsNofollow(),
-                        onchange: (value: boolean) => {
-                          this.robotsNofollow(!value);
-                          this.updateHasChanges();
-                        },
-                      },
-                      'Allow following links to different pages'
-                    )}
-                    {Switch.component(
-                      {
-                        state: this.robotsNoarchive(),
-                        onchange: (value: boolean) => {
-                          this.robotsNoarchive(value);
-                          this.updateHasChanges();
-                        },
-                      },
-                      'Disable archiving page (noarchive)'
-                    )}
-                    {Switch.component(
-                      {
-                        state: this.robotsNoimageindex(),
-                        onchange: (value: boolean) => {
-                          this.robotsNoimageindex(value);
-                          this.updateHasChanges();
-                        },
-                      },
-                      'Disable indexing images on this page (noimageindex)'
-                    )}
-                    {Switch.component(
-                      {
-                        state: this.robotsNosnippet(),
-                        onchange: (value: boolean) => {
-                          this.robotsNosnippet(value);
-                          this.updateHasChanges();
-                        },
-                      },
-                      'Disable text-snippes on page (nosnippet)'
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="SeoItemContainer">
-              <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Estimated reading time</div>
-                <div className="helpText">Estimated reading time in seconds.</div>
-              </div>
-
-              <div className="SeoItemContent">
-                <div className="ManagedContainer">
-                  <input
-                    className="FormControl"
-                    bidi={this.estimatedReadingTime}
-                    placeholder="Reading time in seconds"
-                    type="number"
-                    disabled={this.autoUpdateData()}
-                  />
-
-                  {this.autoUpdateData() && (
-                    <div className="ManagedText">
-                      <i className="fas fa-check" /> Managed
+                    <div className="SeoItemContent-helpertext">
+                      {app.translator.trans('fof-seo.forum.meta_seo.image.managed_by', { source: this.openGraphImageSource() })}
                     </div>
                   )}
                 </div>
@@ -359,23 +285,125 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Twitter card</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.robots.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.robots.help')}</div>
+              </div>
+
+              <div className="SeoItemContent">
+                <div class={clsx('SeoTags-dropdown-container', this.seoTagsOpened && 'SeoTags-dropdown-open')}>
+                  <div className="SeoTags" onclick={() => (this.seoTagsOpened = !this.seoTagsOpened)}>
+                    {this.returnTag(
+                      !this.robotsNoindex(),
+                      app.translator.trans('fof-seo.forum.meta_seo.robots.tags.indexing_allowed'),
+                      app.translator.trans('fof-seo.forum.meta_seo.robots.tags.indexing_not_allowed')
+                    )}
+                    {this.returnTag(
+                      !this.robotsNofollow(),
+                      app.translator.trans('fof-seo.forum.meta_seo.robots.tags.follow_allowed'),
+                      app.translator.trans('fof-seo.forum.meta_seo.robots.tags.follow_not_allowed')
+                    )}
+                    {this.robotsNoarchive() &&
+                      this.returnTag(false, '', app.translator.trans('fof-seo.forum.meta_seo.robots.tags.archive_not_allowed'))}
+                    {this.robotsNoimageindex() &&
+                      this.returnTag(false, '', app.translator.trans('fof-seo.forum.meta_seo.robots.tags.imageindex_not_allowed'))}
+                    {this.robotsNosnippet() &&
+                      this.returnTag(false, '', app.translator.trans('fof-seo.forum.meta_seo.robots.tags.snippet_not_allowed'))}
+                  </div>
+
+                  <div className="SeoTags-dropdown">
+                    <Switch
+                      state={!this.robotsNoindex()}
+                      onchange={(value: boolean) => {
+                        this.robotsNoindex(!value);
+                        this.updateHasChanges();
+                      }}
+                    >
+                      {app.translator.trans('fof-seo.forum.meta_seo.robots.switch.indexing')}
+                    </Switch>
+                    <Switch
+                      state={!this.robotsNofollow()}
+                      onchange={(value: boolean) => {
+                        this.robotsNofollow(!value);
+                        this.updateHasChanges();
+                      }}
+                    >
+                      {app.translator.trans('fof-seo.forum.meta_seo.robots.switch.follow')}
+                    </Switch>
+                    <Switch
+                      state={this.robotsNoarchive()}
+                      onchange={(value: boolean) => {
+                        this.robotsNoarchive(value);
+                        this.updateHasChanges();
+                      }}
+                    >
+                      {app.translator.trans('fof-seo.forum.meta_seo.robots.switch.noarchive')}
+                    </Switch>
+                    <Switch
+                      state={this.robotsNoimageindex()}
+                      onchange={(value: boolean) => {
+                        this.robotsNoimageindex(value);
+                        this.updateHasChanges();
+                      }}
+                    >
+                      {app.translator.trans('fof-seo.forum.meta_seo.robots.switch.noimageindex')}
+                    </Switch>
+                    <Switch
+                      state={this.robotsNosnippet()}
+                      onchange={(value: boolean) => {
+                        this.robotsNosnippet(value);
+                        this.updateHasChanges();
+                      }}
+                    >
+                      {app.translator.trans('fof-seo.forum.meta_seo.robots.switch.nosnippet')}
+                    </Switch>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="SeoItemContainer">
+              <div className="SeoItemInfo">
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.reading_time.label')}</div>
+                <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.reading_time.help')}</div>
               </div>
 
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
-                  {Switch.component(
-                    {
-                      state: !this.enableCustomTwitter,
-                      onchange: (value: boolean) => (this.enableCustomTwitter = !value),
-                      disabled: this.autoUpdateData(),
-                    },
-                    'Auto generate Twitter card'
-                  )}
+                  <input
+                    className="FormControl"
+                    bidi={this.estimatedReadingTime}
+                    placeholder={app.translator.trans('fof-seo.forum.meta_seo.reading_time.placeholder') as unknown as string}
+                    type="number"
+                    disabled={this.autoUpdateData()}
+                  />
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> Managed
+                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="SeoItemContainer">
+              <div className="SeoItemInfo">
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.label')}</div>
+              </div>
+
+              <div className="SeoItemContent">
+                <div className="ManagedContainer">
+                  <Switch
+                    state={!this.enableCustomTwitter}
+                    onchange={(value: boolean) => (this.enableCustomTwitter = !value)}
+                    disabled={this.autoUpdateData()}
+                  >
+                    {app.translator.trans('fof-seo.forum.meta_seo.twitter.auto_switch')}
+                  </Switch>
+
+                  {this.autoUpdateData() && (
+                    <div className="ManagedText">
+                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -385,7 +413,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
             {this.enableCustomTwitter && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
-                  <div class="SeoItemInfo-title">Twitter title</div>
+                  <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.title')}</div>
                 </div>
 
                 <div className="SeoItemContent">
@@ -399,7 +427,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
             {this.enableCustomTwitter && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
-                  <div class="SeoItemInfo-title">Twitter description</div>
+                  <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.description')}</div>
                 </div>
 
                 <div className="SeoItemContent">
@@ -418,8 +446,8 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
             {this.enableCustomTwitter && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
-                  <div class="SeoItemInfo-title">Twitter image</div>
-                  <div className="helpText">Displays an image on Twitter.</div>
+                  <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.image.label')}</div>
+                  <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.twitter.image.help')}</div>
                 </div>
 
                 <div className="SeoItemContent">
@@ -427,7 +455,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     <input
                       className="FormControl"
                       bidi={this.twitterImage}
-                      placeholder={this.openGraphImage() ?? 'Enter image URL'}
+                      placeholder={this.openGraphImage() ?? (app.translator.trans('fof-seo.forum.meta_seo.image.placeholder') as unknown as string)}
                       disabled={this.autoUpdateData() && this.twitterImage() === 'auto'}
                     />
 
@@ -438,7 +466,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                     {this.twitterImageSource() !== 'auto' && this.twitterImageSource() !== 'custom' && (
                       <div className="SeoItemContent-helpertext">
-                        Image source managed by {this.twitterImageSource()} -{' '}
+                        {app.translator.trans('fof-seo.forum.meta_seo.image.managed_by', { source: this.twitterImageSource() })} -{' '}
                         <a
                           href="#"
                           onclick={(e: Event) => {
@@ -449,7 +477,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                             this.updateHasChanges();
                           }}
                         >
-                          Reset image
+                          {app.translator.trans('fof-seo.forum.meta_seo.twitter.image.reset')}
                         </a>
                       </div>
                     )}
@@ -460,23 +488,22 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
-                <div class="SeoItemInfo-title">Open Graph tags</div>
+                <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.og.label')}</div>
               </div>
 
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
-                  {Switch.component(
-                    {
-                      state: !this.enableCustomOpenGraph,
-                      onchange: (value: boolean) => (this.enableCustomOpenGraph = !value),
-                      disabled: this.autoUpdateData(),
-                    },
-                    'Auto generate Open Graph tags'
-                  )}
+                  <Switch
+                    state={!this.enableCustomOpenGraph}
+                    onchange={(value: boolean) => (this.enableCustomOpenGraph = !value)}
+                    disabled={this.autoUpdateData()}
+                  >
+                    {app.translator.trans('fof-seo.forum.meta_seo.og.auto_switch')}
+                  </Switch>
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> Managed
+                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -486,7 +513,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
             {this.enableCustomOpenGraph && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
-                  <div class="SeoItemInfo-title">Open Graph title</div>
+                  <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.og.title')}</div>
                 </div>
 
                 <div className="SeoItemContent">
@@ -500,7 +527,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
             {this.enableCustomOpenGraph && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
-                  <div class="SeoItemInfo-title">Open Graph description</div>
+                  <div class="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.og.description.label')}</div>
                 </div>
 
                 <div className="SeoItemContent">
@@ -508,7 +535,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     <textarea
                       className="FormControl"
                       bidi={this.openGraphDescription}
-                      placeholder="Custom Twitter description"
+                      placeholder={app.translator.trans('fof-seo.forum.meta_seo.og.description.placeholder') as unknown as string}
                       disabled={this.autoUpdateData()}
                     />
                   </div>
@@ -520,7 +547,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
         <div style="padding: 25px 30px; text-align: center;">
           {this.closeInfoText && (
             <div style="margin-bottom: 15px; font-size: 12px;">
-              <b>Note:</b> {this.closeInfoText}
+              <b>{app.translator.trans('fof-seo.forum.meta_seo.note_prefix')}</b> {this.closeInfoText}
             </div>
           )}
           {this.closeDialogButton()}
@@ -559,12 +586,12 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
           );
         }}
       >
-        Upload file
+        {app.translator.trans('fof-seo.forum.meta_seo.image.upload')}
       </Button>
     );
   }
 
-  returnTag(isEnabled: boolean, enabledText: string, disabledText: string) {
+  returnTag(isEnabled: boolean, enabledText: Mithril.Children, disabledText: Mithril.Children) {
     return <div className={clsx('SeoTag', !isEnabled && 'SeoTagDisabled')}>{isEnabled ? enabledText : disabledText}</div>;
   }
 
@@ -577,10 +604,12 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
   }
 
   updateHasChanges() {
-    this.closeText = !this.wasManaged && this.autoUpdateData() ? 'Save & auto-fill' : 'Save';
+    this.closeText = app.translator.trans(
+      !this.wasManaged && this.autoUpdateData() ? 'fof-seo.forum.meta_seo.close.save_autofill' : 'fof-seo.forum.meta_seo.close.save'
+    );
 
     if (!this.wasManaged && this.autoUpdateData()) {
-      this.closeInfoText = 'This change will revert custom changes and fill the meta-tags with item-data.';
+      this.closeInfoText = app.translator.trans('fof-seo.forum.meta_seo.close.autofill_info');
     }
 
     this.hasChanges = true;
@@ -656,7 +685,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
     this.meta!.save(this.submitData())
       .then(() => {
-        app.alerts.show({ type: 'success' }, 'Saved!');
+        app.alerts.show({ type: 'success' }, app.translator.trans('fof-seo.forum.meta_seo.saved'));
         this.hide();
       })
       .catch((err: Error) => {

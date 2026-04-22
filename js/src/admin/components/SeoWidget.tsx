@@ -1,6 +1,7 @@
 import app from 'flarum/admin/app';
 import DashboardWidget from 'flarum/admin/components/DashboardWidget';
 import Button from 'flarum/common/components/Button';
+import icon from 'flarum/common/helpers/icon';
 import type Mithril from 'mithril';
 
 export default class SeoWidget extends DashboardWidget {
@@ -25,15 +26,10 @@ export default class SeoWidget extends DashboardWidget {
   content() {
     return (
       <div>
-        <i className="fas fa-check seo-check-icon"></i> It's time to review your SEO settings!
-        {Button.component(
-          {
-            className: '',
-            icon: 'far fa-thumbs-up',
-            onclick: () => m.route.set('extension/fof-seo'),
-          },
-          'Do the health-check!'
-        )}
+        {icon('fas fa-check seo-check-icon')} {app.translator.trans('fof-seo.admin.dashboard.widget.review_prompt')}
+        <Button className="" icon="far fa-thumbs-up" onclick={() => m.route.set('extension/fof-seo')}>
+          {app.translator.trans('fof-seo.admin.dashboard.widget.cta')}
+        </Button>
       </div>
     );
   }

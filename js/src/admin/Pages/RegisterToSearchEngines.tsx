@@ -79,15 +79,14 @@ export default class RegisterToSearchEngines extends Page {
         </div>
 
         <div className="clear"></div>
-        {Button.component(
-          {
-            className: 'Button pull-right ' + (this.hasConfirmed ? 'hidden' : ''),
-            onclick: () => this.confirm(),
-            icon: 'fas fa-check',
-            loading: this.saving,
-          },
-          'I have read this'
-        )}
+        <Button
+          className={'Button pull-right ' + (this.hasConfirmed ? 'hidden' : '')}
+          onclick={() => this.confirm()}
+          icon="fas fa-check"
+          loading={this.saving}
+        >
+          {app.translator.trans('fof-seo.admin.pages.search_engines.confirm_button')}
+        </Button>
       </div>
     );
   }

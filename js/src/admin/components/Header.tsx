@@ -8,59 +8,31 @@ export default class Header extends Component {
     return (
       <div className="seo-header container">
         <div className="pull-right">
-          {Dropdown.component(
-            {
-              label: 'Tools',
-              icon: 'fas fa-cog',
-              buttonClassName: 'Button',
-              menuClassName: 'Dropdown-menu--right',
-            },
-            [
-              Button.component(
-                {
-                  className: 'Button',
-                  onclick: () => m.route.set(app.route('seo')),
-                  icon: 'fas fa-heartbeat',
-                },
-                'Health check'
-              ),
-              Button.component(
-                {
-                  className: 'Button',
-                  onclick: () => m.route.set(app.route('seoSettings')),
-                  icon: 'fas fa-cogs',
-                },
-                'SEO settings'
-              ),
-              Button.component(
-                {
-                  className: 'Button',
-                  onclick: () => m.route.set(app.route('seoSitemap')),
-                  icon: 'fas fa-sitemap',
-                },
-                'Sitemap information'
-              ),
-              Button.component(
-                {
-                  className: 'Button',
-                  onclick: () => m.route.set(app.route('seoSearchEngines')),
-                  icon: 'fas fa-search',
-                },
-                'Search engine information'
-              ),
-              Button.component(
-                {
-                  className: 'Button',
-                  onclick: () => m.route.set(app.route('seoSSL')),
-                  icon: 'fas fa-shield-alt',
-                },
-                'Set up SSL'
-              ),
-            ]
-          )}
+          <Dropdown
+            label={app.translator.trans('fof-seo.admin.header.tools')}
+            icon="fas fa-cog"
+            buttonClassName="Button"
+            menuClassName="Dropdown-menu--right"
+          >
+            <Button className="Button" onclick={() => m.route.set(app.route('seo'))} icon="fas fa-heartbeat">
+              {app.translator.trans('fof-seo.admin.header.health_check')}
+            </Button>
+            <Button className="Button" onclick={() => m.route.set(app.route('seoSettings'))} icon="fas fa-cogs">
+              {app.translator.trans('fof-seo.admin.header.seo_settings')}
+            </Button>
+            <Button className="Button" onclick={() => m.route.set(app.route('seoSitemap'))} icon="fas fa-sitemap">
+              {app.translator.trans('fof-seo.admin.header.sitemap_info')}
+            </Button>
+            <Button className="Button" onclick={() => m.route.set(app.route('seoSearchEngines'))} icon="fas fa-search">
+              {app.translator.trans('fof-seo.admin.header.search_engines_info')}
+            </Button>
+            <Button className="Button" onclick={() => m.route.set(app.route('seoSSL'))} icon="fas fa-shield-alt">
+              {app.translator.trans('fof-seo.admin.header.setup_ssl')}
+            </Button>
+          </Dropdown>
         </div>
 
-        <h2>Search Engine Optimization</h2>
+        <h2>{app.translator.trans('fof-seo.admin.header.title')}</h2>
 
         <div className="clear" />
       </div>

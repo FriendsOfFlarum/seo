@@ -8,7 +8,7 @@ import type Mithril from 'mithril';
 export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
   value: string | boolean = false;
   startValue: string | boolean = false;
-  closeText: string = 'Close';
+  closeText: Mithril.Children = app.translator.trans('fof-seo.admin.common.close');
   loading: boolean = false;
 
   oninit(vnode: Mithril.Vnode<IInternalModalAttrs, this>) {
@@ -24,7 +24,7 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
   }
 
   title() {
-    return 'Post crawl settings';
+    return app.translator.trans('fof-seo.admin.modals.crawl_post.title');
   }
 
   className() {
@@ -43,7 +43,7 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
                 <span style="display: inline-block; width: 25px;">
                   <i className="fas fa-check"></i>
                 </span>
-                Only index the main post (default)
+                {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_main_title')}
               </b>
               Search engine will only show the main post in the search results. It won't affect loading speed when you navigate to it via forum links.
             </div>
@@ -52,7 +52,7 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
                 <span style="display: inline-block; width: 25px;">
                   <i className="fas fa-check-double"></i>
                 </span>{' '}
-                Index all posts in a discussion (setting enabled)
+                {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_title')}
               </b>
               Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you
               have the extension '
@@ -66,16 +66,12 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
           </div>
         </div>
         <div style="padding: 25px 30px; text-align: center;">
-          <b style="display: block; padding-bottom: 10px;">Do you want to enable this feature?</b>
+          <b style="display: block; padding-bottom: 10px;">{app.translator.trans('fof-seo.admin.modals.crawl_post.question')}</b>
 
           <div style="display: inline-block;">
-            {Switch.component(
-              {
-                state: this.value == '1',
-                onchange: (value: boolean) => this.change(value),
-              },
-              "Crawl all posts (it's slower on page refresh, but search results will be better)"
-            )}
+            <Switch state={this.value == '1'} onchange={(value: boolean) => this.change(value)}>
+              {app.translator.trans('fof-seo.admin.modals.crawl_post.switch_label')}
+            </Switch>
           </div>
         </div>
         <div style="padding: 25px 30px; text-align: center;">{this.closeDialogButton()}</div>
@@ -86,7 +82,9 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
   change(value: boolean) {
     this.value = value;
 
-    this.closeText = this.value !== this.startValue ? 'Save changes' : 'Close';
+    this.closeText = app.translator.trans(
+      this.value !== this.startValue ? 'fof-seo.admin.common.save_changes' : 'fof-seo.admin.common.close'
+    );
   }
 
   closeDialogButton() {

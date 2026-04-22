@@ -14,17 +14,17 @@ app.initializers.add('fof-seo', () => {
 
     items.add(
       'manageSeo',
-      Button.component(
-        {
-          icon: 'fas fa-search',
-          onclick: () =>
-            app.modal.show(MetaSeoModal, {
-              objectType: 'discussions',
-              objectId: discussion.id(),
-            }),
-        },
-        app.translator.trans('fof-seo.forum.controls.configure_seo')
-      ),
+      <Button
+        icon="fas fa-search"
+        onclick={() =>
+          app.modal.show(MetaSeoModal, {
+            objectType: 'discussions',
+            objectId: discussion.id(),
+          })
+        }
+      >
+        {app.translator.trans('fof-seo.forum.controls.configure_seo')}
+      </Button>,
       -1000
     );
   });

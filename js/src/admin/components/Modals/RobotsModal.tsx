@@ -7,7 +7,7 @@ import type Mithril from 'mithril';
 export default class RobotsModal extends Modal<IInternalModalAttrs> {
   value: string = '';
   startValue: string = '';
-  closeText: string = 'Close';
+  closeText: Mithril.Children = app.translator.trans('fof-seo.admin.common.close');
   loading: boolean = false;
 
   oninit(vnode: Mithril.Vnode<IInternalModalAttrs, this>) {
@@ -19,7 +19,7 @@ export default class RobotsModal extends Modal<IInternalModalAttrs> {
   }
 
   title() {
-    return 'Custom robots.txt';
+    return app.translator.trans('fof-seo.admin.modals.robots.title');
   }
 
   className() {
@@ -33,7 +33,7 @@ export default class RobotsModal extends Modal<IInternalModalAttrs> {
           {m('textarea', {
             className: 'FormControl',
             value: this.value,
-            placeholder: 'Add text to the robots.txt',
+            placeholder: app.translator.trans('fof-seo.admin.modals.robots.placeholder'),
             rows: 15,
             oninput: (event: InputEvent) => {
               this.change((event.target as HTMLTextAreaElement).value);
@@ -48,7 +48,9 @@ export default class RobotsModal extends Modal<IInternalModalAttrs> {
   change(value: string) {
     this.value = value;
 
-    this.closeText = this.value !== this.startValue ? 'Save changes' : 'Close';
+    this.closeText = app.translator.trans(
+      this.value !== this.startValue ? 'fof-seo.admin.common.save_changes' : 'fof-seo.admin.common.close'
+    );
   }
 
   closeDialogButton() {

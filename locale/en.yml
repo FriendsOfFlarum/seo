@@ -1,7 +1,162 @@
 fof-seo:
   admin:
+    common:
+      close: Close
+      save_changes: Save changes
+      learn_more: Learn more
+
     permissions:
       configure_seo: "Allow configuring SEO"
+
+    header:
+      title: Search Engine Optimization
+      tools: Tools
+      health_check: Health check
+      seo_settings: SEO settings
+      sitemap_info: Sitemap information
+      search_engines_info: Search engine information
+      setup_ssl: Set up SSL
+
+    dashboard:
+      widget:
+        review_prompt: "It's time to review your SEO settings!"
+        cta: Do the health-check!
+
+    modals:
+      robots:
+        title: Custom robots.txt
+        placeholder: Add text to the robots.txt
+
+      crawl_post:
+        title: Post crawl settings
+        mode_main_title: Only index the main post (default)
+        mode_all_title: Index all posts in a discussion (setting enabled)
+        question: Do you want to enable this feature?
+        switch_label: "Crawl all posts (it's slower on page refresh, but search results will be better)"
+
+      dofollow:
+        title: Do-follow list
+        add_placeholder: Allow a domain
+        duplicate_error: This domain is already present in your do-follow list.
+
+    settings:
+      keywords:
+        heading: Forum keywords
+        help: Enter one or more keywords that describes your forum.
+        placeholder: Add a few keywords
+        comma_note: "Note: Separate keywords with a comma."
+        example: "Example: flarum, web development, forum, apples, security"
+
+      twitter_card:
+        heading: Twitter card size
+        option_large: Large card (large image)
+        option_summary: Summary card (smaller image)
+
+      social_media_image:
+        heading: Social media image
+
+      crawl:
+        heading: Discussion post crawl settings
+        help: This is an important setting about crawling your discussion posts in search results.
+        button: Setup post crawl settings
+
+      nofollow:
+        heading: No-follow links
+        button: Open domain do-follow list
+
+      new_tab:
+        heading: Open external links in new tab
+
+      robots:
+        heading: Edit robots.txt
+        allow_bots_switch: Allow all bots & crawl full site directory
+        edit_button: Edit robots.txt content
+        open_link: Open robots.txt
+
+      updated:
+        heading: Updated this setting?
+        help: When you think you're ready, click the button below to re-check the status of this setting.
+        button: Back to overview and re-check
+
+    pages:
+      search_engines:
+        heading: Submit your website to Search Engines
+        google_heading: Add your website to the Google search results
+        bing_heading: Add your website to the Bing search results
+        yandex_heading: Add your website to the Yandex search results
+        yahoo_heading: Add your website to the Yahoo search results
+        confirm_button: I have read this
+
+      sitemap:
+        why_heading: Why should you use a sitemap?
+        generated_note: The sitemap file is automatically generated and does not need any maintenance.
+        which_extension_heading: What extension should I install?
+        just_installed_heading: I just installed the extension
+
+      ssl:
+        intro_heading: Why do I need an secure connection?
+        rankings_heading: "Search engines love secure connections"
+        what_heading: What is SSL or TLS?
+        how_heading: How to add SSL to your website?
+        added_heading: Okay, I added SSL!
+        no_ssl_heading: What if I do not want to add SSL?
+
+      health:
+        legend: For optimal search engine results, make sure all checks are green.
+        default_button: Update setting
+
+        table:
+          technique: Technique
+          status: Status
+
+        status:
+          warning: Warning!
+          passed: All set!
+
+        checks:
+          description:
+            label: Your forum has a description
+            reason_missing: You did not set up a forum description yet!
+            reason_default: You did not change the default forum description after installation!
+            button: Update description
+
+          keywords:
+            label: Your forum has keywords set up
+            reason: You did not set up a forum keywords yet!
+            button: Update keywords
+
+          ssl:
+            label: Your site has a secure connection available (SSL/TLS)
+            button: How to set up SSL
+
+          crawl:
+            label: Review discussion post crawl settings
+            reason: You will need to review this setting to pass.
+            button: Review post settings
+
+          social_media:
+            label: Set Up a social media image
+            button: Update image
+
+          sitemap:
+            label: Your forum has a sitemap available
+            reason: It is highly recommended to install the FriendsOfFlarum sitemap extension!
+            button: Read more about adding a sitemap
+
+          robots:
+            open_link: Open robots.txt
+
+          meta_tags:
+            label: Your forum has meta tags available (generated by this plugin)
+
+          search_engines:
+            label: Register your forum to search engines
+            reason: You will need to review this to pass.
+            button: More information
+
+          review:
+            reason: It is time to re-review your SEO settings.
+            button: Ok! I reviewed them!
 
   forum:
     profile_title: "Profile of {username}"
@@ -11,3 +166,92 @@ fof-seo:
       configure_seo: Configure SEO
       update_seo: Update SEO
       reset_seo: Reset SEO
+
+    meta_seo:
+      title: SEO settings - Meta
+      note_prefix: "Note:"
+      managed: Managed
+      saved: Saved!
+
+      close:
+        close: Close
+        save: Save
+        save_autofill: Save & auto-fill
+        autofill_info: This change will revert custom changes and fill the meta-tags with item-data.
+
+      unsupported_object:
+        title: This object is not a supported SeoMeta object
+        docs_link: Documentation
+
+      auto_update:
+        label: Auto update meta tags
+        help: When enabled, this items meta tags are automatically updated when the object changes.
+        switch: Update object SEO on change
+
+      meta_title:
+        label: Meta title
+        help: Title in search engines.
+        placeholder: Enter page title
+
+      meta_description:
+        label: Meta description
+        help: Describes the item and shown in search engines.
+
+      keywords:
+        label: Keywords
+        help: Enter one or more keywords that describes this item.
+        placeholder: Add a few keywords
+        comma_note: "Note: Separate keywords with a comma."
+        example: "Example: flarum, web development, forum, apples, security"
+
+      image:
+        label: Meta image
+        help: Displays an image.
+        placeholder: Enter image URL
+        managed_by: "Image source managed by {source}"
+        upload: Upload file
+
+      robots:
+        label: Robots
+        help: Robot-crawling settings for this item.
+
+        tags:
+          indexing_allowed: Allow indexing page
+          indexing_not_allowed: Page indexing not allowed
+          follow_allowed: Allow follow links
+          follow_not_allowed: Link following not allowed
+          archive_not_allowed: Archiving pages not allowed
+          imageindex_not_allowed: Image indexing not allowed
+          snippet_not_allowed: Taking text-snippets not allowed
+
+        switch:
+          indexing: Allow indexing page
+          follow: Allow following links to different pages
+          noarchive: Disable archiving page (noarchive)
+          noimageindex: Disable indexing images on this page (noimageindex)
+          nosnippet: Disable text-snippes on page (nosnippet)
+
+      reading_time:
+        label: Estimated reading time
+        help: Estimated reading time in seconds.
+        placeholder: Reading time in seconds
+
+      twitter:
+        label: Twitter card
+        auto_switch: Auto generate Twitter card
+        title: Twitter title
+        description: Twitter description
+
+        image:
+          label: Twitter image
+          help: Displays an image on Twitter.
+          reset: Reset image
+
+      og:
+        label: Open Graph tags
+        auto_switch: Auto generate Open Graph tags
+        title: Open Graph title
+
+        description:
+          label: Open Graph description
+          placeholder: Custom Twitter description
