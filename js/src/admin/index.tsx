@@ -3,7 +3,11 @@ import { extend } from 'flarum/common/extend';
 import DashboardPage from 'flarum/admin/components/DashboardPage';
 import SeoWidget from './components/SeoWidget';
 import SettingsPage from './Pages/SettingsPage';
-import PermissionGrid from 'flarum/admin/components/PermissionGrid';
+import PermissionGrid, { PermissionType } from 'flarum/admin/components/PermissionGrid';
+
+// Custom permission category not in core's PermissionType union; the
+// permissionItems() extender below renders it as its own section.
+const SEO_PERMISSION_CATEGORY = 'seo' as unknown as PermissionType;
 
 app.initializers.add('fof-seo', () => {
   app.extensionData.for('fof-seo').registerPage(SettingsPage);
@@ -19,20 +23,21 @@ app.initializers.add('fof-seo', () => {
       label: app.translator.trans('fof-seo.admin.permissions.configure_seo'),
       permission: 'fof-seo.canConfigure',
     },
-    'seo',
+    SEO_PERMISSION_CATEGORY,
     90
   );
 
   // Add addPermissions
   extend(PermissionGrid.prototype, 'permissionItems', function (items) {
-    // Add knowledge base permissions
+    const extensionId = (this.attrs as { extensionId?: string }).extensionId;
+
     items.add(
       'seo',
       {
         label: 'SEO',
-        children: this.attrs.extensionId
-          ? app.extensionData.getExtensionPermissions(this.extensionId, 'seo').toArray()
-          : app.extensionData.getAllExtensionPermissions('seo').toArray(),
+        children: extensionId
+          ? app.extensionData.getExtensionPermissions(extensionId, SEO_PERMISSION_CATEGORY).toArray()
+          : app.extensionData.getAllExtensionPermissions(SEO_PERMISSION_CATEGORY).toArray(),
       },
       80
     );

@@ -1,7 +1,7 @@
 import app from 'flarum/admin/app';
 import Page from 'flarum/common/components/Page';
 import Button from 'flarum/common/components/Button';
-import saveSettings from 'flarum/common/utils/saveSettings';
+import saveSettings from 'flarum/admin/utils/saveSettings';
 import type Mithril from 'mithril';
 
 export default class RegisterToSearchEngines extends Page {

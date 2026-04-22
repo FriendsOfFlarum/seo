@@ -1,7 +1,7 @@
 import app from 'flarum/admin/app';
 import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
-import saveSettings from 'flarum/common/utils/saveSettings';
+import saveSettings from 'flarum/admin/utils/saveSettings';
 import Stream from 'flarum/common/utils/Stream';
 import type Mithril from 'mithril';
 
@@ -64,7 +64,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
             <Button className={'Button'} icon={'fas fa-times'} disabled />
           </div>
 
-          {this.domainDoFollowList().map((domain, key) => (
+          {this.domainDoFollowList().map((domain: string, key: number) => (
             <div className={'FlarumSEO-DoFollowList'}>
               <input
                 type="text"
@@ -146,7 +146,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
     this.loading = true;
 
     saveSettings({
-      seo_dofollow_domains: JSON.stringify(this.domainDoFollowList().filter((val) => val !== '')),
+      seo_dofollow_domains: JSON.stringify(this.domainDoFollowList().filter((val: string) => val !== '')),
     }).then(this.onsaved.bind(this));
   }
 

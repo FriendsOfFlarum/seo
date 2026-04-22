@@ -1,7 +1,7 @@
 import app from 'flarum/admin/app';
 import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
-import saveSettings from 'flarum/common/utils/saveSettings';
+import saveSettings from 'flarum/admin/utils/saveSettings';
 import type Mithril from 'mithril';
 
 export default class RobotsModal extends Modal<IInternalModalAttrs> {
