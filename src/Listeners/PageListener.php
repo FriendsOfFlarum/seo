@@ -17,22 +17,14 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use FoF\Seo\Page\PageManager;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
-// Laravel classes
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 
-/**
- * Class PageListener.
- */
 class PageListener
 {
-    protected SettingsRepositoryInterface $settings;
-
-    protected PageManager $pageManager;
-
-    protected string $applicationUrl;
+    protected readonly string $applicationUrl;
 
     protected ?Document $flarumDocument = null;
 
@@ -63,23 +55,13 @@ class PageListener
     protected Cloud $assets;
 
     public function __construct(
-        SettingsRepositoryInterface $settings,
+        protected readonly SettingsRepositoryInterface $settings,
         UrlGenerator $url,
-        PageManager $pageManager,
-        Container $container
+        protected readonly PageManager $pageManager,
+        Container $container,
     ) {
-        // Get Flarum settings
-        $this->settings = $settings;
-
-        // Get page manager
-        $this->pageManager = $pageManager;
-
-        // Set forum base URL
         $this->applicationUrl = $url->to('forum')->base();
-
         $this->assets = $container->make('filesystem')->disk('flarum-assets');
-
-        // Settings debug settings: var_dump($this->settings->all());exit;
     }
 
     /**

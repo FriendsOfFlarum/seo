@@ -18,21 +18,13 @@ use Illuminate\Support\Collection;
 class PageManager implements SeoExtenderManagerInterface
 {
     /**
-     * @var array
+     * @var array<string, PageDriverInterface>
      */
-    protected $extenders = [];
+    protected array $extenders = [];
 
-    /**
-     * @var ExtensionManager
-     */
-    protected $extensionManager;
-
-    /**
-     * @param ExtensionManager $extensionManager
-     */
-    public function __construct(ExtensionManager $extensionManager)
-    {
-        $this->extensionManager = $extensionManager;
+    public function __construct(
+        protected readonly ExtensionManager $extensionManager,
+    ) {
     }
 
     /**

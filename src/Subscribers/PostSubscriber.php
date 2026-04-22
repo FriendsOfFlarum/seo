@@ -21,7 +21,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 class PostSubscriber
 {
     public function __construct(
-        private DiscussionSubscriber $discussionSubscriber
+        private readonly DiscussionSubscriber $discussionSubscriber,
     ) {
     }
 

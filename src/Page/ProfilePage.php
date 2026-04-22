@@ -19,14 +19,10 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class ProfilePage implements PageDriverInterface
 {
-    protected UserRepository $userRepository;
-
-    protected TranslatorInterface $translator;
-
-    public function __construct(UserRepository $userRepository, TranslatorInterface $translator)
-    {
-        $this->userRepository = $userRepository;
-        $this->translator = $translator;
+    public function __construct(
+        protected readonly UserRepository $userRepository,
+        protected readonly TranslatorInterface $translator,
+    ) {
     }
 
     public function extensionDependencies(): array

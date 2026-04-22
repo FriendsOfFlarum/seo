@@ -19,10 +19,6 @@ use s9e\TextFormatter\Utils;
 
 class FormatLinks
 {
-    protected Application $app;
-
-    protected SettingsRepositoryInterface $settings;
-
     protected string $internalDomain = '';
 
     /**
@@ -30,11 +26,10 @@ class FormatLinks
      */
     protected array $doFollowList = [];
 
-    public function __construct(Application $app, SettingsRepositoryInterface $settings)
-    {
-        $this->app = $app;
-        $this->settings = $settings;
-
+    public function __construct(
+        protected readonly Application $app,
+        protected readonly SettingsRepositoryInterface $settings,
+    ) {
         $this->internalDomain = $this->urlToDomain($this->app->url());
         $this->doFollowList = array_merge($this->getDoFollowList(), [$this->internalDomain]);
     }

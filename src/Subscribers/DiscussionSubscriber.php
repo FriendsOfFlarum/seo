@@ -24,8 +24,9 @@ use Illuminate\Contracts\Events\Dispatcher;
  */
 class DiscussionSubscriber
 {
-    public function __construct(private SeoProperties $seoProperties)
-    {
+    public function __construct(
+        private readonly SeoProperties $seoProperties,
+    ) {
     }
 
     /**

@@ -31,34 +31,16 @@ class DiscussionPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    protected SettingsRepositoryInterface $settingsRepositoryInterface;
-
-    protected DiscussionRepository $discussionRepository;
-
-    protected UserRepository $userRepository;
-
-    protected ExtensionManager $extensionManager;
-
-    protected UrlGenerator $urlGenerator;
-
-    protected SlugManager $slugManager;
-
     public function __construct(
-        SettingsRepositoryInterface $settingsRepositoryInterface,
-        DiscussionRepository $discussionRepository,
-        UserRepository $userRepository,
-        ExtensionManager $extensionManager,
-        UrlGenerator $urlGenerator,
+        protected readonly SettingsRepositoryInterface $settingsRepositoryInterface,
+        protected readonly DiscussionRepository $discussionRepository,
+        protected readonly UserRepository $userRepository,
+        protected readonly ExtensionManager $extensionManager,
+        protected readonly UrlGenerator $urlGenerator,
         Dispatcher $events,
-        SlugManager $slugManager
+        protected readonly SlugManager $slugManager,
     ) {
-        $this->settingsRepositoryInterface = $settingsRepositoryInterface;
-        $this->discussionRepository = $discussionRepository;
-        $this->userRepository = $userRepository;
-        $this->extensionManager = $extensionManager;
-        $this->urlGenerator = $urlGenerator;
         $this->events = $events;
-        $this->slugManager = $slugManager;
     }
 
     public function extensionDependencies(): array

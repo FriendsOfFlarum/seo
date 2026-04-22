@@ -17,11 +17,9 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class IndexPage implements PageDriverInterface
 {
-    protected SettingsRepositoryInterface $settings;
-
-    public function __construct(SettingsRepositoryInterface $settings)
-    {
-        $this->settings = $settings;
+    public function __construct(
+        protected readonly SettingsRepositoryInterface $settings,
+    ) {
     }
 
     public function extensionDependencies(): array

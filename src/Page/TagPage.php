@@ -24,14 +24,11 @@ class TagPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    protected TranslatorInterface $translator;
-
     public function __construct(
-        TranslatorInterface $translator,
-        Dispatcher $events
+        protected readonly TranslatorInterface $translator,
+        Dispatcher $events,
     ) {
         $this->events = $events;
-        $this->translator = $translator;
     }
 
     public function extensionDependencies(): array

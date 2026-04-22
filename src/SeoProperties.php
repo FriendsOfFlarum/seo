@@ -19,14 +19,12 @@ use FoF\Seo\SeoMeta\SeoMeta;
  */
 class SeoProperties
 {
-    private ?PageListener $container = null;
-
     /**
      * Initializing extender. For internal user only.
      */
-    public function __construct(PageListener $container)
-    {
-        $this->container = $container;
+    public function __construct(
+        private readonly PageListener $container,
+    ) {
     }
 
     /**
@@ -38,13 +36,8 @@ class SeoProperties
      */
     public function setTitle(string $title, bool $updatePageTitle = true, bool $useAsHeadLine = false): self
     {
-        if ($this->container === null) {
-            self::throwError('setTitle');
-        }
-
         $this->container->setTitle($title, $useAsHeadLine);
 
-        // Update page title as well
         if ($updatePageTitle) {
             $this->container->setPageTitle($title);
         }
@@ -55,21 +48,14 @@ class SeoProperties
     /**
      * Page description.
      *
-     * @param string $content The description will automatically be 'dotted' if too long
+     * @param string|null $content The description will automatically be 'dotted' if too long
      */
     public function setDescription(?string $content = null): self
     {
-        // Empty description
         if ($content === null) {
             return $this;
         }
 
-        // Container not initialized
-        if ($this->container === null) {
-            self::throwError('setDescription');
-        }
-
-        // Set description
         $this->container->setDescription($content);
 
         return $this;
@@ -81,9 +67,8 @@ class SeoProperties
     public function generateDescriptionFromContent(string $content): string
     {
         $description = strip_tags($content);
-        $description = trim(preg_replace('/\s+/', ' ', mb_substr($description, 0, 157))).(mb_strlen($description) > 157 ? '...' : '');
 
-        return $description;
+        return trim(preg_replace('/\s+/', ' ', mb_substr($description, 0, 157))).(mb_strlen($description) > 157 ? '...' : '');
     }
 
     /**
@@ -94,10 +79,6 @@ class SeoProperties
      */
     public function setUrl(string $url, bool $prependApplicationUrl = true): self
     {
-        if ($this->container === null) {
-            self::throwError('setUrl');
-        }
-
         $this->container->setUrl($url, $prependApplicationUrl);
 
         return $this;
@@ -112,10 +93,6 @@ class SeoProperties
      */
     public function setCanonicalUrl(string $path, bool $prependApplicationUrl = true): self
     {
-        if ($this->container === null) {
-            self::throwError('setCanonicalUrl');
-        }
-
         $this->container->setCanonicalUrl($path, $prependApplicationUrl);
 
         return $this;
@@ -124,16 +101,12 @@ class SeoProperties
     /**
      * Page keywords.
      *
-     * @param array $keywords An array of keywords that describes the page
+     * @param array<int, string>|string $keywords An array of keywords that describes the page
      *
      * Example: ["keyword 1", "flarum", "site", "blog"]
      */
     public function setKeywords(array|string $keywords): self
     {
-        if ($this->container === null) {
-            self::throwError('setKeywords');
-        }
-
         $this->container->setKeywords($keywords);
 
         return $this;
@@ -146,10 +119,6 @@ class SeoProperties
      */
     public function setImage(?string $imageUrl): self
     {
-        if ($this->container === null) {
-            self::throwError('setImage');
-        }
-
         if ($imageUrl) {
             $this->container->setImage($imageUrl);
         }
@@ -166,10 +135,6 @@ class SeoProperties
      */
     public function setPublishedOn(string $datetime): self
     {
-        if ($this->container === null) {
-            self::throwError('setPublishedOn');
-        }
-
         $this->container->setPublishedOn($datetime);
 
         return $this;
@@ -184,10 +149,6 @@ class SeoProperties
      */
     public function setUpdatedOn(string $datetime): self
     {
-        if ($this->container === null) {
-            self::throwError('setUpdatedOn');
-        }
-
         $this->container->setUpdatedOn($datetime);
 
         return $this;
@@ -202,10 +163,6 @@ class SeoProperties
      */
     public function setMetaPropertyTag(string $key, string $value): self
     {
-        if ($this->container === null) {
-            self::throwError('setMetaPropertyTag');
-        }
-
         $this->container->setMetaPropertyTag($key, $value);
 
         return $this;
@@ -220,10 +177,6 @@ class SeoProperties
      */
     public function setMetaTag(string $key, string $value): self
     {
-        if ($this->container === null) {
-            self::throwError('setMetaTag');
-        }
-
         $this->container->setMetaTag($key, $value);
 
         return $this;
@@ -238,12 +191,8 @@ class SeoProperties
      * - key: "@type"
      * - value: "WebPage"
      */
-    public function setSchemaJson(string $key, $value): self
+    public function setSchemaJson(string $key, mixed $value): self
     {
-        if ($this->container === null) {
-            self::throwError('setSchemaJson');
-        }
-
         $this->container->setSchemaJson($key, $value);
 
         return $this;
@@ -287,15 +236,5 @@ class SeoProperties
         $this->container->generateTagsFromMetaData($data);
 
         return $this;
-    }
-
-    /**
-     * Container was not yet initialized.
-     *
-     * @return never
-     */
-    private static function throwError(string $caller): void
-    {
-        throw new \Exception('SeoProperties::'.$caller."(..): You're doing it wrong, container was improperly initialized. Please review Flarum SEO documentation.");
     }
 }

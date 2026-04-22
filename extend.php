@@ -74,7 +74,6 @@ return [
       ->addExtender('index', SeoPage\IndexPage::class)
       ->addExtender('profile', SeoPage\ProfilePage::class)
       ->addExtender('tags', SeoPage\TagPage::class)
-      ->addExtender('page_extension', SeoPage\PageExtensionPage::class)
       ->addExtender('discussion', SeoPage\DiscussionPage::class)
       ->addExtender('discussion_best_answer', SeoPage\DiscussionBestAnswerPage::class),
 
@@ -90,5 +89,9 @@ return [
       ->whenExtensionEnabled('flarum-tags', fn () => [
           (new Extend\Event())
             ->subscribe(Subscribers\TagSubscriber::class),
+      ])
+      ->whenExtensionEnabled('fof-pages', fn () => [
+          (new SEO())
+            ->addExtender('page_extension', SeoPage\PageExtensionPage::class)
       ]),
 ];

@@ -46,8 +46,8 @@ class ShowSeoMetaController extends AbstractShowController
         // Make sure the person can access the agents
         $actor->assertCan('fof-seo.canConfigure');
 
-        $id = Arr::get($request->getQueryParams(), 'id', null);
-        $objectType = Arr::get($request->getQueryParams(), 'object_type'.null);
+        $id = Arr::get($request->getQueryParams(), 'id');
+        $objectType = Arr::get($request->getQueryParams(), 'object_type');
 
         // Make sure the ID part is numeric
         if (is_null($id) || !is_numeric($id)) {

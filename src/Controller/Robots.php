@@ -18,20 +18,12 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * Class Robots.
- */
 class Robots implements RequestHandlerInterface
 {
-    protected SettingsRepositoryInterface $settings;
-    protected UrlGenerator $url;
-
     public function __construct(
-        SettingsRepositoryInterface $settings,
-        UrlGenerator $url
+        protected readonly SettingsRepositoryInterface $settings,
+        protected readonly UrlGenerator $url,
     ) {
-        $this->settings = $settings;
-        $this->url = $url;
     }
 
     private function output(): string
@@ -43,27 +35,21 @@ class Robots implements RequestHandlerInterface
             $output .= PHP_EOL.'Allow: /'.PHP_EOL;
         }
 
-        // Get extensions enabled
         $extensionsEnabled = json_decode($this->settings->get('extensions_enabled'), true);
 
-        // If sitemap extension is enabled, add sitemap.xml
-        if (in_array('fof-sitemap', $extensionsEnabled)) {
+        if (in_array('fof-sitemap', $extensionsEnabled, true)) {
             $output .= PHP_EOL.'Sitemap: '.$this->url->to('forum')->base().'/sitemap.xml'.PHP_EOL;
         }
 
-        // Custom robots txt
-        if ($this->settings->get('seo_robots_text') !== null && $this->settings->get('seo_robots_text') !== '') {
-            $output .= $this->settings->get('seo_robots_text');
+        $customRobots = $this->settings->get('seo_robots_text');
+
+        if ($customRobots !== null && $customRobots !== '') {
+            $output .= $customRobots;
         }
 
         return $output;
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     *
-     * @return ResponseInterface
-     */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $response = new Response();

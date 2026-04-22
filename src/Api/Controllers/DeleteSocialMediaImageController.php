@@ -21,12 +21,12 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class DeleteSocialMediaImageController extends AbstractDeleteController
 {
-    protected SettingsRepositoryInterface $settings;
     protected Cloud $disk;
 
-    public function __construct(SettingsRepositoryInterface $settings, Container $container)
-    {
-        $this->settings = $settings;
+    public function __construct(
+        protected readonly SettingsRepositoryInterface $settings,
+        Container $container,
+    ) {
         $this->disk = $container->make('filesystem')->disk('flarum-assets');
     }
 

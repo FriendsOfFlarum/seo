@@ -27,8 +27,9 @@ class UpdateSeoMetaController extends AbstractShowController
      */
     public $serializer = SeoMetaSerializer::class;
 
-    public function __construct(private Dispatcher $events)
-    {
+    public function __construct(
+        private readonly Dispatcher $events,
+    ) {
     }
 
     /**

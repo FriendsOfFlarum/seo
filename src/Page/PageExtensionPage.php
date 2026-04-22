@@ -21,11 +21,10 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class PageExtensionPage implements PageDriverInterface
 {
-    protected TranslatorInterface $translator;
-
-    public function __construct(TranslatorInterface $translator)
-    {
-        $this->translator = $translator;
+    public function __construct(
+        protected readonly TranslatorInterface $translator,
+        protected readonly PageRepository $pageRepository,
+    ) {
     }
 
     public function extensionDependencies(): array
@@ -45,7 +44,7 @@ class PageExtensionPage implements PageDriverInterface
         $pageId = Arr::get($request->getQueryParams(), 'id');
 
         try {
-            $page = resolve(PageRepository::class)->findOrFail($pageId);
+            $page = $this->pageRepository->findOrFail($pageId);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // Do nothing, no model found
             return;

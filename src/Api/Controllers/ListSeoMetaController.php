@@ -32,17 +32,9 @@ class ListSeoMetaController extends AbstractListController
 
     public $limit = 50;
 
-    /**
-     * @var UrlGenerator
-     */
-    protected $url;
-
-    /**
-     * @param UrlGenerator $url
-     */
-    public function __construct(UrlGenerator $url)
-    {
-        $this->url = $url;
+    public function __construct(
+        protected readonly UrlGenerator $url,
+    ) {
     }
 
     /**

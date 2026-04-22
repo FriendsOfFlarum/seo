@@ -12,18 +12,10 @@
 namespace FoF\Seo\SeoMeta\Commands;
 
 use FoF\Seo\SeoMeta\SeoMeta;
-use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Arr;
 
 class UpdateSeoMetaHandler
 {
-    protected Dispatcher $bus;
-
-    public function __construct(Dispatcher $bus)
-    {
-        $this->bus = $bus;
-    }
-
     /**
      * Handle SeoMeta update.
      */

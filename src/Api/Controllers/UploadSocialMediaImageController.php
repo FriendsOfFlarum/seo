@@ -23,12 +23,12 @@ use Tobscure\JsonApi\Document;
 
 class UploadSocialMediaImageController extends ShowForumController
 {
-    protected SettingsRepositoryInterface $settings;
     protected Cloud $disk;
 
-    public function __construct(SettingsRepositoryInterface $settings, Container $container)
-    {
-        $this->settings = $settings;
+    public function __construct(
+        protected readonly SettingsRepositoryInterface $settings,
+        Container $container,
+    ) {
         $this->disk = $container->make('filesystem')->disk('flarum-assets');
     }
 
