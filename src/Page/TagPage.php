@@ -1,15 +1,24 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Page;
 
 use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Tags\TagRepository;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use FoF\Seo\SeoMeta\SeoMeta;
-use FoF\Seo\SeoProperties;
 
 class TagPage implements PageDriverInterface
 {
@@ -65,9 +74,9 @@ class TagPage implements PageDriverInterface
             ->setSchemaJson('@type', 'CollectionPage')
             ->setSchemaJson('about', $seoMeta->description)
             // Tag URL
-            ->setUrl('/t/' . $tag->slug)
+            ->setUrl('/t/'.$tag->slug)
 
             // Canonical url
-            ->setCanonicalUrl('/t/' . $tag->slug);
+            ->setCanonicalUrl('/t/'.$tag->slug);
     }
 }

@@ -1,9 +1,18 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo;
 
-use Illuminate\Support\Collection;
 use FoF\Seo\Page\PageDriverInterface;
+use Illuminate\Support\Collection;
 
 interface SeoExtenderManagerInterface
 {

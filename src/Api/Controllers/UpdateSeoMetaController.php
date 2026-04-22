@@ -1,16 +1,24 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractShowController;
-use Illuminate\Contracts\Bus\Dispatcher;
-use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Http\RequestUtil;
+use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\SeoMeta\Commands\UpdateSeoMeta;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Tobscure\JsonApi\Document;
-use FoF\Seo\Api\Serializers\SeoMetaSerializer;
-use FoF\Seo\SeoMeta\Commands\UpdateSeoMeta;
 
 class UpdateSeoMetaController extends AbstractShowController
 {
@@ -19,7 +27,9 @@ class UpdateSeoMetaController extends AbstractShowController
      */
     public $serializer = SeoMetaSerializer::class;
 
-    public function __construct(private Dispatcher $events) {}
+    public function __construct(private Dispatcher $events)
+    {
+    }
 
     /**
      * {@inheritdoc}

@@ -1,14 +1,23 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Api\Controllers;
 
+use Flarum\Api\Controller\AbstractDeleteController;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Filesystem\Cloud;
-use Psr\Http\Message\ServerRequestInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
 use Psr\Http\Message\ResponseInterface;
-use Flarum\Api\Controller\AbstractDeleteController;
+use Psr\Http\Message\ServerRequestInterface;
 
 class DeleteSocialMediaImageController extends AbstractDeleteController
 {

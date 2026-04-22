@@ -1,12 +1,21 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Extend;
 
-use Flarum\Extension\Extension;
 use Flarum\Extend\ExtenderInterface;
+use Flarum\Extension\Extension;
+use FoF\Seo\Page\PageManager;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
-use FoF\Seo\Page\PageManager;
 
 class SEO implements ExtenderInterface
 {
@@ -16,9 +25,9 @@ class SEO implements ExtenderInterface
     protected array $extenders = [];
 
     /**
-     * Register a new extender
+     * Register a new extender.
      *
-     * @param string $name Unique extender name
+     * @param string       $name     Unique extender name
      * @param class-string $extender Extender class
      */
     public function addExtender(string $name, string $extender): self
@@ -29,7 +38,7 @@ class SEO implements ExtenderInterface
     }
 
     /**
-     * Remove existing extender
+     * Remove existing extender.
      *
      * @param string $name Extender name
      */
@@ -40,7 +49,7 @@ class SEO implements ExtenderInterface
         return $this;
     }
 
-    public function extend(Container $container, Extension $extension = null): void
+    public function extend(Container $container, ?Extension $extension = null): void
     {
         $container->resolving(PageManager::class, function (PageManager $page) use ($container) {
             foreach ($this->extenders as $name => $extender) {

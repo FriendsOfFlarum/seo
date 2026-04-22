@@ -1,24 +1,35 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Subscribers;
 
 use Flarum\Discussion\Discussion;
 use Flarum\Discussion\Event as DiscussionEvent;
 use Flarum\Post\CommentPost;
-use Illuminate\Contracts\Events\Dispatcher;
+use FoF\Seo\SeoMeta\Event\Created;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
-use FoF\Seo\SeoMeta\Event\Created;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
- * Subscribe to discussion creation, update or deleted
+ * Subscribe to discussion creation, update or deleted.
  */
 class DiscussionSubscriber
 {
-    public function __construct(private SeoProperties $seoProperties) {}
+    public function __construct(private SeoProperties $seoProperties)
+    {
+    }
 
     /**
-     * Subscribe to events
+     * Subscribe to events.
      */
     public function subscribe(Dispatcher $events): void
     {
@@ -29,7 +40,7 @@ class DiscussionSubscriber
     }
 
     /**
-     * Handle model event
+     * Handle model event.
      */
     public function onModelEvent(object $event): void
     {
@@ -61,15 +72,19 @@ class DiscussionSubscriber
     }
 
     /**
-     * Handle meta created event
+     * Handle meta created event.
      */
     public function onMetaCreated(Created $event): void
     {
-        if ($event->objectType !== 'discussions') return;
+        if ($event->objectType !== 'discussions') {
+            return;
+        }
 
         $discussion = Discussion::find($event->objectId);
 
-        if ($discussion === null) return;
+        if ($discussion === null) {
+            return;
+        }
 
         $this->updateMeta($event->seoMeta, $discussion);
 
@@ -87,7 +102,7 @@ class DiscussionSubscriber
 
         $firstPost = $discussion->firstPost;
 
-        // If a discussion has a first post, use edited_at time if intial post was more recent edited than the last post was posted 
+        // If a discussion has a first post, use edited_at time if intial post was more recent edited than the last post was posted
         if ($firstPost) {
             $meta->updated_at = $firstPost->edited_at > $discussion->last_posted_at ? $firstPost->edited_at : $discussion->last_posted_at;
         } else {

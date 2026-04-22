@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Api\Serializers;
 
 use Flarum\Api\Serializer\AbstractSerializer;
@@ -43,13 +52,13 @@ class SeoMetaSerializer extends AbstractSerializer
             'twitterTitle'          => $seoMeta->twitter_title,
             'twitterDescription'    => $seoMeta->twitter_description,
             'twitterImage'          => $seoMeta->twitter_image,
-            'twitterImageSource'    => $seoMeta->twitter_image_source ?? "auto",
+            'twitterImageSource'    => $seoMeta->twitter_image_source ?? 'auto',
 
             // Open Graph tags
             'openGraphTitle'        => $seoMeta->open_graph_title,
             'openGraphDescription'  => $seoMeta->open_graph_description,
             'openGraphImage'        => $seoMeta->open_graph_image,
-            'openGraphImageSource'  => $seoMeta->open_graph_image_source ?? "auto",
+            'openGraphImageSource'  => $seoMeta->open_graph_image_source ?? 'auto',
 
             // Extra
             'estimatedReadingTime'  => (int) $seoMeta->estimated_reading_time,

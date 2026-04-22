@@ -1,17 +1,26 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractShowController;
-use Illuminate\Contracts\Events\Dispatcher;
 use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Foundation\ValidationException;
 use Flarum\Http\RequestUtil;
+use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\SeoMeta\SeoMeta;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Tobscure\JsonApi\Document;
-use FoF\Seo\Api\Serializers\SeoMetaSerializer;
-use FoF\Seo\SeoMeta\SeoMeta;
 
 class ShowSeoMetaController extends AbstractShowController
 {
@@ -38,12 +47,12 @@ class ShowSeoMetaController extends AbstractShowController
         $actor->assertCan('fof-seo.canConfigure');
 
         $id = Arr::get($request->getQueryParams(), 'id', null);
-        $objectType = Arr::get($request->getQueryParams(), 'object_type' . null);
+        $objectType = Arr::get($request->getQueryParams(), 'object_type'.null);
 
         // Make sure the ID part is numeric
         if (is_null($id) || !is_numeric($id)) {
             throw new ValidationException([
-                'message' => "Invalid slug/id combination"
+                'message' => 'Invalid slug/id combination',
             ]);
         }
 

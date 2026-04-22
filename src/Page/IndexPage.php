@@ -1,11 +1,19 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Page;
 
 use Flarum\Settings\SettingsRepositoryInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use FoF\Seo\Page\PageDriverInterface;
 use FoF\Seo\SeoProperties;
+use Psr\Http\Message\ServerRequestInterface;
 
 class IndexPage implements PageDriverInterface
 {
@@ -39,7 +47,7 @@ class IndexPage implements PageDriverInterface
         $properties->setCanonicalUrl('');
 
         // Update meta tag URL when it's the discussion overview page
-        if ($routeName === "default" && $this->settings->get('default_route') !== '/all') {
+        if ($routeName === 'default' && $this->settings->get('default_route') !== '/all') {
             $properties->setUrl('/all');
             $properties->setCanonicalUrl('/all');
         }

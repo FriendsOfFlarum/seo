@@ -1,11 +1,19 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Page;
 
 use Flarum\Extension\ExtensionManager;
-use Illuminate\Support\Collection;
-use FoF\Seo\Page\PageDriverInterface;
 use FoF\Seo\SeoExtenderManagerInterface;
+use Illuminate\Support\Collection;
 
 class PageManager implements SeoExtenderManagerInterface
 {
@@ -28,9 +36,9 @@ class PageManager implements SeoExtenderManagerInterface
     }
 
     /**
-     * Add page extender
-     * 
-     * @param string $name Extender name
+     * Add page extender.
+     *
+     * @param string              $name     Extender name
      * @param PageDriverInterface $extender Extender
      */
     public function addExtender(string $name, PageDriverInterface $extender): void
@@ -39,9 +47,9 @@ class PageManager implements SeoExtenderManagerInterface
     }
 
     /**
-     * Get all extenders
+     * Get all extenders.
      */
-    public function getExtenders(string $routeName = null): array
+    public function getExtenders(?string $routeName = null): array
     {
         return $this->getActiveExtenders()
             ->filter(function (PageDriverInterface $driver) use ($routeName) {
@@ -51,7 +59,7 @@ class PageManager implements SeoExtenderManagerInterface
     }
 
     /**
-     * Filter on active extenders
+     * Filter on active extenders.
      */
     public function getActiveExtenders(): Collection
     {

@@ -1,22 +1,32 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Subscribers;
 
-use FoF\Seo\SeoMeta\SeoMeta;
 use Flarum\Post\Event as PostEvent;
+use FoF\Seo\SeoMeta\SeoMeta;
 use Illuminate\Contracts\Events\Dispatcher;
 
 /**
- * Subscribe to post deleting, posted or revised
+ * Subscribe to post deleting, posted or revised.
  */
 class PostSubscriber
 {
     public function __construct(
         private DiscussionSubscriber $discussionSubscriber
-    ) {}
+    ) {
+    }
 
     /**
-     * Subscribe to events
+     * Subscribe to events.
      */
     public function subscribe(Dispatcher $events): void
     {
@@ -26,7 +36,7 @@ class PostSubscriber
     }
 
     /**
-     * Handle model event
+     * Handle model event.
      */
     public function onModelEvent(object $event): void
     {

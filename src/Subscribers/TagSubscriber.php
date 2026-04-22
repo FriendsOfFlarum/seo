@@ -1,25 +1,36 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Subscribers;
 
 use Carbon\Carbon;
 use Flarum\Tags\Event as TagEvent;
 use Flarum\Tags\Tag;
-use Illuminate\Contracts\Events\Dispatcher;
-use Symfony\Contracts\Translation\TranslatorInterface;
 use FoF\Seo\SeoMeta\Event\Created;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use Illuminate\Contracts\Events\Dispatcher;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * Subscribe to tags creation, update or deleted
+ * Subscribe to tags creation, update or deleted.
  */
 class TagSubscriber
 {
-    public function __construct(private SeoProperties $seoProperties) {}
+    public function __construct(private SeoProperties $seoProperties)
+    {
+    }
 
     /**
-     * Subscribe function
+     * Subscribe function.
      */
     public function subscribe(Dispatcher $events): void
     {
@@ -29,7 +40,7 @@ class TagSubscriber
     }
 
     /**
-     * Handle model event
+     * Handle model event.
      */
     public function onModelEvent(object $event): void
     {
@@ -57,15 +68,19 @@ class TagSubscriber
     }
 
     /**
-     * Handle meta created event
+     * Handle meta created event.
      */
     public function onMetaCreated(Created $event): void
     {
-        if ($event->objectType !== 'tags') return;
+        if ($event->objectType !== 'tags') {
+            return;
+        }
 
         $tag = Tag::find($event->objectId);
 
-        if ($tag === null) return;
+        if ($tag === null) {
+            return;
+        }
 
         $this->updateMeta($event->seoMeta, $tag);
 

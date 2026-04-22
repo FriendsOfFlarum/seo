@@ -1,14 +1,23 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractListController;
-use Flarum\Http\UrlGenerator;
 use Flarum\Http\RequestUtil;
-use Psr\Http\Message\ServerRequestInterface;
-use Tobscure\JsonApi\Document;
+use Flarum\Http\UrlGenerator;
 use FoF\Seo\Api\Serializers\SeoMetaSerializer;
 use FoF\Seo\SeoMeta\SeoMeta;
+use Psr\Http\Message\ServerRequestInterface;
+use Tobscure\JsonApi\Document;
 
 class ListSeoMetaController extends AbstractListController
 {

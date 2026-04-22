@@ -1,12 +1,21 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Page;
 
 use Flarum\User\UserRepository;
+use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use FoF\Seo\SeoProperties;
 
 class ProfilePage implements PageDriverInterface
 {
@@ -40,28 +49,30 @@ class ProfilePage implements PageDriverInterface
             $user = is_numeric($username) ? $this->userRepository->findOrFail($username) : $this->userRepository->findByIdentification($username);
 
             // Make sure there's a user
-            if ($user === null) return;
+            if ($user === null) {
+                return;
+            }
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // Do nothing. It just did not work
             return;
         }
 
         // Profile title
-        $profileTitle = $this->translator->trans("fof-seo.forum.profile_title", [
+        $profileTitle = $this->translator->trans('fof-seo.forum.profile_title', [
             'username' => $user->getAttribute('display_name'),
         ]);
 
         // Profile description
-        $profileDescription = $this->translator->trans("fof-seo.forum.profile_description", [
-            'username' => $user->getAttribute('display_name'),
+        $profileDescription = $this->translator->trans('fof-seo.forum.profile_description', [
+            'username'         => $user->getAttribute('display_name'),
             'discussion_count' => $user->getAttribute('discussion_count'),
-            'comment_count' => $user->getAttribute('comment_count')
+            'comment_count'    => $user->getAttribute('comment_count'),
         ]);
 
         // Schema
         $mainEntity = [
-            "@type" => "Person",
-            'name' => $user->getAttribute('username')
+            '@type' => 'Person',
+            'name'  => $user->getAttribute('username'),
         ];
 
         $properties
@@ -95,9 +106,9 @@ class ProfilePage implements PageDriverInterface
             ->setDescription($profileDescription)
 
             // Profile URL
-            ->setUrl('/u/' . $user->getAttribute('username'))
+            ->setUrl('/u/'.$user->getAttribute('username'))
 
             // Canonical url
-            ->setCanonicalUrl('/u/' . $user->getAttribute('username'));
+            ->setCanonicalUrl('/u/'.$user->getAttribute('username'));
     }
 }

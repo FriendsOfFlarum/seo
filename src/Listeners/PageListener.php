@@ -1,22 +1,30 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Listeners;
 
-use Flarum\Http\UrlGenerator;
 use Flarum\Frontend\Document;
+use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Illuminate\Support\Arr;
-use Illuminate\Contracts\Container\Container;
-use Illuminate\Contracts\Filesystem\Cloud;
-// Laravel classes
-use Psr\Http\Message\ServerRequestInterface;
 use FoF\Seo\Page\PageManager;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+// Laravel classes
+use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Filesystem\Cloud;
+use Illuminate\Support\Arr;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Class PageListener
- * @package FoF\Seo\Listeners
+ * Class PageListener.
  */
 class PageListener
 {
@@ -31,13 +39,13 @@ class PageListener
     private ?string $canonicalUrl = null;
 
     /**
-     * Schema.org LD JSON
+     * Schema.org LD JSON.
      *
      * @var array<string, mixed>
      */
     protected array $schemaArray = [
         '@context' => 'http://schema.org',
-        '@type' => 'WebPage'
+        '@type'    => 'WebPage',
     ];
 
     /**
@@ -46,7 +54,7 @@ class PageListener
     protected array $schemaBreadcrumb = [];
 
     /**
-     * Meta data with property tags
+     * Meta data with property tags.
      *
      * @var array<string, string>
      */
@@ -75,7 +83,7 @@ class PageListener
     }
 
     /**
-     * Get current Flarum document and current Server Request
+     * Get current Flarum document and current Server Request.
      */
     public function __invoke(Document $flarumDocument, ServerRequestInterface $serverRequestInterface): void
     {
@@ -87,7 +95,7 @@ class PageListener
     }
 
     /**
-     * Determine the current page type
+     * Determine the current page type.
      */
     private function determine(ServerRequestInterface $serverRequest): void
     {
@@ -105,7 +113,7 @@ class PageListener
 
     /**
      * Default site meta tags
-     * Available for all webpages
+     * Available for all webpages.
      */
     private function setSiteTags(): void
     {
@@ -130,11 +138,11 @@ class PageListener
 
         // Add application information
         $this->setSchemaJson('publisher', [
-            "@type" => "Organization",
-            "name" => $applicationName,
-            "url" => $this->applicationUrl,
-            "description" => $applicationDescription,
-            "logo" => $applicationLogo ? $this->applicationUrl . '/assets/' . $applicationLogo : null
+            '@type'       => 'Organization',
+            'name'        => $applicationName,
+            'url'         => $this->applicationUrl,
+            'description' => $applicationDescription,
+            'logo'        => $applicationLogo ? $this->applicationUrl.'/assets/'.$applicationLogo : null,
         ]);
 
         // Set image
@@ -142,17 +150,17 @@ class PageListener
             $this->setImage($this->assets->url($applicationSeoSocialMediaImage));
         }
         // Fallback to the logo
-        else if ($applicationLogo !== null) {
+        elseif ($applicationLogo !== null) {
             $this->setImage($this->assets->url($applicationLogo));
         }
         // Fallback to the favicon
-        else if ($applicationFavicon !== null) {
+        elseif ($applicationFavicon !== null) {
             $this->setImage($this->assets->url($applicationFavicon));
         }
     }
 
     /**
-     * Finish process and output language, meta property tags, canonical urls & Schema.org json
+     * Finish process and output language, meta property tags, canonical urls & Schema.org json.
      */
     public function finish(ServerRequestInterface $serverRequest): void
     {
@@ -161,7 +169,7 @@ class PageListener
 
         // Write meta property tags
         foreach ($this->metaProperty as $name => $content) {
-            $this->flarumDocument->head[] = '<meta property="' . e($name) . '" content="' . e($content) . '">';
+            $this->flarumDocument->head[] = '<meta property="'.e($name).'" content="'.e($content).'">';
         }
 
         // Override Flarum default canonical url
@@ -174,7 +182,7 @@ class PageListener
     }
 
     /**
-     * Schema.org json
+     * Schema.org json.
      */
     private function writeSchemesOrgJson(): string
     {
@@ -187,25 +195,25 @@ class PageListener
 
         $show[] = $this->addSearchBar();
 
-        return '<script type="application/ld+json">' . json_encode($show) . '</script>';
+        return '<script type="application/ld+json">'.json_encode($show).'</script>';
     }
 
     /**
-     * Add the potential search bar
+     * Add the potential search bar.
      *
      * @return array<string, mixed>
      */
     private function addSearchBar(): array
     {
         return [
-            '@context' => 'http://schema.org',
-            '@type' => 'WebSite',
-            'url' => $this->applicationUrl . '/',
+            '@context'        => 'http://schema.org',
+            '@type'           => 'WebSite',
+            'url'             => $this->applicationUrl.'/',
             'potentialAction' => [
-                "@type" => "SearchAction",
-                "target" => $this->applicationUrl . '/?q={search_term_string}',
-                "query-input" => 'required name=search_term_string'
-            ]
+                '@type'       => 'SearchAction',
+                'target'      => $this->applicationUrl.'/?q={search_term_string}',
+                'query-input' => 'required name=search_term_string',
+            ],
         ];
     }
 
@@ -225,7 +233,7 @@ class PageListener
 
     /**
      * @param string $key
-     * @param mixed $value
+     * @param mixed  $value
      */
     public function setSchemaJson(string $key, $value): self
     {
@@ -236,61 +244,63 @@ class PageListener
 
     /**
      * @param array<int, array<string, mixed>> $tagList
-     * @param string $listOrderType https://schema.org/ItemListOrderType
+     * @param string                           $listOrderType https://schema.org/ItemListOrderType
      */
     public function setSchemaBreadcrumb(array $tagList = [], string $listOrderType = 'ItemListUnordered'): void
     {
         // Don't add the list, there were no tags
-        if (count($tagList) === 0) return;
+        if (count($tagList) === 0) {
+            return;
+        }
 
         $list = [];
 
         // Loop through all tags
         foreach ($tagList as $index => $tag) {
             $list[] = [
-                '@type' => 'ListItem',
+                '@type'    => 'ListItem',
                 'position' => ($index + 1),
-                'item' => [
-                    '@type' => Arr::get($tag, 'type', "Thing"),
-                    '@id' => Arr::get($tag, 'url', $this->applicationUrl),
-                    'name' => Arr::get($tag, 'name', "Unknown"),
-                    'url' => Arr::get($tag, 'url', $this->applicationUrl)
-                ]
+                'item'     => [
+                    '@type' => Arr::get($tag, 'type', 'Thing'),
+                    '@id'   => Arr::get($tag, 'url', $this->applicationUrl),
+                    'name'  => Arr::get($tag, 'name', 'Unknown'),
+                    'url'   => Arr::get($tag, 'url', $this->applicationUrl),
+                ],
             ];
         }
 
         $this->schemaBreadcrumb = [
-            "@context" => "http://schema.org",
-            "@type" => "BreadcrumbList",
-            "itemListElement" => $list,
-            "itemListOrder" => $listOrderType,
-            "numberOfItems" => count($list)
+            '@context'        => 'http://schema.org',
+            '@type'           => 'BreadcrumbList',
+            'itemListElement' => $list,
+            'itemListOrder'   => $listOrderType,
+            'numberOfItems'   => count($list),
         ];
     }
 
     /**
-     * Current page URL
+     * Current page URL.
      */
     public function setUrl(string $path = '', bool $prependApplicationUrl = true): self
     {
         if ($prependApplicationUrl) {
-            $path = $this->applicationUrl . $path;
+            $path = $this->applicationUrl.$path;
         }
 
         $this->setMetaTag('twitter:url', $path);
         $this->setMetaPropertyTag('og:url', $path);
-        $this->setSchemaJson("url", $path);
+        $this->setSchemaJson('url', $path);
 
         return $this;
     }
 
     /**
-     * Set canonical url
+     * Set canonical url.
      */
     public function setCanonicalUrl(string $path, bool $prependApplicationUrl = true): self
     {
         if ($prependApplicationUrl) {
-            $path = $this->applicationUrl . $path;
+            $path = $this->applicationUrl.$path;
         }
 
         $this->canonicalUrl = $path;
@@ -300,11 +310,11 @@ class PageListener
 
     public function getApplicationPath(string $path): string
     {
-        return $this->applicationUrl . $path;
+        return $this->applicationUrl.$path;
     }
 
     /**
-     * Set title
+     * Set title.
      */
     public function setTitle(string $title, bool $headline = false): self
     {
@@ -313,14 +323,14 @@ class PageListener
             ->setMetaTag('twitter:title', $title);
 
         if ($headline === true) {
-            $this->setSchemaJson("headline", $title);
+            $this->setSchemaJson('headline', $title);
         }
 
         return $this;
     }
 
     /**
-     * Set description
+     * Set description.
      */
     public function setDescription(string $description): self
     {
@@ -328,31 +338,34 @@ class PageListener
             ->setMetaPropertyTag('og:description', $description)
             ->setMetaTag('description', $description)
             ->setMetaTag('twitter:description', $description)
-            ->setSchemaJson("description", $description);
+            ->setSchemaJson('description', $description);
 
         return $this;
     }
 
     /**
-     * Set page keywords
+     * Set page keywords.
      *
      * @param string|array<int, string>|null $keywords
      */
     public function setKeywords(string|array|null $keywords): void
     {
-        if (!$keywords) return;
+        if (!$keywords) {
+            return;
+        }
 
         if (is_array($keywords)) {
-            $keywords = implode(", ", $keywords);
+            $keywords = implode(', ', $keywords);
         }
 
         $this->setMetaTag('keywords', $keywords);
     }
 
     /**
-     * Get image from content
+     * Get image from content.
      *
      * @param string|null $content
+     *
      * @return string|null
      */
     public function getImageFromContent(?string $content = null): ?string
@@ -376,9 +389,9 @@ class PageListener
     }
 
     /**
-     * Get estimated reading time in seconds
+     * Get estimated reading time in seconds.
      */
-    public function getEstimatedReadingTime(string $content = null): int
+    public function getEstimatedReadingTime(?string $content = null): int
     {
         $words = str_word_count(strip_tags($content ?? ''));
         $minutes = (int) floor($words / 200);
@@ -388,13 +401,13 @@ class PageListener
     }
 
     /**
-     * Set published on
+     * Set published on.
      */
     public function setPublishedOn(\DateTimeInterface|string $published): self
     {
         $date = $published instanceof \DateTimeInterface
-            ? $published->format("c")
-            : (new \DateTime($published))->format("c");
+            ? $published->format('c')
+            : (new \DateTime($published))->format('c');
 
         $this
             ->setMetaTag('article:published_time', $date)
@@ -405,13 +418,13 @@ class PageListener
 
     /**
      * Set updated time
-     * Only used when a discussion has newer posts
+     * Only used when a discussion has newer posts.
      */
     public function setUpdatedOn(\DateTimeInterface|string $updated): self
     {
         $date = $updated instanceof \DateTimeInterface
-            ? $updated->format("c")
-            : (new \DateTime($updated))->format("c");
+            ? $updated->format('c')
+            : (new \DateTime($updated))->format('c');
 
         $this
             ->setMetaTag('article:updated_time', $date)
@@ -421,7 +434,7 @@ class PageListener
     }
 
     /**
-     * Set page image
+     * Set page image.
      */
     public function setImage(string $imagePath): self
     {
@@ -432,10 +445,10 @@ class PageListener
     }
 
     /**
-     * Auto set meta tags and data from received SeoMeta object
-     * 
+     * Auto set meta tags and data from received SeoMeta object.
+     *
      * @param SeoMeta $seoMeta
-     * 
+     *
      * @return PageListener
      */
     public function generateTagsFromMetaData(SeoMeta $seoMeta): self
@@ -479,29 +492,29 @@ class PageListener
 
         // Generate robots tags for this page
         $robotTags = [
-            $seoMeta->robots_noindex ? "noindex" : "index",
-            $seoMeta->robots_nofollow ? "nofollow" : "follow"
+            $seoMeta->robots_noindex ? 'noindex' : 'index',
+            $seoMeta->robots_nofollow ? 'nofollow' : 'follow',
         ];
 
         if ($seoMeta->robots_noarchive) {
-            $robotTags[] = "noarchive";
+            $robotTags[] = 'noarchive';
         }
 
         if ($seoMeta->robots_noimageindex) {
-            $robotTags[] = "noimageindex";
+            $robotTags[] = 'noimageindex';
         }
 
         if ($seoMeta->robots_nosnippet) {
-            $robotTags[] = "nosnippet";
+            $robotTags[] = 'nosnippet';
         }
 
-        $this->setMetaTag('robots', implode(", ", $robotTags));
+        $this->setMetaTag('robots', implode(', ', $robotTags));
 
         return $this;
     }
 
     /**
-     * Set page title
+     * Set page title.
      */
     public function setPageTitle(string $title): self
     {

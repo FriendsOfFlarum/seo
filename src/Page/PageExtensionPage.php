@@ -1,15 +1,23 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Seo\Page;
 
 use Carbon\Carbon;
 use FoF\Pages\PageRepository;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use FoF\Seo\Page\PageDriverInterface;
-use FoF\Seo\SeoMeta\SeoMeta;
-use FoF\Seo\SeoProperties;
 
 class PageExtensionPage implements PageDriverInterface
 {
@@ -66,10 +74,10 @@ class PageExtensionPage implements PageDriverInterface
             ->setSchemaJson('text', e(strip_tags($content)))
 
             // Tag URL
-            ->setUrl('/p/' . $page->getAttribute('id') . '-' . $page->getAttribute('slug'))
+            ->setUrl('/p/'.$page->getAttribute('id').'-'.$page->getAttribute('slug'))
 
             // Canonical url
-            ->setCanonicalUrl('/p/' . $page->getAttribute('id'))
+            ->setCanonicalUrl('/p/'.$page->getAttribute('id'))
 
             ->generateTagsFromMetaData($seoMeta);
     }
