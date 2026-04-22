@@ -216,7 +216,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
     public function discussion_with_noindex_seo_meta_emits_noindex_robots_tag(): void
     {
         $this->seedDiscussion(title: 'Hidden from crawlers', slug: 'hidden', metaOverrides: [
-            'robots_noindex' => 1,
+            'robots_noindex'  => 1,
             'robots_nofollow' => 0,
         ]);
 
@@ -237,8 +237,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
     {
         $this->seedDiscussion(title: 'Internal name', slug: 'thing', metaOverrides: [
             'auto_update_data' => 0,
-            'title' => 'Crawler-facing title',
-            'description' => 'Crawler-facing description.',
+            'title'            => 'Crawler-facing title',
+            'description'      => 'Crawler-facing description.',
         ]);
 
         $html = $this->fetchForumHtml('/d/1-thing');
@@ -263,22 +263,22 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $db = [
             'discussions' => [
                 [
-                    'id' => 1,
-                    'title' => $title,
-                    'slug' => $slug,
-                    'user_id' => 1,
-                    'created_at' => $createdAt,
+                    'id'            => 1,
+                    'title'         => $title,
+                    'slug'          => $slug,
+                    'user_id'       => 1,
+                    'created_at'    => $createdAt,
                     'comment_count' => 1,
                 ],
             ],
             'posts' => [
                 [
-                    'id' => 1,
+                    'id'            => 1,
                     'discussion_id' => 1,
-                    'user_id' => 1,
-                    'type' => 'comment',
-                    'content' => '<t><p>Opening post body.</p></t>',
-                    'created_at' => $createdAt,
+                    'user_id'       => 1,
+                    'type'          => 'comment',
+                    'content'       => '<t><p>Opening post body.</p></t>',
+                    'created_at'    => $createdAt,
                 ],
             ],
         ];
@@ -286,14 +286,14 @@ class DiscussionPageTest extends ForumHtmlTestCase
         if ($metaOverrides !== []) {
             $db['seo_meta'] = [
                 array_merge([
-                    'id' => 1,
-                    'object_type' => 'discussions',
-                    'object_id' => 1,
+                    'id'               => 1,
+                    'object_type'      => 'discussions',
+                    'object_id'        => 1,
                     'auto_update_data' => 1,
-                    'title' => null,
-                    'description' => null,
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
+                    'title'            => null,
+                    'description'      => null,
+                    'created_at'       => $createdAt,
+                    'updated_at'       => $createdAt,
                 ], $metaOverrides),
             ];
         }

@@ -41,7 +41,7 @@ class FormatLinksTest extends TestCase
         );
 
         $this->prepareDatabase([
-            'users' => [$this->normalUser()],
+            'users'       => [$this->normalUser()],
             'discussions' => [
                 ['id' => 1, 'title' => 'Test', 'slug' => 'test', 'user_id' => 2, 'created_at' => Carbon::now(), 'comment_count' => 1],
             ],
@@ -115,9 +115,9 @@ class FormatLinksTest extends TestCase
         $response = $this->send(
             $this->request('POST', '/api/posts', [
                 'authenticatedAs' => 2,
-                'json' => [
+                'json'            => [
                     'data' => [
-                        'attributes' => ['content' => $content],
+                        'attributes'    => ['content' => $content],
                         'relationships' => [
                             'discussion' => ['data' => ['type' => 'discussions', 'id' => '1']],
                         ],

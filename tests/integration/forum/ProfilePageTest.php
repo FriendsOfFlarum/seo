@@ -28,13 +28,13 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->prepareDatabase([
             'users' => [
                 [
-                    'id' => 2,
-                    'username' => 'victorinox',
-                    'email' => 'v@example.com',
-                    'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim',
-                    'joined_at' => Carbon::parse('2024-03-15'),
-                    'discussion_count' => 3,
-                    'comment_count' => 12,
+                    'id'                 => 2,
+                    'username'           => 'victorinox',
+                    'email'              => 'v@example.com',
+                    'password'           => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim',
+                    'joined_at'          => Carbon::parse('2024-03-15'),
+                    'discussion_count'   => 3,
+                    'comment_count'      => 12,
                     'is_email_confirmed' => 1,
                 ],
             ],
@@ -110,11 +110,11 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->prepareDatabase([
             'users' => [
                 [
-                    'id' => 3,
-                    'username' => 'ab"cd',
-                    'email' => 'hostile@example.com',
-                    'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim',
-                    'joined_at' => Carbon::now(),
+                    'id'                 => 3,
+                    'username'           => 'ab"cd',
+                    'email'              => 'hostile@example.com',
+                    'password'           => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim',
+                    'joined_at'          => Carbon::now(),
                     'is_email_confirmed' => 1,
                 ],
             ],

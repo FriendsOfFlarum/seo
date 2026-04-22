@@ -39,19 +39,19 @@ class ForumAttributesTest extends TestCase
             'users' => [
                 $this->normalUser(),
                 [
-                    'id' => self::TRUSTED_USER_ID,
-                    'username' => 'trusted',
-                    'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim',
-                    'email' => 'trusted@example.com',
+                    'id'                 => self::TRUSTED_USER_ID,
+                    'username'           => 'trusted',
+                    'password'           => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim',
+                    'email'              => 'trusted@example.com',
                     'is_email_confirmed' => 1,
                 ],
             ],
             'groups' => [
                 [
-                    'id' => self::SEO_MANAGER_GROUP_ID,
+                    'id'            => self::SEO_MANAGER_GROUP_ID,
                     'name_singular' => 'SEO Manager',
-                    'name_plural' => 'SEO Managers',
-                    'is_hidden' => 0,
+                    'name_plural'   => 'SEO Managers',
+                    'is_hidden'     => 0,
                 ],
             ],
             'group_user' => [
@@ -78,6 +78,7 @@ class ForumAttributesTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider canConfigureSeoProvider
      */
     public function forum_endpoint_exposes_can_configure_seo_per_actor(?int $authenticatedAs, bool $expected): void
@@ -117,14 +118,14 @@ class ForumAttributesTest extends TestCase
             ],
             'seo_meta' => [
                 [
-                    'id' => 1,
-                    'object_type' => 'discussions',
-                    'object_id' => 1,
+                    'id'               => 1,
+                    'object_type'      => 'discussions',
+                    'object_id'        => 1,
                     'auto_update_data' => 1,
-                    'title' => 'Hello world',
-                    'description' => 'Hello world description.',
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'title'            => 'Hello world',
+                    'description'      => 'Hello world description.',
+                    'created_at'       => $now,
+                    'updated_at'       => $now,
                 ],
             ],
         ]);

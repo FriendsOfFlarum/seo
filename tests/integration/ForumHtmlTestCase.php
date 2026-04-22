@@ -109,7 +109,7 @@ abstract class ForumHtmlTestCase extends TestCase
     }
 
     /**
-     * Locate a schema.org entry in the JSON-LD block by its `@type`.
+     * Locate a schema.org entry in the JSON-LD block by its `@var`.
      *
      * @return array<string, mixed>|null
      */

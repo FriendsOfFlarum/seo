@@ -123,6 +123,7 @@ class SeoMetaTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider seoMetaAccessProvider
      */
     public function listing_seo_meta_respects_permission(?int $authenticatedAs, bool $allowed): void
@@ -143,6 +144,7 @@ class SeoMetaTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider seoMetaAccessProvider
      */
     public function showing_seo_meta_by_id_respects_permission(?int $authenticatedAs, bool $allowed): void
@@ -163,6 +165,7 @@ class SeoMetaTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider seoMetaAccessProvider
      */
     public function showing_seo_meta_by_object_type_respects_permission(?int $authenticatedAs, bool $allowed): void
@@ -181,6 +184,7 @@ class SeoMetaTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider seoMetaAccessProvider
      */
     public function showing_seo_meta_by_object_type_auto_creates_row_when_permitted(?int $authenticatedAs, bool $allowed): void
@@ -207,6 +211,7 @@ class SeoMetaTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider seoMetaAccessProvider
      */
     public function updating_seo_meta_respects_permission(?int $authenticatedAs, bool $allowed): void
