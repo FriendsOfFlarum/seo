@@ -92,6 +92,6 @@ return [
       ])
       ->whenExtensionEnabled('fof-pages', fn () => [
           (new SEO())
-            ->addExtender('page_extension', SeoPage\PageExtensionPage::class)
+            ->addExtender('page_extension', SeoPage\PageExtensionPage::class),
       ]),
 ];
