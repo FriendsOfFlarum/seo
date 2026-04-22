@@ -1,30 +1,24 @@
 <?php
 
-namespace V17Development\FlarumSeo\SeoMeta\Commands;
+namespace FoF\Seo\SeoMeta\Commands;
 
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Arr;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoMeta\SeoMeta;
 
 class UpdateSeoMetaHandler
 {
-    /**
-     * @var Dispatcher
-     */
-    protected $bus;
+    protected Dispatcher $bus;
 
-    /**
-     * @param Dispatcher $bus
-     */
     public function __construct(Dispatcher $bus)
     {
         $this->bus = $bus;
     }
 
     /**
-     * Handle language update
+     * Handle SeoMeta update
      */
-    public function handle(UpdateSeoMeta $command)
+    public function handle(UpdateSeoMeta $command): SeoMeta
     {
         $command->actor->assertAdmin();
 

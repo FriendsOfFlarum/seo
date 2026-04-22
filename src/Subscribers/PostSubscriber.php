@@ -1,10 +1,10 @@
 <?php
 
-namespace V17Development\FlarumSeo\Subscribers;
+namespace FoF\Seo\Subscribers;
 
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\SeoMeta\SeoMeta;
 use Flarum\Post\Event as PostEvent;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * Subscribe to post deleting, posted or revised
@@ -12,16 +12,13 @@ use Flarum\Post\Event as PostEvent;
 class PostSubscriber
 {
     public function __construct(
-        private SeoProperties $seoProperties,
         private DiscussionSubscriber $discussionSubscriber
     ) {}
 
     /**
      * Subscribe to events
-     * 
-     * @param $events
      */
-    public function subscribe($events)
+    public function subscribe(Dispatcher $events): void
     {
         $events->listen(PostEvent\Deleting::class, [$this, 'onModelEvent']);
         $events->listen(PostEvent\Posted::class, [$this, 'onModelEvent']);
@@ -30,27 +27,21 @@ class PostSubscriber
 
     /**
      * Handle model event
-     *
-     * @param $event
      */
-    public function onModelEvent($event)
+    public function onModelEvent(object $event): void
     {
-        // Find meta
         $meta = SeoMeta::findOneByModel($event->post->discussion);
 
-        // Create new meta by model
         if (!$meta) {
             $meta = SeoMeta::buildByModel($event->post->discussion);
         }
 
-        // Do not auto update
         if (!$meta->auto_update_data) {
             return;
         }
 
         $this->discussionSubscriber->updateMeta($meta, $event->post->discussion);
 
-        // Update
         $meta->save();
     }
 }

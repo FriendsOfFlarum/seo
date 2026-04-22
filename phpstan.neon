@@ -2,11 +2,18 @@ includes:
   - vendor/flarum/phpstan/extension.neon
 
 parameters:
-  level: 5
+  level: 6
   paths:
-    - src
     - extend.php
+    - src
+    - vendor/flarum/tags/extend.php
+    - vendor/flarum/likes/extend.php
+    - vendor/fof/best-answer/extend.php
   excludePaths:
-    - *.blade.php
+    analyse:
+      - *.blade.php
+      - vendor/flarum/tags/extend.php
+      - vendor/flarum/likes/extend.php
+      - vendor/fof/best-answer/extend.php
   checkMissingIterableValueType: false
   databaseMigrationsPath: ['migrations']

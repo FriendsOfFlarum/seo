@@ -1,12 +1,12 @@
 <?php
 
-namespace V17Development\FlarumSeo;
+namespace FoF\Seo;
 
 use s9e\TextFormatter\Configurator;
 
 class ConfigureLinks
 {
-    public function __invoke(Configurator $configurator)
+    public function __invoke(Configurator $configurator): void
     {
         $configurator->templateNormalizer->append(
             function (\DOMElement $template) {

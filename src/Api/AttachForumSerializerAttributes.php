@@ -1,29 +1,22 @@
 <?php
 
-namespace V17Development\FlarumSeo\Api;
+namespace FoF\Seo\Api;
 
-use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Api\Serializer\ForumSerializer;
 
 class AttachForumSerializerAttributes
 {
     /**
-     * @param SettingsRepositoryInterface $settings
-     */
-    public function __construct(private SettingsRepositoryInterface $settings)
-    {
-    }
-
-    /**
      * @param ForumSerializer $serializer
-     * @param array $model
-     * @param array $attributes
+     * @param mixed $model
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
      */
-    public function __invoke(ForumSerializer $serializer, $model, $attributes)
+    public function __invoke(ForumSerializer $serializer, mixed $model, array $attributes): array
     {
         $actor = $serializer->getActor();
 
-        $attributes['canConfigureSeo'] = (bool) $actor->hasPermissionLike('seo.canConfigure');
+        $attributes['canConfigureSeo'] = (bool) $actor->hasPermissionLike('fof-seo.canConfigure');
 
         return $attributes;
     }

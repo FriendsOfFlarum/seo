@@ -1,4 +1,4 @@
-v17development-flarum-seo:
+fof-seo:
   admin:
     permissions:
       configure_seo: "Allow configuring SEO"

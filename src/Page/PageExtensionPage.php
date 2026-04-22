@@ -1,25 +1,20 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
+use Carbon\Carbon;
 use FoF\Pages\PageRepository;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\Page\PageDriverInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\Page\PageDriverInterface;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 
 class PageExtensionPage implements PageDriverInterface
 {
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
+    protected TranslatorInterface $translator;
 
-    /**
-     * @param TranslatorInterface $translator
-     */
     public function __construct(TranslatorInterface $translator)
     {
         $this->translator = $translator;
@@ -35,13 +30,10 @@ class PageExtensionPage implements PageDriverInterface
         return ['pages.home', 'pages.page'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $pageId = Arr::get($request->getQueryParams(), 'id');
 
         try {
@@ -59,7 +51,7 @@ class PageExtensionPage implements PageDriverInterface
             function (SeoMeta $meta) use ($page, $properties, $content) {
                 $meta->title = $page->title;
 
-                $meta->created_at = $page->time ?? new \DateTime();
+                $meta->created_at = $page->time ?? Carbon::now();
 
                 $meta->updated_at = $page->edit_time;
 

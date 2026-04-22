@@ -1,22 +1,16 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
 use Flarum\Settings\SettingsRepositoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use V17Development\FlarumSeo\Page\PageDriverInterface;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\Page\PageDriverInterface;
+use FoF\Seo\SeoProperties;
 
 class IndexPage implements PageDriverInterface
 {
-    /**
-     * @var SettingsRepositoryInterface
-     */
-    protected $settings;
+    protected SettingsRepositoryInterface $settings;
 
-    /**
-     * @param SettingsRepositoryInterface $settings
-     */
     public function __construct(SettingsRepositoryInterface $settings)
     {
         $this->settings = $settings;
@@ -32,14 +26,10 @@ class IndexPage implements PageDriverInterface
         return ['default', 'index'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     * @param SeoProperties $properties
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $routeName = $request->getAttribute('routeName');
 
         $properties->setDescription($this->settings->get('forum_description'));

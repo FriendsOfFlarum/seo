@@ -1,17 +1,15 @@
 <?php
 
-namespace V17Development\FlarumSeo\SeoMeta\Event;
+namespace FoF\Seo\SeoMeta\Event;
 
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoMeta\SeoMeta;
 
 class Created
 {
-    // Basic meta info
-    public $objectType;
-    public $objectId;
+    public string $objectType;
+    public int $objectId;
 
-    // SeoMeta object
-    public $seoMeta;
+    public SeoMeta $seoMeta;
 
     public function __construct(SeoMeta $seoMeta)
     {

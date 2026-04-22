@@ -1,8 +1,9 @@
 <?php
 
-namespace V17Development\FlarumSeo\Api\Serializers;
+namespace FoF\Seo\Api\Serializers;
 
 use Flarum\Api\Serializer\AbstractSerializer;
+use FoF\Seo\SeoMeta\SeoMeta;
 
 class SeoMetaSerializer extends AbstractSerializer
 {
@@ -13,6 +14,8 @@ class SeoMetaSerializer extends AbstractSerializer
 
     /**
      * {@inheritdoc}
+     *
+     * @param SeoMeta $seoMeta
      */
     protected function getDefaultAttributes($seoMeta)
     {

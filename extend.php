@@ -1,6 +1,6 @@
 <?php
 
-namespace V17Development\FlarumSeo;
+namespace FoF\Seo;
 
 use Flarum\Api\Controller\ListDiscussionsController;
 use Flarum\Api\Controller\ShowDiscussionController;
@@ -9,31 +9,15 @@ use Flarum\Api\Serializer\ForumSerializer;
 use Flarum\Database\AbstractModel;
 use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Extend;
-use V17Development\FlarumSeo\Api\AttachForumSerializerAttributes;
-use V17Development\FlarumSeo\ConfigureLinks;
-use V17Development\FlarumSeo\Api\Serializers\SeoMetaSerializer;
-use V17Development\FlarumSeo\Controller\Robots;
-use V17Development\FlarumSeo\Formatter\FormatLinks;
-use V17Development\FlarumSeo\Extend\SEO;
-use V17Development\FlarumSeo\Listeners\PageListener;
-use V17Development\FlarumSeo\Page as SeoPage;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-
-// Listen events
-$events = (new Extend\Event);
-
-// Listen to discussion updates
-$events
-  ->subscribe(Subscribers\DiscussionSubscriber::class);
-
-// Listen to post updates
-$events
-  ->subscribe(Subscribers\PostSubscriber::class);
-
-// Add events for Tag extension
-if (class_exists("Flarum\Tags\Tag")) {
-  $events->subscribe(Subscribers\TagSubscriber::class);
-}
+use FoF\Seo\Api\AttachForumSerializerAttributes;
+use FoF\Seo\ConfigureLinks;
+use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\Controller\Robots;
+use FoF\Seo\Formatter\FormatLinks;
+use FoF\Seo\Extend\SEO;
+use FoF\Seo\Listeners\PageListener;
+use FoF\Seo\Page as SeoPage;
+use FoF\Seo\SeoMeta\SeoMeta;
 
 return [
   (new Extend\Frontend('forum'))
@@ -45,13 +29,12 @@ return [
     ->js(__DIR__ . '/js/dist/admin.js')
     ->css(__DIR__ . '/less/Admin.less'),
 
-  (new Extend\Routes('forum'))
-    ->get('/robots.txt', 'v17development-flarum-seo', Robots::class),
+  // (new Extend\Routes('forum'))
+  //   ->get('/robots.txt', 'v17development-flarum-seo', Robots::class),
 
   (new Extend\Routes('api'))
     ->post('/seo_social_media_image', 'seo.socialmedia.upload', Api\Controllers\UploadSocialMediaImageController::class)
     ->delete('/seo_social_media_image', 'seo.socialmedia.delete', Api\Controllers\DeleteSocialMediaImageController::class)
-
     ->get('/seo_meta', 'seo_meta.overview', Api\Controllers\ListSeoMetaController::class)
     ->get('/seo_meta/{id:\d+}', 'seo_meta.get', Api\Controllers\ShowSeoMetaController::class)
     ->patch('/seo_meta/{id:\d+}', 'seo_meta.update', Api\Controllers\UpdateSeoMetaController::class)
@@ -91,6 +74,13 @@ return [
   (new Extend\ApiSerializer(ForumSerializer::class))
     ->attributes(AttachForumSerializerAttributes::class),
 
-  // Add events
-  $events
+  (new Extend\Event())
+    ->subscribe(Subscribers\DiscussionSubscriber::class)
+    ->subscribe(Subscribers\PostSubscriber::class),
+
+  (new Extend\Conditional())
+    ->whenExtensionEnabled('flarum-tags', fn () => [
+        (new Extend\Event())
+          ->subscribe(Subscribers\TagSubscriber::class)
+    ])
 ];

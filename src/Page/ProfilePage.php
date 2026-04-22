@@ -1,29 +1,19 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
 use Flarum\User\UserRepository;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\SeoProperties;
 
 class ProfilePage implements PageDriverInterface
 {
-    /**
-     * @var UserRepository
-     */
-    protected $userRepository;
+    protected UserRepository $userRepository;
 
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
+    protected TranslatorInterface $translator;
 
-    /**
-     * @param UserRepository $userRepository
-     * @param TranslatorInterface $translator
-     */
     public function __construct(UserRepository $userRepository, TranslatorInterface $translator)
     {
         $this->userRepository = $userRepository;
@@ -40,13 +30,10 @@ class ProfilePage implements PageDriverInterface
         return ['user'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $username = Arr::get($request->getQueryParams(), 'username');
 
         try {
@@ -60,12 +47,12 @@ class ProfilePage implements PageDriverInterface
         }
 
         // Profile title
-        $profileTitle = $this->translator->trans("v17development-flarum-seo.forum.profile_title", [
+        $profileTitle = $this->translator->trans("fof-seo.forum.profile_title", [
             'username' => $user->getAttribute('display_name'),
         ]);
 
         // Profile description
-        $profileDescription = $this->translator->trans("v17development-flarum-seo.forum.profile_description", [
+        $profileDescription = $this->translator->trans("fof-seo.forum.profile_description", [
             'username' => $user->getAttribute('display_name'),
             'discussion_count' => $user->getAttribute('discussion_count'),
             'comment_count' => $user->getAttribute('comment_count')

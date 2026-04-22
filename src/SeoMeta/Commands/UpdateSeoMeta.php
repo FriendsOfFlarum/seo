@@ -1,18 +1,24 @@
 <?php
 
-namespace V17Development\FlarumSeo\SeoMeta\Commands;
+namespace FoF\Seo\SeoMeta\Commands;
 
 use Flarum\User\User;
 
 class UpdateSeoMeta
 {
-    public $actor;
+    public User $actor;
 
-    public $id;
+    public int|string $id;
 
-    public $data;
+    /**
+     * @var array<string, mixed>
+     */
+    public array $data;
 
-    public function __construct(User $actor, $id, array $data)
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function __construct(User $actor, int|string $id, array $data)
     {
         $this->actor = $actor;
         $this->id = $id;

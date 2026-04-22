@@ -1,24 +1,22 @@
 <?php
 
-namespace V17Development\FlarumSeo;
+namespace FoF\Seo;
 
-use V17Development\FlarumSeo\Listeners\PageListener;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
+use FoF\Seo\Listeners\PageListener;
+use FoF\Seo\SeoMeta\SeoMeta;
 
 /**
  * FlarumSeo Properties Extender
  */
 class SeoProperties
 {
-    // SEO container
-    private $container = null;
+    private ?PageListener $container = null;
 
     /**
      * Initializing extender. For internal user only.
      */
     public function __construct(PageListener $container)
     {
-        // Set container
         $this->container = $container;
     }
 
@@ -26,10 +24,10 @@ class SeoProperties
      * Page title
      *
      * @param string $title Sets title
-     * @param boolean $updatePageTitle Update page title as well
+     * @param bool $updatePageTitle Update page title as well
      * @param bool $useAsHeadLine Only true if you want to use this as headline
      */
-    public function setTitle(string $title, $updatePageTitle = true, bool $useAsHeadLine = false): self
+    public function setTitle(string $title, bool $updatePageTitle = true, bool $useAsHeadLine = false): self
     {
         if ($this->container === null) self::throwError("setTitle");
 
@@ -65,7 +63,7 @@ class SeoProperties
     /**
      * Generate page description
      */
-    public function generateDescriptionFromContent($content): string
+    public function generateDescriptionFromContent(string $content): string
     {
         $description = strip_tags($content);
         $description = trim(preg_replace('/\s+/', ' ', mb_substr($description, 0, 157))) . (mb_strlen($description) > 157 ? '...' : '');
@@ -76,8 +74,8 @@ class SeoProperties
     /**
      * Page full URL
      *
-     * @param string $url The path or url of the page (if it is the full url, set $addApplicationUrl to false)
-     * @param bool $addApplicationUrl Adds application before the URL if true
+     * @param string $url The path or url of the page (if it is the full url, set $prependApplicationUrl to false)
+     * @param bool $prependApplicationUrl Adds application before the URL if true
      */
     public function setUrl(string $url, bool $prependApplicationUrl = true): self
     {
@@ -171,14 +169,11 @@ class SeoProperties
     /**
      * Adds or updates an 'og:' key
      *
-     * @param string $key
-     * @param string|array $value
-     *
      * example:
      * - key: "og:site_name"
      * - value: "blog"
      */
-    public function setMetaPropertyTag(string $key, $value): self
+    public function setMetaPropertyTag(string $key, string $value): self
     {
         if ($this->container === null) self::throwError("setMetaPropertyTag");
 
@@ -190,14 +185,11 @@ class SeoProperties
     /**
      * Adds or updates a meta tag
      *
-     * @param string $key
-     * @param string|array $value
-     *
      * example:
      * - key: "robots"
      * - value: "index, follow"
      */
-    public function setMetaTag(string $key, $value): self
+    public function setMetaTag(string $key, string $value): self
     {
         if ($this->container === null) self::throwError("setMetaTag");
 
@@ -209,8 +201,7 @@ class SeoProperties
     /**
      * Adds or updates a JSON schema key
      *
-     * @param string $key
-     * @param string|array $value
+     * @param mixed $value
      *
      * example:
      * - key: "@type"
@@ -227,26 +218,26 @@ class SeoProperties
 
     /**
      * Returns current application full-path
-     *
-     * @param string $path
      */
-    public function withApplicationPath(string $path)
+    public function withApplicationPath(string $path): string
     {
         return $this->container->getApplicationPath($path);
     }
 
-    public function getImageFromContent(?string $content = null)
+    public function getImageFromContent(?string $content = null): ?string
     {
         return $this->container->getImageFromContent($content);
     }
 
-    public function getEstimatedReadingTime(string $content = null)
+    public function getEstimatedReadingTime(string $content = null): int
     {
         return $this->container->getEstimatedReadingTime($content);
     }
 
     /**
-     * Generates a
+     * Generates a schema.org breadcrumb list
+     *
+     * @param array<int, array<string, mixed>> $tags
      */
     public function generateSchemaBreadcrumb(array $tags): self
     {
@@ -258,7 +249,7 @@ class SeoProperties
     /**
      * Generate default tags from meta
      */
-    public function generateTagsFromMetaData(SeoMeta $data)
+    public function generateTagsFromMetaData(SeoMeta $data): self
     {
         $this->container->generateTagsFromMetaData($data);
 
@@ -267,8 +258,10 @@ class SeoProperties
 
     /**
      * Container was not yet initialized
+     *
+     * @return never
      */
-    private static function throwError($caller)
+    private static function throwError(string $caller): void
     {
         throw new \Exception("SeoProperties::" . $caller . "(..): You're doing it wrong, container was improperly initialized. Please review Flarum SEO documentation.");
     }

@@ -1,11 +1,11 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
 use Flarum\Extension\ExtensionManager;
 use Illuminate\Support\Collection;
-use V17Development\FlarumSeo\Page\PageDriverInterface;
-use V17Development\FlarumSeo\SeoExtenderManagerInterface;
+use FoF\Seo\Page\PageDriverInterface;
+use FoF\Seo\SeoExtenderManagerInterface;
 
 class PageManager implements SeoExtenderManagerInterface
 {
@@ -45,7 +45,7 @@ class PageManager implements SeoExtenderManagerInterface
     {
         return $this->getActiveExtenders()
             ->filter(function (PageDriverInterface $driver) use ($routeName) {
-                return $routeName === null || in_array($routeName, $driver->handleRoutes() ?? []);
+                return $routeName === null || in_array($routeName, $driver->handleRoutes());
             })
             ->toArray();
     }

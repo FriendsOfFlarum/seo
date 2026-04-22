@@ -1,4 +1,4 @@
-name: V17 Seo JS
+name: FoF SEO JS
 
 on: [workflow_dispatch, push, pull_request]
 
@@ -12,5 +12,8 @@ jobs:
 
       frontend_directory: ./js
       backend_directory: .
-      js_package_manager: npm
-      main_git_branch: master
+      js_package_manager: yarn
+      main_git_branch: 1.x
+
+    secrets:
+      bundlewatch_github_token: ${{ secrets.BUNDLEWATCH_GITHUB_TOKEN }}

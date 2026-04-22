@@ -1,25 +1,31 @@
 {
-  "name": "v17development/flarum-seo",
+  "name": "fof/seo",
   "description": "Adds SEO tags for your Flarum forum",
   "type": "flarum-extension",
   "license": "MIT",
   "authors": [
     {
+      "name": "FriendsOfFlarum",
+      "homepage": "https://github.com/FriendsOfFlarum"
+    },
+    {
       "name": "V17 Development",
-      "email": "info@v17.dev"
+      "homepage": "https://v17.dev",
+      "role": "Original author"
     }
   ],
-  "homepage": "https://v17.dev/projects/flarum-seo",
+  "homepage": "https://github.com/FriendsOfFlarum/seo",
   "support": {
-    "forum": "https://discuss.flarum.org/d/18316",
-    "issues": "https://github.com/v17development/flarum-seo/issues",
-    "source": "https://github.com/v17development/flarum-seo",
-    "docs": "https://community.v17.dev/knowledgebase/category/flarum-seo"
+    "issues": "https://github.com/FriendsOfFlarum/seo/issues",
+    "source": "https://github.com/FriendsOfFlarum/seo"
   },
   "autoload": {
     "psr-4": {
-      "V17Development\\FlarumSeo\\": "src/"
-    }
+      "FoF\\Seo\\": "src/"
+    },
+    "files": [
+      "src/Compat/aliases.php"
+    ]
   },
   "require": {
     "php": "^8.0",
@@ -28,6 +34,7 @@
   },
   "require-dev": {
     "flarum/tags": "^1.8",
+    "flarum/likes": "^1.8",
     "fof/pages": "^1.0",
     "fof/best-answer": "^1.6",
     "flarum/phpstan": "^1.0"
@@ -36,24 +43,24 @@
     "zerosonesfun/elint": "*",
     "franzl/flarum-open-links-in-new-tab": "*"
   },
+  "replace": {
+    "v17development/flarum-seo": "*"
+  },
   "suggest": {
     "fof/sitemap": "Allows you to generate powerful sitemap.xml files"
   },
   "extra": {
     "flarum-extension": {
-      "title": "SEO",
+      "title": "FoF SEO",
       "category": "feature",
       "optional-dependencies": [
         "flarum/tags"
       ],
       "icon": {
         "name": "fas fa-check",
-        "backgroundColor": "#0072ff",
-        "color": "#ffffff"
+        "backgroundColor": "#e74c3c",
+        "color": "#fff"
       }
-    },
-    "flagrow": {
-      "discuss": "https://discuss.flarum.org/d/18316"
     }
   },
   "scripts": {

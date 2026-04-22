@@ -1,4 +1,4 @@
-import MetaSeoModal from "./Components/MetaSeoModal";
+import MetaSeoModal from './Components/MetaSeoModal';
 
 export const components = {
   MetaSeoModal,

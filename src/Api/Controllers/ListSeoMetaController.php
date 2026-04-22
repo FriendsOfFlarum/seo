@@ -1,14 +1,14 @@
 <?php
 
-namespace V17Development\FlarumSeo\Api\Controllers;
+namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractListController;
 use Flarum\Http\UrlGenerator;
 use Flarum\Http\RequestUtil;
 use Psr\Http\Message\ServerRequestInterface;
 use Tobscure\JsonApi\Document;
-use V17Development\FlarumSeo\Api\Serializers\SeoMetaSerializer;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
+use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\SeoMeta\SeoMeta;
 
 class ListSeoMetaController extends AbstractListController
 {
@@ -44,7 +44,7 @@ class ListSeoMetaController extends AbstractListController
         $actor = RequestUtil::getActor($request);
 
         // Make sure the person can access the agents
-        $actor->assertCan('seo.canConfigure');
+        $actor->assertCan('fof-seo.canConfigure');
 
         // Params
         $limit = $this->extractLimit($request);

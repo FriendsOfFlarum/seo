@@ -1,12 +1,14 @@
 <?php
 
-namespace V17Development\FlarumSeo\Subscribers;
+namespace FoF\Seo\Subscribers;
 
 use Flarum\Discussion\Discussion;
 use Flarum\Discussion\Event as DiscussionEvent;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
-use V17Development\FlarumSeo\SeoMeta\Event\Created;
+use Flarum\Post\CommentPost;
+use Illuminate\Contracts\Events\Dispatcher;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
+use FoF\Seo\SeoMeta\Event\Created;
 
 /**
  * Subscribe to discussion creation, update or deleted
@@ -17,10 +19,8 @@ class DiscussionSubscriber
 
     /**
      * Subscribe to events
-     * 
-     * @param $events
      */
-    public function subscribe($events)
+    public function subscribe(Dispatcher $events): void
     {
         $events->listen(DiscussionEvent\Deleting::class, [$this, 'onModelEvent']);
         $events->listen(DiscussionEvent\Started::class, [$this, 'onModelEvent']);
@@ -30,17 +30,14 @@ class DiscussionSubscriber
 
     /**
      * Handle model event
-     *
-     * @param $event
      */
-    public function onModelEvent($event)
+    public function onModelEvent(object $event): void
     {
         // Find meta
         $meta = SeoMeta::findOneByModel($event->discussion);
 
         // Find and delete meta-data
         if ($event::class === DiscussionEvent\Deleting::class) {
-            // Meta existed, delete
             if ($meta) {
                 $meta->delete();
             }
@@ -60,22 +57,19 @@ class DiscussionSubscriber
 
         $this->updateMeta($meta, $event->discussion);
 
-        // Update
         $meta->save();
     }
 
     /**
      * Handle meta created event
-     * 
-     * @param Created $event
      */
-    public function onMetaCreated(Created $event)
+    public function onMetaCreated(Created $event): void
     {
-        // Only update meta data if object type matches
         if ($event->objectType !== 'discussions') return;
 
-        // Find discussion
         $discussion = Discussion::find($event->objectId);
+
+        if ($discussion === null) return;
 
         $this->updateMeta($event->seoMeta, $discussion);
 
@@ -83,9 +77,9 @@ class DiscussionSubscriber
     }
 
     /**
-     * Public function to update 
+     * Populate the SeoMeta row from the discussion's current state.
      */
-    public function updateMeta($meta, $discussion)
+    public function updateMeta(SeoMeta $meta, Discussion $discussion): void
     {
         $meta->title = $discussion->title;
 
@@ -101,7 +95,7 @@ class DiscussionSubscriber
         }
 
         // Set discussion description and image
-        if ($firstPost) {
+        if ($firstPost instanceof CommentPost) {
             $content = $firstPost->formatContent();
 
             // Set page description

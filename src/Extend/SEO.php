@@ -1,25 +1,27 @@
 <?php
 
-namespace V17Development\FlarumSeo\Extend;
+namespace FoF\Seo\Extend;
 
 use Flarum\Extension\Extension;
 use Flarum\Extend\ExtenderInterface;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
-use V17Development\FlarumSeo\Page\PageManager;
+use FoF\Seo\Page\PageManager;
 
 class SEO implements ExtenderInterface
 {
-    // Extender list
-    protected $extenders = [];
+    /**
+     * @var array<string, class-string>
+     */
+    protected array $extenders = [];
 
     /**
      * Register a new extender
      *
      * @param string $name Unique extender name
-     * @param string $extender Extender class
+     * @param class-string $extender Extender class
      */
-    public function addExtender(string $name, string $extender)
+    public function addExtender(string $name, string $extender): self
     {
         $this->extenders[$name] = $extender;
 
@@ -31,22 +33,16 @@ class SEO implements ExtenderInterface
      *
      * @param string $name Extender name
      */
-    public function removeExtender(string $name)
+    public function removeExtender(string $name): self
     {
-        // Forget extender
         Arr::forget($this->extenders, $name);
 
         return $this;
     }
 
-    /**
-     * Extender
-     *
-     * @param
-     */
-    public function extend(Container $container, Extension $extension = null)
+    public function extend(Container $container, Extension $extension = null): void
     {
-        $container->resolving(PageManager::class, function ($page) use ($container) {
+        $container->resolving(PageManager::class, function (PageManager $page) use ($container) {
             foreach ($this->extenders as $name => $extender) {
                 $page->addExtender($name, $container->make($extender));
             }

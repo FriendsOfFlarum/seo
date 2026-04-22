@@ -1,6 +1,6 @@
 <?php
 
-namespace V17Development\FlarumSeo\Api\Controllers;
+namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Container\Container;

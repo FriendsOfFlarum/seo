@@ -1,6 +1,6 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
 use Flarum\Database\Eloquent\Collection;
 use Flarum\Discussion\DiscussionRepository;
@@ -16,57 +16,27 @@ use Flarum\User\UserRepository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 
 class DiscussionBestAnswerPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    /**
-     * @var SettingsRepositoryInterface
-     */
-    protected $settingsRepositoryInterface;
+    protected SettingsRepositoryInterface $settingsRepositoryInterface;
 
-    /**
-     * @var DiscussionRepository
-     */
-    protected $discussionRepository;
+    protected DiscussionRepository $discussionRepository;
 
-    /**
-     * @var UserRepository
-     */
-    protected $userRepository;
+    protected UserRepository $userRepository;
 
-    /**
-     * @var ExtensionManager
-     */
-    protected $extensionManager;
+    protected ExtensionManager $extensionManager;
 
-    /**
-     * @var UrlGenerator
-     */
-    protected $urlGenerator;
+    protected UrlGenerator $urlGenerator;
 
-    /**
-     * @var Discussion
-     */
-    protected $discussionFallback;
+    protected DiscussionPage $discussionFallback;
 
-    /**
-     * @var SlugManager
-     */
-    protected $slugManager;
+    protected SlugManager $slugManager;
 
-    /**
-     * @param SettingsRepositoryInterface $settingsRepositoryInterface
-     * @param DiscussionRepository $discussionRepository
-     * @param TranslatorInterface $translator
-     * @param ExtensionManager $extensionManager
-     * @param UrlGenerator $urlGenerator
-     * @param Discussion $discussionFallback
-     */
     public function __construct(
         SettingsRepositoryInterface $settingsRepositoryInterface,
         DiscussionRepository $discussionRepository,
@@ -97,14 +67,10 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         return ['discussion'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     * @param SeoProperties $properties
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         // Simple discussion tags is set up
         if ($this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 0) return;
 
@@ -151,7 +117,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $properties->generateTagsFromMetaData($seoMeta);
 
         // Get posted on and Last posted on
-        $bestAnswerId = $enableBestAnswer ? $discussion->best_answer_post_id : null;
+        $bestAnswerId = $discussion->best_answer_post_id;
 
         // Update topic url
         $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id . '-' . $discussion->slug]), false);

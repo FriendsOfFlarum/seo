@@ -1,6 +1,6 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
 use Flarum\Database\Eloquent\Collection;
 use Flarum\Discussion\DiscussionRepository;
@@ -15,49 +15,25 @@ use Flarum\User\UserRepository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 
 class DiscussionPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    /**
-     * @var SettingsRepositoryInterface
-     */
-    protected $settingsRepositoryInterface;
+    protected SettingsRepositoryInterface $settingsRepositoryInterface;
 
-    /**
-     * @var DiscussionRepository
-     */
-    protected $discussionRepository;
+    protected DiscussionRepository $discussionRepository;
 
-    /**
-     * @var UserRepository
-     */
-    protected $userRepository;
+    protected UserRepository $userRepository;
 
-    /**
-     * @var ExtensionManager
-     */
-    protected $extensionManager;
+    protected ExtensionManager $extensionManager;
 
-    /**
-     * @var UrlGenerator
-     */
-    protected $urlGenerator;
+    protected UrlGenerator $urlGenerator;
 
-    /**
-     * @var SlugManager
-     */
-    protected $slugManager;
+    protected SlugManager $slugManager;
 
-    /**
-     * @param SettingsRepositoryInterface $settingsRepositoryInterface
-     * @param DiscussionRepository $discussionRepository
-     * @param TranslatorInterface $translator
-     */
     public function __construct(
         SettingsRepositoryInterface $settingsRepositoryInterface,
         DiscussionRepository $discussionRepository,
@@ -86,14 +62,10 @@ class DiscussionPage implements PageDriverInterface
         return ['discussion'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     * @param SeoProperties $properties
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         // Get discussion ID from params
         $discussionId = Arr::get($request->getQueryParams(), 'id');
 
@@ -114,7 +86,7 @@ class DiscussionPage implements PageDriverInterface
         // Do not continue discussion matches a FriendsOfFlarum BestAnswer discussion (if enabled)
         if (
             $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1 &&
-            $tagsEnabled && (!$enableBestAnswer || ($enableBestAnswer && $discussionTags->contains(fn(Tag $tag) => (bool)$tag->is_qna )))
+            $tagsEnabled && (!$enableBestAnswer || $discussionTags->contains(fn(Tag $tag) => (bool)$tag->is_qna))
         ) {
             return;
         }

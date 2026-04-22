@@ -1,12 +1,12 @@
 <?php
 
-namespace V17Development\FlarumSeo\SeoMeta;
+namespace FoF\Seo\SeoMeta;
 
 use Carbon\Carbon;
 use Flarum\Database\AbstractModel;
 use Flarum\Foundation\EventGeneratorTrait;
 use Illuminate\Database\Eloquent\Model;
-use V17Development\FlarumSeo\SeoMeta\Event\Created;
+use FoF\Seo\SeoMeta\Event\Created;
 
 /**
  * @property int $id
@@ -63,7 +63,7 @@ class SeoMeta extends AbstractModel
      */
     protected $dates = ['created_at', 'updated_at'];
 
-    public static function build(string $objectType, int $objectId, bool $autoUpdate = true)
+    public static function build(string $objectType, int $objectId, bool $autoUpdate = true): self
     {
         $seoMeta = new static();
         $seoMeta->object_id = $objectId;
@@ -91,11 +91,11 @@ class SeoMeta extends AbstractModel
 
     /**
      * Find the SEO meta by object type
-     * 
+     *
      * @param string $objectType Name of the object
-     * @param string $objectId ID of the object
+     * @param int $objectId ID of the object
      */
-    public static function findByObjectType(string $objectType, int $objectId): Model
+    public static function findByObjectType(string $objectType, int $objectId): self
     {
         return self::firstOrCreate([
             'object_type' => $objectType,
@@ -105,11 +105,11 @@ class SeoMeta extends AbstractModel
 
     /**
      * Find the SEO meta by object type
-     * 
+     *
      * @param string $objectType Name of the object
-     * @param string $objectId ID of the object
+     * @param int $objectId ID of the object
      */
-    public static function findByObjectTypeOrFail(string $objectType, int $objectId): Model
+    public static function findByObjectTypeOrFail(string $objectType, int $objectId): self
     {
         return self::where([
             ['object_type', '=', $objectType],
@@ -119,11 +119,12 @@ class SeoMeta extends AbstractModel
 
     /**
      * Find the SEO meta by object type
-     * 
+     *
      * @param string $objectType Name of the object
-     * @param string $objectId ID of the object
+     * @param int $objectId ID of the object
+     * @param callable|null $fillables Optional callable to populate defaults on create
      */
-    public static function findByObjectTypeOrCreate(string $objectType, int $objectId, callable|null $fillables = null): Model
+    public static function findByObjectTypeOrCreate(string $objectType, int $objectId, callable|null $fillables = null): self
     {
         $query = self::where([
             ['object_type', '=', $objectType],
@@ -132,7 +133,7 @@ class SeoMeta extends AbstractModel
 
         // No fillables
         if ($fillables === null) {
-            return $query->firstOr(function () use ($objectType, $objectId): Model {
+            return $query->firstOr(function () use ($objectType, $objectId): self {
                 $data = SeoMeta::build($objectType, $objectId);
 
                 $data->save();
@@ -141,7 +142,7 @@ class SeoMeta extends AbstractModel
             });
         }
 
-        return $query->firstOr(function () use ($objectType, $objectId, $fillables): Model {
+        return $query->firstOr(function () use ($objectType, $objectId, $fillables): self {
             $data = SeoMeta::build($objectType, $objectId);
 
             $fillables($data);
@@ -154,14 +155,14 @@ class SeoMeta extends AbstractModel
 
     /**
      * Find by slug
-     * 
+     *
      * Could be used to add dynamic tags to pages that do not have a database row
      * For example: a blog home/overview page, knowledge base page, tags overview page etc.
-     * 
-     * @param string $objectType Name of the object
-     * @param string $objectId ID of the object
+     *
+     * @param string $pageSlug Page slug used as object type
+     * @param callable|null $fillables Optional callable to populate defaults on create
      */
-    public static function findOrCreateBySlug(string $pageSlug, callable|null $fillables = null): Model
+    public static function findOrCreateBySlug(string $pageSlug, callable|null $fillables = null): self
     {
         return self::findByObjectTypeOrCreate(str_replace("-", "_", $pageSlug), -1, $fillables);
     }
@@ -172,7 +173,7 @@ class SeoMeta extends AbstractModel
      * 
      * @param Model $model The model
      */
-    public static function findOneByModel(Model $model): ?Model
+    public static function findOneByModel(Model $model): ?self
     {
         return self::where([
             'object_type' => $model->getTable(),
@@ -185,17 +186,18 @@ class SeoMeta extends AbstractModel
      * 
      * @param Model $model The model
      */
-    public static function buildByModel(Model $model): ?Model
+    public static function buildByModel(Model $model): self
     {
         return self::build($model->getTable(), $model->getKey());
     }
 
     /**
      * Find or create the SEO meta of an object from a model
-     * 
+     *
      * @param Model $model The model
+     * @param array|callable $fillables Defaults to fill when creating
      */
-    public static function findByModelOrCreate(Model $model, array|callable $fillables = []): Model
+    public static function findByModelOrCreate(Model $model, array|callable $fillables = []): self
     {
         // Is an array with defaults
         if (!is_callable($fillables)) {
@@ -208,7 +210,7 @@ class SeoMeta extends AbstractModel
         return self::where([
             'object_type' => $model->getTable(),
             'object_id' => $model->getKey()
-        ])->firstOr(function () use ($model, $fillables): Model {
+        ])->firstOr(function () use ($model, $fillables): self {
             $data = SeoMeta::build($model->getTable(), $model->getKey());
 
             $fillables($data);

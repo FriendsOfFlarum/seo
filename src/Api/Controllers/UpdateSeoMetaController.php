@@ -1,6 +1,6 @@
 <?php
 
-namespace V17Development\FlarumSeo\Api\Controllers;
+namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractShowController;
 use Illuminate\Contracts\Bus\Dispatcher;
@@ -9,8 +9,8 @@ use Flarum\Http\RequestUtil;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Tobscure\JsonApi\Document;
-use V17Development\FlarumSeo\Api\Serializers\SeoMetaSerializer;
-use V17Development\FlarumSeo\SeoMeta\Commands\UpdateSeoMeta;
+use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\SeoMeta\Commands\UpdateSeoMeta;
 
 class UpdateSeoMetaController extends AbstractShowController
 {

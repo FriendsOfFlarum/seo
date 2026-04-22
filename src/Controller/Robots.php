@@ -1,5 +1,5 @@
 <?php
-namespace V17Development\FlarumSeo\Controller;
+namespace FoF\Seo\Controller;
 
 use Flarum\Settings\SettingsRepositoryInterface;
 
@@ -11,30 +11,22 @@ use Flarum\Http\UrlGenerator;
 
 /**
  * Class Robots
- * @package V17Development\FlarumSeo\Controller
+ * @package FoF\Seo\Controller
  */
 class Robots implements RequestHandlerInterface
 {
-    protected $settings;
-    protected $url;
+    protected SettingsRepositoryInterface $settings;
+    protected UrlGenerator $url;
 
-    /**
-     * Robots constructor.
-     * @param SettingsRepositoryInterface $settings
-     */
     public function __construct(
         SettingsRepositoryInterface $settings,
         UrlGenerator $url
-    )
-    {
+    ) {
         $this->settings = $settings;
         $this->url = $url;
     }
 
-    /**
-     * @return string
-     */
-    private function output()
+    private function output(): string
     {
         $output = '';
 
@@ -62,7 +54,7 @@ class Robots implements RequestHandlerInterface
 
     /**
      * @param ServerRequestInterface $request
-     * @return mixed
+     * @return ResponseInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {

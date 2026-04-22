@@ -1,6 +1,6 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+namespace FoF\Seo\Page;
 
 use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Tags\TagRepository;
@@ -8,21 +8,15 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 
 class TagPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
+    protected TranslatorInterface $translator;
 
-    /**
-     * @param TagRepository $tagRepository
-     */
     public function __construct(
         TranslatorInterface $translator,
         Dispatcher $events
@@ -41,13 +35,10 @@ class TagPage implements PageDriverInterface
         return ['tag'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $tagId = Arr::get($request->getQueryParams(), 'slug');
 
         // I do support it, but it didn't work
