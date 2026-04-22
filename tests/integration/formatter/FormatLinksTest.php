@@ -1,0 +1,138 @@
+<?php
+
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Tests\integration\formatter;
+
+use Carbon\Carbon;
+use Flarum\Extend;
+use Flarum\Testing\integration\RetrievesAuthorizedUsers;
+use Flarum\Testing\integration\TestCase;
+
+/**
+ * Integration test for the FormatLinks render callback.
+ *
+ * We exercise the full formatter pipeline by POSTing a reply through the
+ * API: the JSON:API response's `contentHtml` attribute is rendered
+ * server-side through the same pipeline that runs in production, including
+ * this extension's `Extend\Formatter->render(FormatLinks::class)`.
+ */
+class FormatLinksTest extends TestCase
+{
+    use RetrievesAuthorizedUsers;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->extension('fof-seo');
+
+        // Bypass the post-creation rate limit so multiple tests can each
+        // create a reply in the same setUp window.
+        $this->extend(
+            (new Extend\ThrottleApi())->remove('postTimeout')
+        );
+
+        $this->prepareDatabase([
+            'users' => [$this->normalUser()],
+            'discussions' => [
+                ['id' => 1, 'title' => 'Test', 'slug' => 'test', 'user_id' => 2, 'created_at' => Carbon::now(), 'comment_count' => 1],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>Opener.</p></t>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function external_link_in_post_content_gets_nofollow_and_new_tab(): void
+    {
+        $html = $this->postReplyAndGetContentHtml('Please visit https://external.test/path for more info.');
+
+        $this->assertStringContainsString('nofollow', $html);
+        $this->assertStringContainsString('target="_blank"', $html);
+        $this->assertStringContainsString('rel="ugc noopener', $html);
+    }
+
+    /**
+     * @test
+     */
+    public function link_to_the_forum_itself_does_not_get_nofollow(): void
+    {
+        // The internal/forum URL under test is http://localhost, which the
+        // TextFormatter accepts as a valid URL. Links to it should not be
+        // nofollow.
+        $html = $this->postReplyAndGetContentHtml('See http://localhost/d/1 for details.');
+
+        $this->assertStringNotContainsString('nofollow', $html);
+        $this->assertStringContainsString('target="_self"', $html);
+    }
+
+    /**
+     * @test
+     */
+    public function domain_on_dofollow_list_does_not_get_nofollow(): void
+    {
+        $this->setting('seo_dofollow_domains', json_encode(['trusted.test']));
+
+        $html = $this->postReplyAndGetContentHtml('Check https://trusted.test/page out.');
+
+        $this->assertStringNotContainsString('nofollow', $html);
+        $this->assertStringContainsString('target="_blank"', $html);
+    }
+
+    /**
+     * Rendering hostile text via TextFormatter must not allow a URL to break
+     * out of its rel/target attribute and inject markup. Even a URL with a
+     * closing quote + script tag must come through safely encoded.
+     *
+     * @test
+     */
+    public function hostile_url_does_not_break_out_of_attributes(): void
+    {
+        $html = $this->postReplyAndGetContentHtml('Evil: https://evil.test/"><script>alert(1)</script>');
+
+        // The TextFormatter URL matcher should either URL-encode or reject
+        // the quote/script portion. Either way, a live <script> tag must
+        // never appear in the rendered HTML.
+        $this->assertStringNotContainsString('"><script>alert(1)</script>', $html);
+    }
+
+    /**
+     * POST a reply to discussion 1 and extract `data.attributes.contentHtml`.
+     */
+    private function postReplyAndGetContentHtml(string $content): string
+    {
+        $response = $this->send(
+            $this->request('POST', '/api/posts', [
+                'authenticatedAs' => 2,
+                'json' => [
+                    'data' => [
+                        'attributes' => ['content' => $content],
+                        'relationships' => [
+                            'discussion' => ['data' => ['type' => 'discussions', 'id' => '1']],
+                        ],
+                    ],
+                ],
+            ])
+        );
+
+        $this->assertSame(201, $response->getStatusCode(), 'Creating the reply failed: '.$response->getBody());
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        $html = $body['data']['attributes']['contentHtml'] ?? null;
+        $this->assertIsString($html, 'Response is missing contentHtml.');
+
+        return $html;
+    }
+}

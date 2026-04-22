@@ -435,12 +435,19 @@ class PageListener
      */
     public function generateTagsFromMetaData(SeoMeta $seoMeta): self
     {
-        // Set title
-        $this->setPageTitle($seoMeta->title);
+        if ($seoMeta->title !== null && $seoMeta->title !== '') {
+            $this->setPageTitle($seoMeta->title);
+        }
 
-        $this
-            ->setMetaPropertyTag('og:title', $seoMeta->open_graph_title ?? $seoMeta->title)
-            ->setMetaTag('twitter:title', $seoMeta->twitter_title ?? $seoMeta->title);
+        $ogTitle = $seoMeta->open_graph_title ?? $seoMeta->title;
+        if ($ogTitle !== null && $ogTitle !== '') {
+            $this->setMetaPropertyTag('og:title', $ogTitle);
+        }
+
+        $twitterTitle = $seoMeta->twitter_title ?? $seoMeta->title;
+        if ($twitterTitle !== null && $twitterTitle !== '') {
+            $this->setMetaTag('twitter:title', $twitterTitle);
+        }
 
         // Description
         if ($seoMeta->description) {

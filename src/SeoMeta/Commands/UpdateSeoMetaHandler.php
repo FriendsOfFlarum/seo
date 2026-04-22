@@ -21,7 +21,7 @@ class UpdateSeoMetaHandler
      */
     public function handle(UpdateSeoMeta $command): SeoMeta
     {
-        $command->actor->assertAdmin();
+        $command->actor->assertCan('fof-seo.canConfigure');
 
         $seoMeta = SeoMeta::findOrFail($command->id);
 
