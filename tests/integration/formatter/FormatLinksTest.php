@@ -86,7 +86,10 @@ class FormatLinksTest extends TestCase
 
         $html = $this->postReplyAndGetContentHtml('Check https://trusted.test/page out.');
 
+        // GH #113 — do-follow links must pass ranking signals: no nofollow and
+        // no ugc (which Google also treats as nofollow).
         $this->assertStringNotContainsString('nofollow', $html);
+        $this->assertStringNotContainsString('ugc', $html);
         $this->assertStringContainsString('target="_blank"', $html);
     }
 
