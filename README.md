@@ -31,7 +31,19 @@ php flarum cache:clear
 
 ## Migrating from v17development/flarum-seo
 
-This extension was transferred to FriendsOfFlarum in April 2026 and was previously published as `v17development/flarum-seo`. A migration guide for forum admins and third-party extension authors will be published before release.
+This extension was transferred to FriendsOfFlarum and was previously published as `v17development/flarum-seo`. The FriendsOfFlarum line begins at **3.0.0**, continuing the version history (the previous package reached 2.0.9).
+
+For forum admins, migration is a one-line change — swap the package, keep your settings and stored SEO data:
+
+```sh
+composer remove v17development/flarum-seo
+composer require fof/seo
+php flarum cache:clear
+```
+
+`fof/seo` declares `replace: { "v17development/flarum-seo": "*" }`, so anything that depended on the old package is satisfied by the new one, and the two can never be installed at once. Existing `v17development/flarum-seo` releases (≤ 2.0.9) remain installable from Packagist for anyone not yet ready to switch.
+
+Third-party extension authors should update any references from the `V17Development\FlarumSeo` namespace to `FoF\Seo`, and from the `v17development-seo` frontend module to `fof-seo`. See the [developer documentation](docs/developers/extending-metadata.md).
 
 ## Features
 
