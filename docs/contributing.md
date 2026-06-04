@@ -13,10 +13,10 @@ The frontend lives in `js/`.
 
 ```bash
 cd js
-npm install        # or: yarn
-npm run dev        # watch + rebuild during development
-npm run build      # production build
-npm run format     # prettier
+yern install        # or: yarn
+yarn run dev        # watch + rebuild during development
+yarn run build      # production build
+yarn run format     # prettier
 ```
 
 The source is TypeScript and follows current Flarum conventions (JSX, the `Link`
