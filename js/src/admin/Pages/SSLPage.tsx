@@ -1,5 +1,6 @@
 import app from 'flarum/admin/app';
 import Page from 'flarum/common/components/Page';
+import Link from 'flarum/common/components/Link';
 import icon from 'flarum/common/helpers/icon';
 
 export default class SSLPage extends Page {
@@ -21,9 +22,9 @@ export default class SSLPage extends Page {
         <p>
           {app.translator.trans('fof-seo.admin.pages.ssl.how_body', {
             link: (
-              <a href="https://letsencrypt.org/" target="_blank">
+              <Link external={true} href="https://letsencrypt.org/" target="_blank">
                 Let's Encrypt {icon('fas fa-external-link-alt')}
-              </a>
+              </Link>
             ),
           })}
         </p>

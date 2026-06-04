@@ -2,12 +2,24 @@
 
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/FriendsOfFlarum/seo/blob/1.x/LICENSE.md) [![Latest Stable Version](https://img.shields.io/packagist/v/fof/seo.svg)](https://packagist.org/packages/fof/seo) [![Total Downloads](https://img.shields.io/packagist/dt/fof/seo.svg)](https://packagist.org/packages/fof/seo)
 
-A [Flarum](https://flarum.org) extension that adds SEO tags to your forum — meta description, Open Graph, Twitter cards, schema.org structured data, and a dynamic `robots.txt`.
+A [Flarum](https://flarum.org) extension that adds SEO tags to your forum — meta description, Open Graph, Twitter cards, and schema.org structured data.
+
+## Documentation
+
+Full documentation lives in the [`docs/`](docs/README.md) folder:
+
+- [Installation](docs/installation.md)
+- [Features & configuration](docs/features.md)
+- [Per-item SEO (the *Configure SEO* dialog)](docs/meta-management.md)
+- [Do-follow link list](docs/do-follow-links.md)
+- [Sitemap & robots.txt](docs/sitemap-and-robots.md)
+- Developers: [SeoMeta objects](docs/developers/seometa-objects.md) · [the `SeoProperties` class](docs/developers/seoproperties.md)
+- [Contributing](docs/contributing.md)
 
 ## Installation
 
 ```sh
-composer require fof/seo
+composer require fof/seo:"*"
 ```
 
 ## Updating
@@ -34,7 +46,6 @@ SEO tags are generated for the following pages:
 Methods used:
 
 - HTML meta tags (`application-name`, `description`, `keywords`, `language`)
-- A dynamic `robots.txt` (with a link to your sitemap when `fof/sitemap` is enabled)
 - Open Graph tags (`og:type`, `og:title`, `og:description`, `og:url`, `article:published_time`, `article:updated_time`)
 - Twitter cards
 - Schema.org structured data:
@@ -44,6 +55,8 @@ Methods used:
   - [CollectionPage](https://schema.org/CollectionPage)
   - [ProfilePage](https://schema.org/ProfilePage)
 - Uses the first image in the post as the social-media image when one is present, falling back to the configured default.
+
+> Your `robots.txt` and XML sitemap are provided by [fof/sitemap](https://github.com/FriendsOfFlarum/sitemap). See [Sitemap & robots.txt](docs/sitemap-and-robots.md).
 
 ## Works with
 
@@ -57,7 +70,12 @@ Compatible — but not required — alongside:
 
 ## Extending
 
-Third-party extensions can register custom SEO page drivers by extending the `FoF\Seo\Extend\SEO` extender and implementing `FoF\Seo\Page\PageDriverInterface`. Full extension documentation will follow.
+Third-party extensions can register custom SEO page drivers by extending the `FoF\Seo\Extend\SEO` extender and implementing `FoF\Seo\Page\PageDriverInterface`, manage per-object metadata through `SeoMeta` objects, and fine-tune individual pages with the `SeoProperties` API.
+
+See the developer guides for details:
+
+- [SeoMeta objects — developer guide](docs/developers/seometa-objects.md)
+- [The `SeoProperties` class](docs/developers/seoproperties.md)
 
 ## Credits
 
@@ -65,9 +83,11 @@ This extension was originally created and maintained by [V17 Development](https:
 
 ## Links
 
+- [Documentation](docs/README.md)
 - [Packagist](https://packagist.org/packages/fof/seo)
 - [GitHub](https://github.com/FriendsOfFlarum/seo)
 - [Issues](https://github.com/FriendsOfFlarum/seo/issues)
+- [Support](https://discuss.flarum.org/d/39374)
 
 ## License
 

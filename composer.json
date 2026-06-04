@@ -7,17 +7,14 @@
     {
       "name": "FriendsOfFlarum",
       "homepage": "https://github.com/FriendsOfFlarum"
-    },
-    {
-      "name": "V17 Development",
-      "homepage": "https://v17.dev",
-      "role": "Original author"
     }
   ],
-  "homepage": "https://github.com/FriendsOfFlarum/seo",
+  "homepage": "https://friendsofflarum.org",
   "support": {
     "issues": "https://github.com/FriendsOfFlarum/seo/issues",
-    "source": "https://github.com/FriendsOfFlarum/seo"
+    "source": "https://github.com/FriendsOfFlarum/seo",
+    "forum": "https://discuss.flarum.org/d/39374",
+    "docs": "https://github.com/FriendsOfFlarum/seo/blob/1.x/docs/README.md"
   },
   "autoload": {
     "psr-4": {
@@ -38,7 +35,7 @@
     "flarum/tags": "^1.8",
     "flarum/likes": "^1.8",
     "fof/pages": "^1.0",
-    "fof/best-answer": "^1.6",
+    "fof/best-answer": "^1.7",
     "flarum/phpstan": "^1.0",
     "flarum/testing": "^1.0.0"
   },
@@ -50,7 +47,7 @@
     "v17development/flarum-seo": "*"
   },
   "suggest": {
-    "fof/sitemap": "Allows you to generate powerful sitemap.xml files"
+    "fof/sitemap": "Provides sitemap and robots.txt functionality."
   },
   "extra": {
     "flarum-extension": {
@@ -58,7 +55,9 @@
       "category": "feature",
       "optional-dependencies": [
         "flarum/tags",
-        "fof/pages"
+        "fof/pages",
+        "fof/sitemap",
+        "fof/best-answer"
       ],
       "icon": {
         "name": "fas fa-check",

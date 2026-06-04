@@ -109,8 +109,10 @@ fof-seo:
         why_body: A sitemap is a XML file with a list of all the available pages on your website. It will be used by crawlers and search engines to find pages on your website.
         generated_note: The sitemap file is automatically generated and does not need any maintenance.
         which_extension_heading: What extension should I install?
-        which_extension_body: At the moment, {link} is the best extension to install for Flarum. We advice you to install and activate this extension.
+        which_extension_body: '{link} is the suggested extension to install for Flarum. We strongly recommend you to install and activate this extension.'
         which_extension_details: This extension will make sure crawlers will find your forum <b>discussions</b>, <b>tags</b> (when extension is enabled) and <b>Pages</b> extension (when extension is installed and enabled). It will automatically make an sitemap.xml available.
+        robots_heading: What about robots.txt?
+        robots_body: The same extension also generates a <b>robots.txt</b> for your forum. This file tells search engines which areas they may crawl and points them to your sitemap, so installing it takes care of both files at once — there is nothing extra to configure.
         just_installed_heading: I just installed the extension
         just_installed_body: In that case, activate it by clicking the extension in the sidebar at the left . Then this warning will disappear.
 

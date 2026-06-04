@@ -1,6 +1,7 @@
 import app from 'flarum/admin/app';
 import Page from 'flarum/common/components/Page';
 import Button from 'flarum/common/components/Button';
+import Link from 'flarum/common/components/Link';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 import icon from 'flarum/common/helpers/icon';
 import type Mithril from 'mithril';
@@ -23,7 +24,7 @@ export default class RegisterToSearchEngines extends Page {
 
         <p>
           {app.translator.trans('fof-seo.admin.pages.search_engines.sitemap_tip', {
-            a: <a href="#/seo/sitemap" />,
+            a: <Link href={app.route('extension', { id: 'fof-seo', page: 'sitemap' })} />,
           })}
         </p>
 
@@ -32,9 +33,9 @@ export default class RegisterToSearchEngines extends Page {
           <p>
             {app.translator.trans('fof-seo.admin.pages.search_engines.google_visit', {
               link: (
-                <a href="https://search.google.com/search-console" target="_blank">
+                <Link external={true} href="https://search.google.com/search-console" target="_blank">
                   Google Search Console {icon('fas fa-external-link-alt')}
-                </a>
+                </Link>
               ),
             })}
           </p>
@@ -49,9 +50,9 @@ export default class RegisterToSearchEngines extends Page {
           <p>
             {app.translator.trans('fof-seo.admin.pages.search_engines.bing_visit', {
               link: (
-                <a href="https://www.bing.com/toolbox/webmaster" target="_blank">
+                <Link external={true} href="https://www.bing.com/toolbox/webmaster" target="_blank">
                   Bing Webmaster Tools {icon('fas fa-external-link-alt')}
-                </a>
+                </Link>
               ),
             })}
           </p>
@@ -64,9 +65,9 @@ export default class RegisterToSearchEngines extends Page {
           <p>
             {app.translator.trans('fof-seo.admin.pages.search_engines.yandex_visit', {
               link: (
-                <a href="https://webmaster.yandex.com" target="_blank">
+                <Link external={true} href="https://webmaster.yandex.com" target="_blank">
                   Yandex.Webmaster {icon('fas fa-external-link-alt')}
-                </a>
+                </Link>
               ),
             })}
           </p>

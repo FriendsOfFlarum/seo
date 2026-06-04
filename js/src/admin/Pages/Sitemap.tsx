@@ -1,5 +1,6 @@
 import app from 'flarum/admin/app';
 import Page from 'flarum/common/components/Page';
+import Link from 'flarum/common/components/Link';
 import icon from 'flarum/common/helpers/icon';
 
 export default class Sitemap extends Page {
@@ -14,14 +15,17 @@ export default class Sitemap extends Page {
         <p>
           {app.translator.trans('fof-seo.admin.pages.sitemap.which_extension_body', {
             link: (
-              <a href="https://discuss.flarum.org/d/14941-fof-sitemap" target="_blank">
+              <Link external={true} href="https://discuss.flarum.org/d/14941-fof-sitemap" target="_blank">
                 FriendsOfFlarum Sitemap {icon('fas fa-external-link-alt')}
-              </a>
+              </Link>
             ),
           })}
         </p>
 
         <p>{app.translator.trans('fof-seo.admin.pages.sitemap.which_extension_details', { b: <b /> })}</p>
+
+        <h4>{app.translator.trans('fof-seo.admin.pages.sitemap.robots_heading')}</h4>
+        <p>{app.translator.trans('fof-seo.admin.pages.sitemap.robots_body', { b: <b /> })}</p>
 
         <h4>{app.translator.trans('fof-seo.admin.pages.sitemap.just_installed_heading')}</h4>
         <p>{app.translator.trans('fof-seo.admin.pages.sitemap.just_installed_body')}</p>

@@ -28,6 +28,7 @@ class ForumAttributesTest extends TestCase
 
     private const SEO_MANAGER_GROUP_ID = 10;
     private const TRUSTED_USER_ID = 3;
+    private const SOCIAL_IMAGE_URL = 'https://example.com/assets/social.png';
 
     public function setUp(): void
     {
@@ -97,6 +98,68 @@ class ForumAttributesTest extends TestCase
 
         $this->assertArrayHasKey('canConfigureSeo', $data['data']['attributes']);
         $this->assertSame($expected, $data['data']['attributes']['canConfigureSeo']);
+    }
+
+    /**
+     * @return array<string, array{0: ?int, 1: bool}>
+     */
+    public function socialMediaImageVisibilityProvider(): array
+    {
+        return [
+            'admin sees social media image url'                => [1, true],
+            'permitted non-admin sees social media image url'  => [self::TRUSTED_USER_ID, true],
+            'regular user does not see social media image url' => [2, false],
+            'guest does not see social media image url'        => [null, false],
+        ];
+    }
+
+    /**
+     * The social media image URL is exposed under the `seo_social_media_imageUrl`
+     * attribute (the name core's UploadImageButton expects) and is gated behind
+     * the same `fof-seo.canConfigure` permission as the rest of the SEO admin.
+     *
+     * @test
+     *
+     * @dataProvider socialMediaImageVisibilityProvider
+     */
+    public function forum_endpoint_exposes_social_media_image_url_only_to_seo_managers(?int $authenticatedAs, bool $shouldSee): void
+    {
+        $this->setting('seo_social_media_image_url', self::SOCIAL_IMAGE_URL);
+
+        $options = [];
+
+        if ($authenticatedAs !== null) {
+            $options['authenticatedAs'] = $authenticatedAs;
+        }
+
+        $response = $this->send($this->request('GET', '/api/', $options));
+
+        $this->assertSame(200, $response->getStatusCode());
+
+        $attributes = json_decode($response->getBody()->getContents(), true)['data']['attributes'];
+
+        if ($shouldSee) {
+            $this->assertArrayHasKey('seo_social_media_imageUrl', $attributes);
+            $this->assertSame(self::SOCIAL_IMAGE_URL, $attributes['seo_social_media_imageUrl']);
+        } else {
+            $this->assertArrayNotHasKey('seo_social_media_imageUrl', $attributes);
+        }
+    }
+
+    /**
+     * When no social media image has been uploaded, SEO managers still receive
+     * the attribute (as null) so the admin upload button renders its empty state.
+     *
+     * @test
+     */
+    public function social_media_image_url_is_null_when_unset(): void
+    {
+        $response = $this->send($this->request('GET', '/api/', ['authenticatedAs' => 1]));
+
+        $attributes = json_decode($response->getBody()->getContents(), true)['data']['attributes'];
+
+        $this->assertArrayHasKey('seo_social_media_imageUrl', $attributes);
+        $this->assertNull($attributes['seo_social_media_imageUrl']);
     }
 
     /**

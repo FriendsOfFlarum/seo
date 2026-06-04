@@ -1,8 +1,10 @@
 import app from 'flarum/admin/app';
 import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
+import Link from 'flarum/common/components/Link';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 import Stream from 'flarum/common/utils/Stream';
+import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
 
 export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
@@ -52,7 +54,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
 
           <p style={{ marginBottom: '15px' }}>
             {app.translator.trans('fof-seo.admin.modals.dofollow.learn_more_line', {
-              a: <a href={'https://community.v17.dev/knowledgebase/36'} target={'_blank'} />,
+              a: <Link external={true} href="https://community.v17.dev/knowledgebase/36" target="_blank" />,
             })}
           </p>
 
@@ -77,7 +79,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
             <input
               type="text"
               bidi={this.newDomain}
-              placeholder={app.translator.trans('fof-seo.admin.modals.dofollow.add_placeholder') as unknown as string}
+              placeholder={extractText(app.translator.trans('fof-seo.admin.modals.dofollow.add_placeholder'))}
               onkeydown={(e: KeyboardEvent) => {
                 if (e.keyCode === 13 && this.newDomain() !== '') {
                   e.preventDefault();
@@ -104,7 +106,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
 
   addDomain() {
     if (this.domainDoFollowList().indexOf(this.newDomain()) >= 0) {
-      alert(app.translator.trans('fof-seo.admin.modals.dofollow.duplicate_error') as unknown as string);
+      alert(extractText(app.translator.trans('fof-seo.admin.modals.dofollow.duplicate_error')));
       this.newDomain('');
       return;
     }

@@ -42,7 +42,7 @@ class UpdateSeoMetaController extends AbstractShowController
         $data = Arr::get($request->getParsedBody(), 'data', false);
 
         return $this->events->dispatch(
-            new UpdateSeoMeta($actor, intval($id), $data)
+            new UpdateSeoMeta($actor, (int) $id, $data)
         );
     }
 }

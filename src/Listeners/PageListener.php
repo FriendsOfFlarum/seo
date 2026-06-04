@@ -213,11 +213,7 @@ class PageListener
         return $this;
     }
 
-    /**
-     * @param string $key
-     * @param mixed  $value
-     */
-    public function setSchemaJson(string $key, $value): self
+    public function setSchemaJson(string $key, mixed $value): self
     {
         $this->schemaArray[$key] = $value;
 

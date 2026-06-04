@@ -2,11 +2,14 @@ import app from 'flarum/admin/app';
 import Component from 'flarum/common/Component';
 import FieldSet from 'flarum/common/components/FieldSet';
 import Button from 'flarum/common/components/Button';
+import LinkButton from 'flarum/common/components/LinkButton';
+import Link from 'flarum/common/components/Link';
 import Select from 'flarum/common/components/Select';
 import UploadImageButton from 'flarum/admin/components/UploadImageButton';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 import Stream from 'flarum/common/utils/Stream';
 import ItemList from 'flarum/common/utils/ItemList';
+import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
 
 import CrawlPostModal from '../Modals/CrawlPostModal';
@@ -84,7 +87,7 @@ export default class SeoSettings extends Component {
         <textarea
           className="FormControl"
           bidi={this.values.forum_keywords}
-          placeholder={app.translator.trans('fof-seo.admin.settings.keywords.placeholder') as unknown as string}
+          placeholder={extractText(app.translator.trans('fof-seo.admin.settings.keywords.placeholder'))}
         />
         <div
           className="helpText"
@@ -106,8 +109,8 @@ export default class SeoSettings extends Component {
         <div className="helpText">{app.translator.trans('fof-seo.admin.settings.twitter_card.help')}</div>
         <Select
           options={{
-            large: app.translator.trans('fof-seo.admin.settings.twitter_card.option_large') as unknown as string,
-            summary: app.translator.trans('fof-seo.admin.settings.twitter_card.option_summary') as unknown as string,
+            large: extractText(app.translator.trans('fof-seo.admin.settings.twitter_card.option_large')),
+            summary: extractText(app.translator.trans('fof-seo.admin.settings.twitter_card.option_summary')),
           }}
           value={this.values.seo_twitter_card_size() || 'large'}
           onchange={(val: string) => {
@@ -157,9 +160,9 @@ export default class SeoSettings extends Component {
         <div className="helpText">{app.translator.trans('fof-seo.admin.settings.nofollow.help', { i: <i /> })}</div>
         <div className="helpText">
           {app.translator.trans('fof-seo.admin.settings.nofollow.help_dofollow', { i: <i /> })}{' '}
-          <a href="https://community.v17.dev/knowledgebase/36" target="_blank">
+          <Link external={true} href="https://community.v17.dev/knowledgebase/36" target="_blank">
             {app.translator.trans('fof-seo.admin.common.learn_more')}
-          </a>
+          </Link>
           .
         </div>
         <div style="height: 5px;"></div>
@@ -184,9 +187,9 @@ export default class SeoSettings extends Component {
       'updated',
       <FieldSet label={app.translator.trans('fof-seo.admin.settings.updated.heading')} className={this.showField === 'all' ? 'hidden' : ''}>
         <div className="helpText">{app.translator.trans('fof-seo.admin.settings.updated.help')}</div>
-        <Button className="Button" icon="fas fa-sync" loading={this.saving} onclick={() => m.route.set(app.route('extension', { id: 'fof-seo' }))}>
+        <LinkButton className="Button" icon="fas fa-sync" loading={this.saving} href={app.route('extension', { id: 'fof-seo' })}>
           {app.translator.trans('fof-seo.admin.settings.updated.button')}
-        </Button>
+        </LinkButton>
       </FieldSet>,
       10
     );

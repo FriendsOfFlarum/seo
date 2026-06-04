@@ -2,6 +2,7 @@ import app from 'flarum/admin/app';
 import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
 import Switch from 'flarum/common/components/Switch';
+import Link from 'flarum/common/components/Link';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 import icon from 'flarum/common/helpers/icon';
 import type Mithril from 'mithril';
@@ -51,7 +52,7 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
                 {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_title')}
               </b>
               {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_help', {
-                a: <a href="https://discuss.flarum.org/d/21894-friendsofflarum-best-answer" target="_blank" />,
+                a: <Link external={true} href="https://discuss.flarum.org/d/21894-friendsofflarum-best-answer" target="_blank" />,
                 b: <b />,
               })}
             </div>

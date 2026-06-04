@@ -1,6 +1,7 @@
 import app from 'flarum/admin/app';
 import ExtensionPage from 'flarum/admin/components/ExtensionPage';
-import Button from 'flarum/common/components/Button';
+import LinkButton from 'flarum/common/components/LinkButton';
+import ItemList from 'flarum/common/utils/ItemList';
 import type Mithril from 'mithril';
 
 import SeoSettings from '../components/Forms/SeoSettings';
@@ -16,7 +17,7 @@ export default class SettingsPage extends ExtensionPage {
     return (
       <div className="ExtensionPage-settings FlarumSEO">
         <div className={'seo-menu'}>
-          <div className={'container'}>{this.menuButtons(page)}</div>
+          <div className={'container'}>{this.menuButtons(page).toArray()}</div>
         </div>
 
         <div className="container FlarumSeoPage-container">{this.pageContent(page)}</div>
@@ -24,52 +25,87 @@ export default class SettingsPage extends ExtensionPage {
     );
   }
 
-  menuButtons(page: string): Mithril.Children[] {
-    return [
-      <Button
+  menuButtons(page: string): ItemList<Mithril.Children> {
+    const items = new ItemList<Mithril.Children>();
+
+    items.add(
+      'health',
+      <LinkButton
         className={`Button ${page === 'health' ? 'item-selected' : ''}`}
-        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo' }))}
+        href={app.route('extension', { id: 'fof-seo' })}
         icon="fas fa-heartbeat"
       >
         {app.translator.trans('fof-seo.admin.header.health_check')}
-      </Button>,
-      <Button
+      </LinkButton>,
+      100
+    );
+
+    items.add(
+      'settings',
+      <LinkButton
         className={`Button ${page === 'settings' ? 'item-selected' : ''}`}
-        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'settings' }))}
+        href={app.route('extension', { id: 'fof-seo', page: 'settings' })}
         icon="fas fa-cogs"
       >
         {app.translator.trans('fof-seo.admin.header.seo_settings')}
-      </Button>,
-      <Button
+      </LinkButton>,
+      90
+    );
+
+    items.add(
+      'sitemap',
+      <LinkButton
         className={`Button ${page === 'sitemap' ? 'item-selected' : ''}`}
-        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'sitemap' }))}
+        href={app.route('extension', { id: 'fof-seo', page: 'sitemap' })}
         icon="fas fa-sitemap"
       >
         {app.translator.trans('fof-seo.admin.header.sitemap_info')}
-      </Button>,
-      <Button
+      </LinkButton>,
+      80
+    );
+
+    items.add(
+      'search-engines',
+      <LinkButton
         className={`Button ${page === 'search-engines' ? 'item-selected' : ''}`}
-        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'search-engines' }))}
+        href={app.route('extension', { id: 'fof-seo', page: 'search-engines' })}
         icon="fas fa-search"
       >
         {app.translator.trans('fof-seo.admin.header.search_engines_info')}
-      </Button>,
-      <Button
+      </LinkButton>,
+      70
+    );
+
+    items.add(
+      'ssl',
+      <LinkButton
         className={`Button ${page === 'ssl' ? 'item-selected' : ''}`}
-        onclick={() => m.route.set(app.route('extension', { id: 'fof-seo', page: 'ssl' }))}
+        href={app.route('extension', { id: 'fof-seo', page: 'ssl' })}
         icon="fas fa-shield-alt"
       >
         {app.translator.trans('fof-seo.admin.header.setup_ssl')}
-      </Button>,
-    ];
+      </LinkButton>,
+      60
+    );
+
+    return items;
+  }
+
+  pages(): ItemList<Mithril.Children> {
+    const items = new ItemList<Mithril.Children>();
+
+    items.add('health', <HealthCheck />, 100);
+    items.add('settings', <SeoSettings />, 90);
+    items.add('sitemap', <Sitemap />, 80);
+    items.add('search-engines', <RegisterToSearchEngines />, 70);
+    items.add('ssl', <SSLPage />, 60);
+
+    return items;
   }
 
   pageContent(page: string): Mithril.Children {
-    if (page === 'search-engines') return <RegisterToSearchEngines />;
-    if (page === 'settings') return <SeoSettings />;
-    if (page === 'ssl') return <SSLPage />;
-    if (page === 'sitemap') return <Sitemap />;
+    const pages = this.pages();
 
-    return <HealthCheck />;
+    return pages.has(page) ? pages.get(page) : pages.get('health');
   }
 }

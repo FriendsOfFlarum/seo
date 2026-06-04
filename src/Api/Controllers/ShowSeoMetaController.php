@@ -50,14 +50,14 @@ class ShowSeoMetaController extends AbstractShowController
         $objectType = Arr::get($request->getQueryParams(), 'object_type');
 
         // Make sure the ID part is numeric
-        if (is_null($id) || !is_numeric($id)) {
+        if ($id === null || !is_numeric($id)) {
             throw new ValidationException([
                 'message' => 'Invalid slug/id combination',
             ]);
         }
 
         // Find SeoMeta by it's unique ID
-        if (is_null($objectType)) {
+        if ($objectType === null) {
             return SeoMeta::findOrFail($id);
         }
 

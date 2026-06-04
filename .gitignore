@@ -7,3 +7,4 @@ node_modules
 composer.lock
 tests/integration/tmp/
 .phpunit.result.cache
+.claude
