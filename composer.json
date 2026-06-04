@@ -22,10 +22,7 @@
   "autoload": {
     "psr-4": {
       "FoF\\Seo\\": "src/"
-    },
-    "files": [
-      "src/Compat/aliases.php"
-    ]
+    }
   },
   "autoload-dev": {
     "psr-4": {
