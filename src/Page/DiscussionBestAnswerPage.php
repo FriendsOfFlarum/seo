@@ -86,7 +86,8 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $discussionTags = $discussion->tags;
 
         // Not a Q&A discussion — DiscussionPage already emitted DiscussionForumPosting.
-        if (!$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna)) {
+        // A child of a Q&A tag counts as Q&A too (flarum-tags nests one level).
+        if (!$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna)) {
             return;
         }
 

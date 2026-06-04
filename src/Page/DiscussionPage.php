@@ -82,7 +82,7 @@ class DiscussionPage implements PageDriverInterface
         // DiscussionForumPosting here.
         if (
             $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1 &&
-            $tagsEnabled && $enableBestAnswer && $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna)
+            $tagsEnabled && $enableBestAnswer && $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna)
         ) {
             return;
         }

@@ -109,6 +109,42 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * A discussion tagged only with a *child* of a Q&A tag should still be
+     * treated as Q&A and emit a QAPage. Regression lock for GH #108.
+     *
+     * @test
+     */
+    public function qa_page_emitted_for_discussion_in_child_of_qna_tag(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            'tags' => [
+                ['id' => 10, 'name' => 'Support', 'slug' => 'support', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+                ['id' => 11, 'name' => 'Install', 'slug' => 'install', 'description' => null, 'color' => '#000', 'position' => 0, 'parent_id' => 10, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => false],
+            ],
+            'discussions' => [
+                ['id' => 1, 'title' => 'How to install?', 'slug' => 'how-to-install', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>How?</p></t>', 'created_at' => $now],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Like this.</p></t>', 'created_at' => $now],
+            ],
+            // Tagged only with the child tag (#11), whose parent (#10) is the Q&A tag.
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => 11],
+            ],
+        ]);
+
+        $this->assertNotNull(
+            $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-to-install'), 'QAPage'),
+            'A discussion in a child of a Q&A tag should emit a QAPage.'
+        );
+    }
+
+    /**
      * @test
      */
     public function qa_page_marks_accepted_and_suggested_answers(): void
