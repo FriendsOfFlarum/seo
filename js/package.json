@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "prettier": "@flarum/prettier-config",
-  "dependencies": {
-    "clsx": "^2.1.1"
-  },
   "devDependencies": {
     "@flarum/prettier-config": "^1.0.0",
     "flarum-tsconfig": "^1.0.0",
