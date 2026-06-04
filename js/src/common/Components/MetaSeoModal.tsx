@@ -5,6 +5,7 @@ import Switch from 'flarum/common/components/Switch';
 import Stream from 'flarum/common/utils/Stream';
 import Alert from 'flarum/common/components/Alert';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
+import icon from 'flarum/common/helpers/icon';
 import type Mithril from 'mithril';
 import clsx from 'clsx';
 
@@ -75,8 +76,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
               </a>,
             ],
           },
-          // TODO(i18n): multi-sentence error body, leaving untranslated for now.
-          'Please open this dialog using the objectType and objectId properties or register the object relationship instead.'
+          app.translator.trans('fof-seo.forum.meta_seo.unsupported_object.body')
         );
 
         setTimeout(() => this.hide(), 100);
@@ -197,7 +197,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -221,7 +221,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -264,7 +264,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                   {this.autoUpdateData() && this.openGraphImageSource() !== 'custom' && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
 
@@ -379,7 +379,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -403,7 +403,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
@@ -503,7 +503,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      <i className="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>

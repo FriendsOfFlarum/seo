@@ -46,17 +46,14 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
     return (
       <div>
         <div className="Modal-body">
-          <p>
-            Enter the <b>hostnames</b> of the domains you want to add to the do-follow list.
-          </p>
+          <p>{app.translator.trans('fof-seo.admin.modals.dofollow.intro', { b: <b /> })}</p>
 
-          <p>The domain you use for your Flarum instance is added to the list by default.</p>
+          <p>{app.translator.trans('fof-seo.admin.modals.dofollow.default_note')}</p>
 
           <p style={{ marginBottom: '15px' }}>
-            <a href={'https://community.v17.dev/knowledgebase/36'} target={'_blank'}>
-              Learn more
-            </a>{' '}
-            about the do-follow list.
+            {app.translator.trans('fof-seo.admin.modals.dofollow.learn_more_line', {
+              a: <a href={'https://community.v17.dev/knowledgebase/36'} target={'_blank'} />,
+            })}
           </p>
 
           <div className={'FlarumSEO-DoFollowList'}>

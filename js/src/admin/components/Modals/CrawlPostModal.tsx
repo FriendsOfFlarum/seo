@@ -3,6 +3,7 @@ import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
 import Switch from 'flarum/common/components/Switch';
 import saveSettings from 'flarum/admin/utils/saveSettings';
+import icon from 'flarum/common/helpers/icon';
 import type Mithril from 'mithril';
 
 export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
@@ -36,32 +37,23 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
       <div>
         <div className="Modal-body">
           <div className="Form">
-            <b>Read this dialog carefully.</b> This function will only be executed on a page refresh on a discussion. You can always change this
-            option later.
+            {app.translator.trans('fof-seo.admin.modals.crawl_post.intro', { b: <b /> })}
             <div style="padding: 10px 0;">
               <b style="display: block; padding-bottom: 10px;">
-                <span style="display: inline-block; width: 25px;">
-                  <i className="fas fa-check"></i>
-                </span>
+                <span style="display: inline-block; width: 25px;">{icon('fas fa-check')}</span>
                 {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_main_title')}
               </b>
-              Search engine will only show the main post in the search results. It won't affect loading speed when you navigate to it via forum links.
+              {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_main_help')}
             </div>
             <div style="padding: 10px 0;">
               <b style="display: block; padding-bottom: 10px;">
-                <span style="display: inline-block; width: 25px;">
-                  <i className="fas fa-check-double"></i>
-                </span>{' '}
+                <span style="display: inline-block; width: 25px;">{icon('fas fa-check-double')}</span>{' '}
                 {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_title')}
               </b>
-              Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you
-              have the extension '
-              <a href="https://discuss.flarum.org/d/21894-friendsofflarum-best-answer" target="_blank">
-                best answer
-              </a>
-              ' installed and enabled on your forum, it will mark the discussion as 'answered' on the search results and redirect the user to that
-              specific post. <b>However, depending on your server settings, this can be heavier</b>. It may cost some performance, so it depends on
-              how fast your server is to enable this feature.
+              {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_help', {
+                a: <a href="https://discuss.flarum.org/d/21894-friendsofflarum-best-answer" target="_blank" />,
+                b: <b />,
+              })}
             </div>
           </div>
         </div>
@@ -82,9 +74,7 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
   change(value: boolean) {
     this.value = value;
 
-    this.closeText = app.translator.trans(
-      this.value !== this.startValue ? 'fof-seo.admin.common.save_changes' : 'fof-seo.admin.common.close'
-    );
+    this.closeText = app.translator.trans(this.value !== this.startValue ? 'fof-seo.admin.common.save_changes' : 'fof-seo.admin.common.close');
   }
 
   closeDialogButton() {

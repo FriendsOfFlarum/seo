@@ -20,7 +20,6 @@ use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Extend;
 use FoF\Seo\Api\AttachForumSerializerAttributes;
 use FoF\Seo\Api\Serializers\SeoMetaSerializer;
-use FoF\Seo\Controller\Robots;
 use FoF\Seo\Extend\SEO;
 use FoF\Seo\Formatter\FormatLinks;
 use FoF\Seo\Listeners\PageListener;
@@ -36,9 +35,6 @@ return [
     (new Extend\Frontend('admin'))
       ->js(__DIR__.'/js/dist/admin.js')
       ->css(__DIR__.'/less/Admin.less'),
-
-    // (new Extend\Routes('forum'))
-    //   ->get('/robots.txt', 'v17development-flarum-seo', Robots::class),
 
     (new Extend\Routes('api'))
       ->post('/seo_social_media_image', 'seo.socialmedia.upload', Api\Controllers\UploadSocialMediaImageController::class)

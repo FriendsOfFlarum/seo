@@ -19,29 +19,6 @@ export default class HealthCheck extends Page {
   view() {
     return (
       <div>
-        <p className="seo-intro">
-          A quick SEO-health-check overview. If you have questions, ask your question the official{' '}
-          <a href="https://discuss.flarum.org/d/18316-flarum-seo" target="_blank">
-            Flarum forums <i className="fas fa-external-link-alt" />
-          </a>
-          . When you have issues,{' '}
-          <a href="https://github.com/FriendsOfFlarum/seo/issues" target="_blank">
-            create a new issue <i className="fas fa-external-link-alt" />
-          </a>
-          .
-        </p>
-        <p className="seo-intro">
-          Are you a developer with some free time left? Contribute to the project{' '}
-          <a href="https://github.com/FriendsOfFlarum/seo" target="_blank">
-            on GitHub <i className="fas fa-external-link-alt" />
-          </a>
-          . Have you have built a Flarum Extension and you'd like to use the SEO tools from this extension? Please{' '}
-          <a href="https://community.v17.dev/knowledgebase/22" target="_blank">
-            read the documentation <i className="fas fa-external-link-alt" />
-          </a>
-          .
-        </p>
-
         <p className="seo-intro">{app.translator.trans('fof-seo.admin.pages.health.legend')}</p>
 
         <table className="seo-check-table">
@@ -58,8 +35,8 @@ export default class HealthCheck extends Page {
             {this.discussionPostSet()}
             {this.socialMediaImage()}
             {this.hasSitemap()}
+            {this.hasRobotsTxt()}
             {this.registeredSearchEngines()}
-            {this.robotsTxt()}
             {this.tagsAvailable()}
             {this.reviewAgain()}
           </tbody>
@@ -75,8 +52,7 @@ export default class HealthCheck extends Page {
 
     if (passed === true && description!.length <= 20) {
       passed = false;
-      // TODO(i18n): two-sentence reason, leaving untranslated for now.
-      reason = 'Your forum description is lower then 20 characters. Please expand it for better search results.';
+      reason = app.translator.trans('fof-seo.admin.pages.health.checks.description.reason_too_short');
     }
 
     if (passed === true && description!.indexOf('This is beta software') >= 0) {
@@ -130,8 +106,7 @@ export default class HealthCheck extends Page {
           {app.translator.trans('fof-seo.admin.pages.health.checks.ssl.label')}
           {this.notPassedError(
             passed,
-            // TODO(i18n): multi-sentence reason, leaving untranslated for now.
-            "Your forum does not force a SSL/TLS connection (a secure connection to your website). Most search engines won't index your website or lower your ranking if you have no secure connection available.",
+            app.translator.trans('fof-seo.admin.pages.health.checks.ssl.reason'),
             app.translator.trans('fof-seo.admin.pages.health.checks.ssl.button'),
             app.route('extension', {
               id: 'fof-seo',
@@ -173,8 +148,7 @@ export default class HealthCheck extends Page {
           {app.translator.trans('fof-seo.admin.pages.health.checks.social_media.label')}
           {this.notPassedError(
             passed,
-            // TODO(i18n): multi-sentence reason, leaving untranslated for now.
-            'You did not set a social media image for your forum. It is recommended to set one. Your favicon will now be used as preview on social media.',
+            app.translator.trans('fof-seo.admin.pages.health.checks.social_media.reason'),
             app.translator.trans('fof-seo.admin.pages.health.checks.social_media.button'),
             this.getSettingUrl('social-media')
           )}
@@ -186,7 +160,7 @@ export default class HealthCheck extends Page {
 
   hasSitemap() {
     const enabled = app.data.settings.extensions_enabled || '';
-    const passed: PassState = enabled.indexOf('flagrow-sitemap') !== -1 || enabled.indexOf('fof-sitemap') !== -1;
+    const passed: PassState = enabled.indexOf('fof-sitemap') !== -1;
 
     return (
       <tr>
@@ -207,17 +181,25 @@ export default class HealthCheck extends Page {
     );
   }
 
-  robotsTxt() {
+  hasRobotsTxt() {
+    const enabled = app.data.settings.extensions_enabled || '';
+    const passed: PassState = enabled.indexOf('fof-sitemap') !== -1;
+
     return (
       <tr>
         <td>
-          {/* TODO(i18n): sentence contains inline <b>, leaving untranslated. */}
-          Your forum has a <b>robots.txt</b> available.{' '}
-          <a href={app.forum.attribute<string>('baseUrl') + '/robots.txt'} target="_blank" className="robots-link">
-            {app.translator.trans('fof-seo.admin.pages.health.checks.robots.open_link')} <i className="fas fa-external-link-alt"></i>
-          </a>
+          {app.translator.trans('fof-seo.admin.pages.health.checks.robots.label')}
+          {this.notPassedError(
+            passed,
+            app.translator.trans('fof-seo.admin.pages.health.checks.robots.reason'),
+            app.translator.trans('fof-seo.admin.pages.health.checks.robots.button'),
+            app.route('extension', {
+              id: 'fof-seo',
+              page: 'sitemap',
+            })
+          )}
         </td>
-        {this.passed(true)}
+        {this.passed(passed)}
       </tr>
     );
   }
@@ -225,9 +207,7 @@ export default class HealthCheck extends Page {
   tagsAvailable() {
     return (
       <tr>
-        <td>
-          {app.translator.trans('fof-seo.admin.pages.health.checks.meta_tags.label')}
-        </td>
+        <td>{app.translator.trans('fof-seo.admin.pages.health.checks.meta_tags.label')}</td>
         {this.passed(true)}
       </tr>
     );
@@ -274,8 +254,9 @@ export default class HealthCheck extends Page {
     return (
       <tr>
         <td>
-          {/* TODO(i18n): two-sentence label with embedded <b>date</b>, leaving untranslated. */}
-          Review your SEO settings every two months. Next review needed on <b>{nextReviewDate.toDateString()}</b>
+          {app.translator.trans('fof-seo.admin.pages.health.checks.review.label', {
+            date: <b>{nextReviewDate.toDateString()}</b>,
+          })}
           {this.notPassedError(
             passed,
             app.translator.trans('fof-seo.admin.pages.health.checks.review.reason'),

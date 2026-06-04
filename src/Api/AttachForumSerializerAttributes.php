@@ -12,9 +12,15 @@
 namespace FoF\Seo\Api;
 
 use Flarum\Api\Serializer\ForumSerializer;
+use Flarum\Settings\SettingsRepositoryInterface;
 
 class AttachForumSerializerAttributes
 {
+    public function __construct(
+        protected readonly SettingsRepositoryInterface $settings,
+    ) {
+    }
+
     /**
      * @param ForumSerializer      $serializer
      * @param mixed                $model
@@ -27,6 +33,13 @@ class AttachForumSerializerAttributes
         $actor = $serializer->getActor();
 
         $attributes['canConfigureSeo'] = (bool) $actor->hasPermissionLike('fof-seo.canConfigure');
+
+        // Core's UploadImageButton reads the current image from the `<name>Url` forum
+        // attribute, so expose the stored URL under the name it expects. Only needed by
+        // admins configuring SEO, so it's gated behind the same permission.
+        if ($attributes['canConfigureSeo']) {
+            $attributes['seo_social_media_imageUrl'] = $this->settings->get('seo_social_media_image_url');
+        }
 
         return $attributes;
     }

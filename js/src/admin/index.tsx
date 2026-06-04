@@ -34,7 +34,7 @@ app.initializers.add('fof-seo', () => {
     items.add(
       'seo',
       {
-        label: 'SEO',
+        label: app.translator.trans('fof-seo.admin.permissions.category_label'),
         children: extensionId
           ? app.extensionData.getExtensionPermissions(extensionId, SEO_PERMISSION_CATEGORY).toArray()
           : app.extensionData.getAllExtensionPermissions(SEO_PERMISSION_CATEGORY).toArray(),
