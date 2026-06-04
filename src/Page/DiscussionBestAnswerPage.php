@@ -1,90 +1,47 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Page;
 
 use Flarum\Database\Eloquent\Collection;
 use Flarum\Discussion\DiscussionRepository;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
-use Flarum\Http\UrlGenerator;
 use Flarum\Http\SlugManager;
+use Flarum\Http\UrlGenerator;
 use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
 use Flarum\User\UserRepository;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
 
 class DiscussionBestAnswerPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    /**
-     * @var SettingsRepositoryInterface
-     */
-    protected $settingsRepositoryInterface;
-
-    /**
-     * @var DiscussionRepository
-     */
-    protected $discussionRepository;
-
-    /**
-     * @var UserRepository
-     */
-    protected $userRepository;
-
-    /**
-     * @var ExtensionManager
-     */
-    protected $extensionManager;
-
-    /**
-     * @var UrlGenerator
-     */
-    protected $urlGenerator;
-
-    /**
-     * @var Discussion
-     */
-    protected $discussionFallback;
-
-    /**
-     * @var SlugManager
-     */
-    protected $slugManager;
-
-    /**
-     * @param SettingsRepositoryInterface $settingsRepositoryInterface
-     * @param DiscussionRepository $discussionRepository
-     * @param TranslatorInterface $translator
-     * @param ExtensionManager $extensionManager
-     * @param UrlGenerator $urlGenerator
-     * @param Discussion $discussionFallback
-     */
     public function __construct(
-        SettingsRepositoryInterface $settingsRepositoryInterface,
-        DiscussionRepository $discussionRepository,
-        UserRepository $userRepository,
-        ExtensionManager $extensionManager,
-        UrlGenerator $urlGenerator,
-        DiscussionPage $discussionFallback,
+        protected readonly SettingsRepositoryInterface $settingsRepositoryInterface,
+        protected readonly DiscussionRepository $discussionRepository,
+        protected readonly UserRepository $userRepository,
+        protected readonly ExtensionManager $extensionManager,
+        protected readonly UrlGenerator $urlGenerator,
         Dispatcher $events,
-        SlugManager $slugManager
+        protected readonly SlugManager $slugManager,
     ) {
-        $this->settingsRepositoryInterface = $settingsRepositoryInterface;
-        $this->discussionRepository = $discussionRepository;
-        $this->userRepository = $userRepository;
-        $this->extensionManager = $extensionManager;
-        $this->urlGenerator = $urlGenerator;
-        $this->discussionFallback = $discussionFallback;
         $this->events = $events;
-        $this->slugManager = $slugManager;
     }
 
     public function extensionDependencies(): array
@@ -97,16 +54,14 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         return ['discussion'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     * @param SeoProperties $properties
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         // Simple discussion tags is set up
-        if ($this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 0) return;
+        if ($this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 0) {
+            return;
+        }
 
         // Get discussion ID from params
         $discussionId = Arr::get($request->getQueryParams(), 'id');
@@ -119,14 +74,19 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             return;
         }
 
-        // Fallback to simple discussions for not-answer tags
+        // When best-answer isn't installed, DiscussionPage emits the standard
+        // DiscussionForumPosting, so there's nothing for us to do.
         $enableBestAnswer = $this->extensionManager->isEnabled('fof-best-answer');
+
+        if (!$enableBestAnswer) {
+            return;
+        }
 
         /** @var Collection<Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
-        if (!$enableBestAnswer || !$discussionTags->contains(fn(Tag $tag) => (bool)$tag->is_qna )) {
-            $this->discussionFallback->handle($request, $properties);
+        // Not a Q&A discussion — DiscussionPage already emitted DiscussionForumPosting.
+        if (!$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna)) {
             return;
         }
 
@@ -142,7 +102,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
 
         // Update ld-json
         $properties
-            ->setSchemaJson('@type', "QAPage")
+            ->setSchemaJson('@type', 'QAPage')
 
             // Set page type article
             ->setMetaPropertyTag('og:type', 'article');
@@ -150,32 +110,58 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Generate data
         $properties->generateTagsFromMetaData($seoMeta);
 
+        // Optional fof/discussion-views integration: expose the view count.
+        if ($this->extensionManager->isEnabled('fof-discussion-views')) {
+            $properties->setSchemaJson('interactionStatistic', [
+                [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/ViewAction',
+                    'userInteractionCount' => (int) $discussion->getAttribute('view_count'),
+                ],
+            ]);
+        }
+
+        // Optional fof/discussion-language integration: a discussion's own
+        // language drives inLanguage, overriding the viewer's locale.
+        if ($this->extensionManager->isEnabled('fof-discussion-language')) {
+            $languageCode = data_get($discussion->getAttribute('language'), 'code');
+
+            if ($languageCode !== null) {
+                $properties->setSchemaJson('inLanguage', $languageCode);
+            }
+        }
+
         // Get posted on and Last posted on
-        $bestAnswerId = $enableBestAnswer ? $discussion->best_answer_post_id : null;
+        $bestAnswerId = $discussion->best_answer_post_id;
 
         // Update topic url
-        $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id . '-' . $discussion->slug]), false);
+        $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug]), false);
 
         // Schema
         $mainEntity = [
-            '@type' => 'Question',
-            'name' => $seoMeta->title,
-            'text' => $firstPost !== null ? strip_tags($firstPost->content) : '',
+            '@type'       => 'Question',
+            'name'        => $seoMeta->title,
+            'text'        => $firstPost !== null ? strip_tags($firstPost->content) : '',
             'dateCreated' => $seoMeta->created_at,
-            'author' => [
-                "@type" => "Person",
-                "name" => $discussion->user?->getDisplayNameAttribute(),
-                "url" => $discussion->user ? $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($discussion->user)]) : null,
+            'author'      => [
+                '@type' => 'Person',
+                'name'  => $discussion->user?->getDisplayNameAttribute(),
+                'url'   => $discussion->user ? $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($discussion->user)]) : null,
             ],
-            'answerCount' => $discussion->comment_count - 1
+            'answerCount' => $discussion->comment_count - 1,
         ];
+
+        // Upvotes on the question itself (the first post), when likes are available.
+        if ($enableLikes && $firstPost !== null) {
+            $mainEntity['upvoteCount'] = $firstPost->likes()->count();
+        }
 
         // Generate a breadcrumb if discussion has tags
         if ($discussionTags->count() >= 1) {
             $properties->generateSchemaBreadcrumb(
-                $discussionTags->map(fn(Tag $tag) => [
+                $discussionTags->map(fn (Tag $tag) => [
                     'name' => $tag->name,
-                    'url' => $this->urlGenerator->to('forum')->route('tag', ['slug' => $tag->slug])
+                    'url'  => $this->urlGenerator->to('forum')->route('tag', ['slug' => $tag->slug]),
                 ])->toArray()
             );
         }
@@ -184,9 +170,18 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $mainEntity['suggestedAnswer'] = [];
 
         // Get all public comments for this discussion
+        // Eager-load the author (and likes, when the extension is enabled)
+        // relations referenced in the loop below to avoid an N+1 per answer post.
+        $with = ['user'];
+        if ($enableLikes) {
+            $with[] = 'likes';
+        }
+
         /** @var Collection<Post> $posts */
         $posts = $discussion->posts()
-            ->where('number', '>', '1')->get();
+            ->where('number', '>', '1')
+            ->with($with)
+            ->get();
 
         foreach ($posts as $post) {
             /** @var Post $post */
@@ -196,15 +191,15 @@ class DiscussionBestAnswerPage implements PageDriverInterface
 
             // Temp post
             $generatedPost = [
-                '@type' => 'Answer',
-                'text' => strip_tags($post->content),
+                '@type'       => 'Answer',
+                'text'        => strip_tags($post->content),
                 'dateCreated' => $post->created_at->toIso8601String(),
-                'url' => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id . '-' . $discussion->slug, 'near' => $post->number]),
-                'author' => [
-                    "@type" => "Person",
-                    "name" => $post->user ? $post->user->display_name : null,
-                    "url" => $post->user ? $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($post->user)]) : null,
-                ]
+                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
+                'author'      => [
+                    '@type' => 'Person',
+                    'name'  => $post->user ? $post->user->display_name : null,
+                    'url'   => $post->user ? $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($post->user)]) : null,
+                ],
             ];
 
             // Upvote/like count

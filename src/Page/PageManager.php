@@ -1,36 +1,36 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Page;
 
 use Flarum\Extension\ExtensionManager;
+use FoF\Seo\SeoExtenderManagerInterface;
 use Illuminate\Support\Collection;
-use V17Development\FlarumSeo\Page\PageDriverInterface;
-use V17Development\FlarumSeo\SeoExtenderManagerInterface;
 
 class PageManager implements SeoExtenderManagerInterface
 {
     /**
-     * @var array
+     * @var array<string, PageDriverInterface>
      */
-    protected $extenders = [];
+    protected array $extenders = [];
 
-    /**
-     * @var ExtensionManager
-     */
-    protected $extensionManager;
-
-    /**
-     * @param ExtensionManager $extensionManager
-     */
-    public function __construct(ExtensionManager $extensionManager)
-    {
-        $this->extensionManager = $extensionManager;
+    public function __construct(
+        protected readonly ExtensionManager $extensionManager,
+    ) {
     }
 
     /**
-     * Add page extender
-     * 
-     * @param string $name Extender name
+     * Add page extender.
+     *
+     * @param string              $name     Extender name
      * @param PageDriverInterface $extender Extender
      */
     public function addExtender(string $name, PageDriverInterface $extender): void
@@ -39,19 +39,19 @@ class PageManager implements SeoExtenderManagerInterface
     }
 
     /**
-     * Get all extenders
+     * Get all extenders.
      */
-    public function getExtenders(string $routeName = null): array
+    public function getExtenders(?string $routeName = null): array
     {
         return $this->getActiveExtenders()
             ->filter(function (PageDriverInterface $driver) use ($routeName) {
-                return $routeName === null || in_array($routeName, $driver->handleRoutes() ?? []);
+                return $routeName === null || in_array($routeName, $driver->handleRoutes());
             })
             ->toArray();
     }
 
     /**
-     * Filter on active extenders
+     * Filter on active extenders.
      */
     public function getActiveExtenders(): Collection
     {

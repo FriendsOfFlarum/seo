@@ -1,28 +1,30 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
+namespace FoF\Seo\Page;
+
+use Carbon\Carbon;
 use FoF\Pages\PageRepository;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\Page\PageDriverInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
 
 class PageExtensionPage implements PageDriverInterface
 {
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
-
-    /**
-     * @param TranslatorInterface $translator
-     */
-    public function __construct(TranslatorInterface $translator)
-    {
-        $this->translator = $translator;
+    public function __construct(
+        protected readonly TranslatorInterface $translator,
+        protected readonly PageRepository $pageRepository,
+    ) {
     }
 
     public function extensionDependencies(): array
@@ -35,17 +37,14 @@ class PageExtensionPage implements PageDriverInterface
         return ['pages.home', 'pages.page'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $pageId = Arr::get($request->getQueryParams(), 'id');
 
         try {
-            $page = resolve(PageRepository::class)->findOrFail($pageId);
+            $page = $this->pageRepository->findOrFail($pageId);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // Do nothing, no model found
             return;
@@ -59,7 +58,7 @@ class PageExtensionPage implements PageDriverInterface
             function (SeoMeta $meta) use ($page, $properties, $content) {
                 $meta->title = $page->title;
 
-                $meta->created_at = $page->time ?? new \DateTime();
+                $meta->created_at = $page->time ?? Carbon::now();
 
                 $meta->updated_at = $page->edit_time;
 
@@ -74,10 +73,10 @@ class PageExtensionPage implements PageDriverInterface
             ->setSchemaJson('text', e(strip_tags($content)))
 
             // Tag URL
-            ->setUrl('/p/' . $page->getAttribute('id') . '-' . $page->getAttribute('slug'))
+            ->setUrl('/p/'.$page->getAttribute('id').'-'.$page->getAttribute('slug'))
 
             // Canonical url
-            ->setCanonicalUrl('/p/' . $page->getAttribute('id'))
+            ->setCanonicalUrl('/p/'.$page->getAttribute('id'))
 
             ->generateTagsFromMetaData($seoMeta);
     }

@@ -1,21 +1,27 @@
 <?php
 
-namespace V17Development\FlarumSeo\SeoMeta\Commands;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\SeoMeta\Commands;
 
 use Flarum\User\User;
 
 class UpdateSeoMeta
 {
-    public $actor;
-
-    public $id;
-
-    public $data;
-
-    public function __construct(User $actor, $id, array $data)
-    {
-        $this->actor = $actor;
-        $this->id = $id;
-        $this->data = $data;
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function __construct(
+        public readonly User $actor,
+        public readonly int|string $id,
+        public readonly array $data,
+    ) {
     }
 }

@@ -1,7 +1,198 @@
-v17development-flarum-seo:
+fof-seo:
   admin:
+    common:
+      close: Close
+      save_changes: Save changes
+      learn_more: Learn more
+
     permissions:
       configure_seo: "Allow configuring SEO"
+      category_label: SEO
+
+    header:
+      title: Search Engine Optimization
+      tools: Tools
+      health_check: Health check
+      seo_settings: SEO settings
+      sitemap_info: Sitemap information
+      search_engines_info: Search engine information
+      setup_ssl: Set up SSL
+
+    dashboard:
+      widget:
+        review_prompt: "It's time to review your SEO settings!"
+        cta: Do the health-check!
+
+    modals:
+      crawl_post:
+        title: Post crawl settings
+        intro: <b>Read this dialog carefully.</b> This function will only be executed on a page refresh on a discussion. You can always change this option later.
+        mode_main_title: Only index the main post (default)
+        mode_main_help: Search engine will only show the main post in the search results. It won't affect loading speed when you navigate to it via forum links.
+        mode_all_title: Index all posts in a discussion (setting enabled)
+        mode_all_help: Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you have the extension '<a>best answer</a>' installed and enabled on your forum, it will mark the discussion as 'answered' on the search results and redirect the user to that specific post. <b>However, depending on your server settings, this can be heavier</b>. It may cost some performance, so it depends on how fast your server is to enable this feature.
+        question: Do you want to enable this feature?
+        switch_label: "Crawl all posts (it's slower on page refresh, but search results will be better)"
+
+      dofollow:
+        title: Do-follow list
+        intro: Enter the <b>hostnames</b> of the domains you want to add to the do-follow list.
+        default_note: The domain you use for your Flarum instance is added to the list by default.
+        learn_more_line: <a>Learn more</a> about the do-follow list.
+        add_placeholder: Allow a domain
+        duplicate_error: This domain is already present in your do-follow list.
+
+    settings:
+      keywords:
+        heading: Forum keywords
+        help: Enter one or more keywords that describes your forum.
+        placeholder: Add a few keywords
+        comma_note: "Note: Separate keywords with a comma."
+        example: "Example: flarum, web development, forum, apples, security"
+
+      info:
+        overview: This page contains some other settings from around the admin area. However, it's good to have a good overview about these settings. Do not forget to do the SEO check.
+        maintain: Check all your settings when you first setup this extensions. Maintain them to get the best search results.
+
+      twitter_card:
+        heading: Twitter card size
+        help: When your forum is shared on Twitter, it will have an image (if a social media image has been set up). This can be a big card with a big image, or a small card (summary) with a smaller image.
+        option_large: Large card (large image)
+        option_summary: Summary card (smaller image)
+
+      social_media_image:
+        heading: Social media image
+        help_size: Expecting a square image. Recommended size is 1200x1200 pixels. Otherwise use a landscape image, recommended size is 1200x630.
+        help_usage: This image will be used by Social Media when a user shares a page on your website (Facebook, Twitter, Reddit).
+
+      crawl:
+        heading: Discussion post crawl settings
+        help: This is an important setting about crawling your discussion posts in search results.
+        button: Setup post crawl settings
+
+      nofollow:
+        heading: No-follow links
+        help: All links to external domains will receive a '<i>nofollow</i>' attribute by default. This will make sure people do not spam your forum with links to other domains in order to get more referrals.
+        help_dofollow: With this setting you are able to add domains to the 'do-follow' list. For example, you can add <i>flarum.org</i> to make sure links to this website do not receive a 'nofollow' attribute.
+        button: Open domain do-follow list
+
+      new_tab:
+        heading: Open external links in new tab
+        help: This extension will also make sure that external links (to other domains) open in a new tab. Currently it is not possible to disable this setting.
+
+      updated:
+        heading: Updated this setting?
+        help: When you think you're ready, click the button below to re-check the status of this setting.
+        button: Back to overview and re-check
+
+    pages:
+      search_engines:
+        heading: Submit your website to Search Engines
+        intro: It is good practice to let Search Engines know your site is exists. This page will guide you in doing this succesfully.
+        sitemap_tip: It is recommended to have a sitemap ready before completing this guide. If you don't have a sitemap yet, <a>click here to read more about them</a>.
+        google_heading: Add your website to the Google search results
+        google_visit: If you want to add your website to the Google search results, visit the {link}. You'll need to add your website and verify that you're the owner of the associated domain name.
+        google_www: "When you enter your domain you need to answer the following question for yourself: Do you want to use the 'www' sub-domain in the search results? You can <strong>not</strong> change this later. Registering your domain in the Google Search Console multiple times won't result in a better ranking."
+        google_sitemap: When you completed the registration in the Google Search Console, visit the <b>Sitemaps</b> page. Pass your <b>sitemap.xml</b> to Google. Make sure that Google can crawl your sitemap and will keep doing this.
+        bing_heading: Add your website to the Bing search results
+        bing_visit: If you want to add your website to the Bing search results, visit the {link} and complete the given steps. Not all fields are required.
+        bing_sitemap: Don't forget to configure your sitemap URL. After you verified your website you're all set and Bing will now index your website.
+        yandex_heading: Add your website to the Yandex search results
+        yandex_visit: If you want to add your website to the Yandex search results, visit the {link} and follow the given steps.
+        yandex_sitemap: Don't forget to configure the sitemap in the Yandex.Webmaster.
+        yahoo_heading: Add your website to the Yahoo search results
+        yahoo_body: If you want to add your website to the Yahoo search results, finish your Bing search results registration. Yahoo will use that data.
+        confirm_button: I have read this
+
+      sitemap:
+        why_heading: Why should you use a sitemap?
+        why_body: A sitemap is a XML file with a list of all the available pages on your website. It will be used by crawlers and search engines to find pages on your website.
+        generated_note: The sitemap file is automatically generated and does not need any maintenance.
+        which_extension_heading: What extension should I install?
+        which_extension_body: '{link} is the suggested extension to install for Flarum. We strongly recommend you to install and activate this extension.'
+        which_extension_details: This extension will make sure crawlers will find your forum <b>discussions</b>, <b>tags</b> (when extension is enabled) and <b>Pages</b> extension (when extension is installed and enabled). It will automatically make an sitemap.xml available.
+        robots_heading: What about robots.txt?
+        robots_body: The same extension also generates a <b>robots.txt</b> for your forum. This file tells search engines which areas they may crawl and points them to your sitemap, so installing it takes care of both files at once — there is nothing extra to configure.
+        just_installed_heading: I just installed the extension
+        just_installed_body: In that case, activate it by clicking the extension in the sidebar at the left . Then this warning will disappear.
+
+      ssl:
+        intro_heading: Why do I need an secure connection?
+        intro_body: Safety and privacy awareness on the web is on the rise. <b>Almost every</b> developer/website owner want their website safe to use for their visitors so they won't need to be afraid that their data will be compromised by hackers or website-impersonators.
+        rankings_heading: Search engines {icon} secure connections
+        rankings_body: When you do not have a secure connection to your website, search engines will rank your site much lower then other sites, or even won't index it.
+        rankings_body_ssl: When you have SSL available, your website will get an higher rank and will be indexed.
+        what_heading: What is SSL or TLS?
+        what_body: "The most people know <b>https</b> that's used for secure connections as SSL: <i>Secure Sockets Layer</i>. Officially it's called TLS: <i>Transport Layer Security</i>. This method is used to create a secure connection to your webserver what will prevent attackers or other webservers to impersonate your website and keep your visitors safe. The SSL connection will be broken if that happens and the visitors browsers will warning the user that's it's not trusted."
+        how_heading: How to add SSL to your website?
+        how_body: For people who are using a webhosting, the most common way is to enter the webhosting panel, go to the hosting-settings of your website and click SSL. You can follow the steps to add SSL to your website. The most webhosting companies nowadays are supporting the popular certificate issuer {link}.
+        added_heading: Okay, I added SSL!
+        added_body: Great! Now, change your <b>config.php</b> and change the <b>'url'</b> to <b>https</b>!
+        no_ssl_heading: What if I do not want to add SSL?
+        no_ssl_body: In that case, you can uninstall this extension as search engines <b>won't index your forum</b> or rank them far below other sites due safety reasons.
+
+      health:
+        legend: For optimal search engine results, make sure all checks are green.
+        default_button: Update setting
+
+        table:
+          technique: Technique
+          status: Status
+
+        status:
+          warning: Warning!
+          passed: All set!
+
+        checks:
+          description:
+            label: Your forum has a description
+            reason_missing: You did not set up a forum description yet!
+            reason_default: You did not change the default forum description after installation!
+            reason_too_short: Your forum description is lower then 20 characters. Please expand it for better search results.
+            button: Update description
+
+          keywords:
+            label: Your forum has keywords set up
+            reason: You did not set up a forum keywords yet!
+            button: Update keywords
+
+          ssl:
+            label: Your site has a secure connection available (SSL/TLS)
+            reason: Your forum does not force a SSL/TLS connection (a secure connection to your website). Most search engines won't index your website or lower your ranking if you have no secure connection available.
+            button: How to set up SSL
+
+          crawl:
+            label: Review discussion post crawl settings
+            reason: You will need to review this setting to pass.
+            button: Review post settings
+
+          social_media:
+            label: Set Up a social media image
+            reason: You did not set a social media image for your forum. It is recommended to set one. Your favicon will now be used as preview on social media.
+            button: Update image
+
+          sitemap:
+            label: Your forum has a sitemap available
+            reason: It is highly recommended to install the FriendsOfFlarum sitemap extension!
+            button: Read more about adding a sitemap
+
+          robots:
+            label: Your forum has a robots.txt available
+            reason: Your robots.txt is provided by the FriendsOfFlarum Sitemap extension. Install and enable it to make a robots.txt available to search engines.
+            button: Read more about adding a sitemap
+
+          meta_tags:
+            label: Your forum has meta tags available (generated by this plugin)
+
+          search_engines:
+            label: Register your forum to search engines
+            reason: You will need to review this to pass.
+            button: More information
+
+          review:
+            label: Review your SEO settings every two months. Next review needed on {date}
+            reason: It is time to re-review your SEO settings.
+            button: Ok! I reviewed them!
 
   forum:
     profile_title: "Profile of {username}"
@@ -11,3 +202,93 @@ v17development-flarum-seo:
       configure_seo: Configure SEO
       update_seo: Update SEO
       reset_seo: Reset SEO
+
+    meta_seo:
+      title: SEO settings - Meta
+      note_prefix: "Note:"
+      managed: Managed
+      saved: Saved!
+
+      close:
+        close: Close
+        save: Save
+        save_autofill: Save & auto-fill
+        autofill_info: This change will revert custom changes and fill the meta-tags with item-data.
+
+      unsupported_object:
+        title: This object is not a supported SeoMeta object
+        docs_link: Documentation
+        body: Please open this dialog using the objectType and objectId properties or register the object relationship instead.
+
+      auto_update:
+        label: Auto update meta tags
+        help: When enabled, this items meta tags are automatically updated when the object changes.
+        switch: Update object SEO on change
+
+      meta_title:
+        label: Meta title
+        help: Title in search engines.
+        placeholder: Enter page title
+
+      meta_description:
+        label: Meta description
+        help: Describes the item and shown in search engines.
+
+      keywords:
+        label: Keywords
+        help: Enter one or more keywords that describes this item.
+        placeholder: Add a few keywords
+        comma_note: "Note: Separate keywords with a comma."
+        example: "Example: flarum, web development, forum, apples, security"
+
+      image:
+        label: Meta image
+        help: Displays an image.
+        placeholder: Enter image URL
+        managed_by: "Image source managed by {source}"
+        upload: Upload file
+
+      robots:
+        label: Robots
+        help: Robot-crawling settings for this item.
+
+        tags:
+          indexing_allowed: Allow indexing page
+          indexing_not_allowed: Page indexing not allowed
+          follow_allowed: Allow follow links
+          follow_not_allowed: Link following not allowed
+          archive_not_allowed: Archiving pages not allowed
+          imageindex_not_allowed: Image indexing not allowed
+          snippet_not_allowed: Taking text-snippets not allowed
+
+        switch:
+          indexing: Allow indexing page
+          follow: Allow following links to different pages
+          noarchive: Disable archiving page (noarchive)
+          noimageindex: Disable indexing images on this page (noimageindex)
+          nosnippet: Disable text-snippes on page (nosnippet)
+
+      reading_time:
+        label: Estimated reading time
+        help: Estimated reading time in seconds.
+        placeholder: Reading time in seconds
+
+      twitter:
+        label: Twitter card
+        auto_switch: Auto generate Twitter card
+        title: Twitter title
+        description: Twitter description
+
+        image:
+          label: Twitter image
+          help: Displays an image on Twitter.
+          reset: Reset image
+
+      og:
+        label: Open Graph tags
+        auto_switch: Auto generate Open Graph tags
+        title: Open Graph title
+
+        description:
+          label: Open Graph description
+          placeholder: Custom Twitter description

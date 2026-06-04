@@ -1,5 +1,0 @@
-
-v17development-flarum-seo:
-  forum:
-    profile_title: "الملف الشخصي لـ {username}"
-    profile_description: "الملف الشخصي لـ {username} |  مجموع النقاشات {discussion_count} |  مجموع المشاركات {comment_count}"

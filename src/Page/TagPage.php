@@ -1,34 +1,34 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Page;
 
 use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Tags\TagRepository;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
 
 class TagPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
-
-    /**
-     * @param TagRepository $tagRepository
-     */
     public function __construct(
-        TranslatorInterface $translator,
-        Dispatcher $events
+        protected readonly TranslatorInterface $translator,
+        Dispatcher $events,
     ) {
         $this->events = $events;
-        $this->translator = $translator;
     }
 
     public function extensionDependencies(): array
@@ -41,13 +41,10 @@ class TagPage implements PageDriverInterface
         return ['tag'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $tagId = Arr::get($request->getQueryParams(), 'slug');
 
         // I do support it, but it didn't work
@@ -72,11 +69,33 @@ class TagPage implements PageDriverInterface
         $properties
             // Add Schema.org metadata: CollectionPage https://schema.org/CollectionPage
             ->setSchemaJson('@type', 'CollectionPage')
+            ->setSchemaJson('name', $tag->name)
             ->setSchemaJson('about', $seoMeta->description)
             // Tag URL
-            ->setUrl('/t/' . $tag->slug)
+            ->setUrl('/t/'.$tag->slug)
 
             // Canonical url
-            ->setCanonicalUrl('/t/' . $tag->slug);
+            ->setCanonicalUrl('/t/'.$tag->slug);
+
+        // List the tag's most recent public discussions as a schema.org ItemList.
+        $discussions = $tag->discussions()
+            ->where('is_private', false)
+            ->whereNull('hidden_at')
+            ->latest('last_posted_at')
+            ->limit(20)
+            ->get();
+
+        $itemListElement = $discussions->values()->map(fn ($discussion, int $index) => [
+            '@type'    => 'ListItem',
+            'position' => $index + 1,
+            'url'      => $properties->withApplicationPath('/d/'.$discussion->id.'-'.$discussion->slug),
+            'name'     => $discussion->title,
+        ])->toArray();
+
+        $properties->setSchemaJson('mainEntity', [
+            '@type'           => 'ItemList',
+            'numberOfItems'   => count($itemListElement),
+            'itemListElement' => $itemListElement,
+        ]);
     }
 }

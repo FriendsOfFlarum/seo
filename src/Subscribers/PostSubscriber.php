@@ -1,27 +1,34 @@
 <?php
 
-namespace V17Development\FlarumSeo\Subscribers;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
+namespace FoF\Seo\Subscribers;
+
 use Flarum\Post\Event as PostEvent;
+use FoF\Seo\SeoMeta\SeoMeta;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
- * Subscribe to post deleting, posted or revised
+ * Subscribe to post deleting, posted or revised.
  */
 class PostSubscriber
 {
     public function __construct(
-        private SeoProperties $seoProperties,
-        private DiscussionSubscriber $discussionSubscriber
-    ) {}
+        private readonly DiscussionSubscriber $discussionSubscriber,
+    ) {
+    }
 
     /**
-     * Subscribe to events
-     * 
-     * @param $events
+     * Subscribe to events.
      */
-    public function subscribe($events)
+    public function subscribe(Dispatcher $events): void
     {
         $events->listen(PostEvent\Deleting::class, [$this, 'onModelEvent']);
         $events->listen(PostEvent\Posted::class, [$this, 'onModelEvent']);
@@ -29,28 +36,22 @@ class PostSubscriber
     }
 
     /**
-     * Handle model event
-     *
-     * @param $event
+     * Handle model event.
      */
-    public function onModelEvent($event)
+    public function onModelEvent(object $event): void
     {
-        // Find meta
         $meta = SeoMeta::findOneByModel($event->post->discussion);
 
-        // Create new meta by model
         if (!$meta) {
             $meta = SeoMeta::buildByModel($event->post->discussion);
         }
 
-        // Do not auto update
         if (!$meta->auto_update_data) {
             return;
         }
 
         $this->discussionSubscriber->updateMeta($meta, $event->post->discussion);
 
-        // Update
         $meta->save();
     }
 }

@@ -1,4 +1,0 @@
-v17development-flarum-seo:
-  forum:
-    profile_title: "Profilul lui {username}"
-    profile_description: "Profilul lui {username} | {discussion_count} discuții | {comment_count} postări"

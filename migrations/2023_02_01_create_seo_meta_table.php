@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Builder;
 
@@ -9,9 +18,12 @@ return [
             $schema->create('seo_meta', function (Blueprint $table) {
                 $table->increments('id');
 
-                // Object information
+                // Object information. object_type is capped at 150 chars so
+                // it fits within the utf8mb4 key-length limit (191) for the
+                // unique index below — MySQL rejects indexes on TEXT columns
+                // without a prefix length.
                 $table->integer('object_id');
-                $table->string('object_type', 65535);
+                $table->string('object_type', 150);
 
                 // Make the combination Object ID and Object Type unique
                 $table->unique(['object_id', 'object_type']);

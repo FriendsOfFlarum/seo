@@ -1,14 +1,23 @@
 <?php
 
-namespace V17Development\FlarumSeo\Api\Controllers;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractListController;
-use Flarum\Http\UrlGenerator;
 use Flarum\Http\RequestUtil;
+use Flarum\Http\UrlGenerator;
+use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\SeoMeta\SeoMeta;
 use Psr\Http\Message\ServerRequestInterface;
 use Tobscure\JsonApi\Document;
-use V17Development\FlarumSeo\Api\Serializers\SeoMetaSerializer;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
 
 class ListSeoMetaController extends AbstractListController
 {
@@ -23,17 +32,9 @@ class ListSeoMetaController extends AbstractListController
 
     public $limit = 50;
 
-    /**
-     * @var UrlGenerator
-     */
-    protected $url;
-
-    /**
-     * @param UrlGenerator $url
-     */
-    public function __construct(UrlGenerator $url)
-    {
-        $this->url = $url;
+    public function __construct(
+        protected readonly UrlGenerator $url,
+    ) {
     }
 
     /**
@@ -44,7 +45,7 @@ class ListSeoMetaController extends AbstractListController
         $actor = RequestUtil::getActor($request);
 
         // Make sure the person can access the agents
-        $actor->assertCan('seo.canConfigure');
+        $actor->assertCan('fof-seo.canConfigure');
 
         // Params
         $limit = $this->extractLimit($request);

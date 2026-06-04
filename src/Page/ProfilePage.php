@@ -1,33 +1,28 @@
 <?php
 
-namespace V17Development\FlarumSeo\Page;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Page;
 
 use Flarum\User\UserRepository;
+use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use V17Development\FlarumSeo\SeoProperties;
 
 class ProfilePage implements PageDriverInterface
 {
-    /**
-     * @var UserRepository
-     */
-    protected $userRepository;
-
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
-
-    /**
-     * @param UserRepository $userRepository
-     * @param TranslatorInterface $translator
-     */
-    public function __construct(UserRepository $userRepository, TranslatorInterface $translator)
-    {
-        $this->userRepository = $userRepository;
-        $this->translator = $translator;
+    public function __construct(
+        protected readonly UserRepository $userRepository,
+        protected readonly TranslatorInterface $translator,
+    ) {
     }
 
     public function extensionDependencies(): array
@@ -40,42 +35,66 @@ class ProfilePage implements PageDriverInterface
         return ['user'];
     }
 
-    /**
-     * @param ServerRequestInterface $request
-     */
     public function handle(
         ServerRequestInterface $request,
         SeoProperties $properties
-    ) {
+    ): void {
         $username = Arr::get($request->getQueryParams(), 'username');
 
         try {
             $user = is_numeric($username) ? $this->userRepository->findOrFail($username) : $this->userRepository->findByIdentification($username);
 
             // Make sure there's a user
-            if ($user === null) return;
+            if ($user === null) {
+                return;
+            }
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // Do nothing. It just did not work
             return;
         }
 
         // Profile title
-        $profileTitle = $this->translator->trans("v17development-flarum-seo.forum.profile_title", [
+        $profileTitle = $this->translator->trans('fof-seo.forum.profile_title', [
             'username' => $user->getAttribute('display_name'),
         ]);
 
         // Profile description
-        $profileDescription = $this->translator->trans("v17development-flarum-seo.forum.profile_description", [
-            'username' => $user->getAttribute('display_name'),
+        $profileDescription = $this->translator->trans('fof-seo.forum.profile_description', [
+            'username'         => $user->getAttribute('display_name'),
             'discussion_count' => $user->getAttribute('discussion_count'),
-            'comment_count' => $user->getAttribute('comment_count')
+            'comment_count'    => $user->getAttribute('comment_count'),
         ]);
 
-        // Schema
+        // Schema — describe the creator on the Person mainEntity per Google's
+        // ProfilePage guidance (identity + activity statistics).
         $mainEntity = [
-            "@type" => "Person",
-            'name' => $user->getAttribute('username')
+            '@type'                     => 'Person',
+            'name'                      => $user->getAttribute('display_name'),
+            'alternateName'             => $user->getAttribute('username'),
+            'identifier'                => $user->id,
+            'url'                       => $properties->withApplicationPath('/u/'.$user->getAttribute('username')),
+            'agentInteractionStatistic' => [
+                [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/WriteAction',
+                    'userInteractionCount' => (int) $user->getAttribute('comment_count'),
+                ],
+                [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/CreateAction',
+                    'userInteractionCount' => (int) $user->getAttribute('discussion_count'),
+                ],
+            ],
         ];
+
+        // Bio / avatar on the Person, when available.
+        if ($user->getAttribute('bio') !== null) {
+            $mainEntity['description'] = $user->getAttribute('bio');
+        }
+
+        if ($user->getAttribute('avatar_url') !== null) {
+            $mainEntity['image'] = $user->getAttribute('avatar_url');
+        }
 
         $properties
             // Page type
@@ -108,9 +127,9 @@ class ProfilePage implements PageDriverInterface
             ->setDescription($profileDescription)
 
             // Profile URL
-            ->setUrl('/u/' . $user->getAttribute('username'))
+            ->setUrl('/u/'.$user->getAttribute('username'))
 
             // Canonical url
-            ->setCanonicalUrl('/u/' . $user->getAttribute('username'));
+            ->setCanonicalUrl('/u/'.$user->getAttribute('username'));
     }
 }

@@ -1,26 +1,38 @@
 <?php
 
-namespace V17Development\FlarumSeo\Subscribers;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+namespace FoF\Seo\Subscribers;
 
 use Flarum\Discussion\Discussion;
 use Flarum\Discussion\Event as DiscussionEvent;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
-use V17Development\FlarumSeo\SeoProperties;
-use V17Development\FlarumSeo\SeoMeta\Event\Created;
+use Flarum\Post\CommentPost;
+use FoF\Seo\SeoMeta\Event\Created;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
+use Illuminate\Contracts\Events\Dispatcher;
 
 /**
- * Subscribe to discussion creation, update or deleted
+ * Subscribe to discussion creation, update or deleted.
  */
 class DiscussionSubscriber
 {
-    public function __construct(private SeoProperties $seoProperties) {}
+    public function __construct(
+        private readonly SeoProperties $seoProperties,
+    ) {
+    }
 
     /**
-     * Subscribe to events
-     * 
-     * @param $events
+     * Subscribe to events.
      */
-    public function subscribe($events)
+    public function subscribe(Dispatcher $events): void
     {
         $events->listen(DiscussionEvent\Deleting::class, [$this, 'onModelEvent']);
         $events->listen(DiscussionEvent\Started::class, [$this, 'onModelEvent']);
@@ -29,18 +41,15 @@ class DiscussionSubscriber
     }
 
     /**
-     * Handle model event
-     *
-     * @param $event
+     * Handle model event.
      */
-    public function onModelEvent($event)
+    public function onModelEvent(object $event): void
     {
         // Find meta
         $meta = SeoMeta::findOneByModel($event->discussion);
 
         // Find and delete meta-data
         if ($event::class === DiscussionEvent\Deleting::class) {
-            // Meta existed, delete
             if ($meta) {
                 $meta->delete();
             }
@@ -60,22 +69,23 @@ class DiscussionSubscriber
 
         $this->updateMeta($meta, $event->discussion);
 
-        // Update
         $meta->save();
     }
 
     /**
-     * Handle meta created event
-     * 
-     * @param Created $event
+     * Handle meta created event.
      */
-    public function onMetaCreated(Created $event)
+    public function onMetaCreated(Created $event): void
     {
-        // Only update meta data if object type matches
-        if ($event->objectType !== 'discussions') return;
+        if ($event->objectType !== 'discussions') {
+            return;
+        }
 
-        // Find discussion
         $discussion = Discussion::find($event->objectId);
+
+        if ($discussion === null) {
+            return;
+        }
 
         $this->updateMeta($event->seoMeta, $discussion);
 
@@ -83,9 +93,9 @@ class DiscussionSubscriber
     }
 
     /**
-     * Public function to update 
+     * Populate the SeoMeta row from the discussion's current state.
      */
-    public function updateMeta($meta, $discussion)
+    public function updateMeta(SeoMeta $meta, Discussion $discussion): void
     {
         $meta->title = $discussion->title;
 
@@ -93,7 +103,7 @@ class DiscussionSubscriber
 
         $firstPost = $discussion->firstPost;
 
-        // If a discussion has a first post, use edited_at time if intial post was more recent edited than the last post was posted 
+        // If a discussion has a first post, use edited_at time if intial post was more recent edited than the last post was posted
         if ($firstPost) {
             $meta->updated_at = $firstPost->edited_at > $discussion->last_posted_at ? $firstPost->edited_at : $discussion->last_posted_at;
         } else {
@@ -101,7 +111,7 @@ class DiscussionSubscriber
         }
 
         // Set discussion description and image
-        if ($firstPost) {
+        if ($firstPost instanceof CommentPost) {
             $content = $firstPost->formatContent();
 
             // Set page description

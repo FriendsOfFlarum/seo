@@ -1,16 +1,27 @@
 {
-  "name": "@v17development/flarum-seo",
+  "name": "@fof/seo",
   "version": "0.0.0",
-  "dependencies": {
+  "private": true,
+  "prettier": "@flarum/prettier-config",
+  "devDependencies": {
     "@flarum/prettier-config": "^1.0.0",
-    "clsx": "^2.1.1",
-    "flarum-tsconfig": "^1.0.2",
+    "flarum-tsconfig": "^1.0.0",
     "flarum-webpack-config": "^2.0.0",
-    "webpack": "^5.70.0",
-    "webpack-cli": "^4.9.2"
+    "prettier": "^3.0.3",
+    "typescript-coverage-report": "^0.6.1",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^5.1.4"
   },
   "scripts": {
+    "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
-    "start": "webpack --mode development --watch"
+    "analyze": "cross-env ANALYZER=true npm run build",
+    "format": "prettier --write src",
+    "format-check": "prettier --check src",
+    "clean-typings": "npx rimraf dist-typings && mkdir dist-typings",
+    "build-typings": "npm run clean-typings && ([ -e src/@types ] && cp -r src/@types dist-typings/@types || true) && tsc && npm run post-build-typings",
+    "post-build-typings": "find dist-typings -type f -name '*.d.ts' -print0 | xargs -0 sed -i 's,../src/@types,@types,g'",
+    "check-typings": "tsc --noEmit --emitDeclarationOnly false",
+    "check-typings-coverage": "typescript-coverage-report"
   }
 }

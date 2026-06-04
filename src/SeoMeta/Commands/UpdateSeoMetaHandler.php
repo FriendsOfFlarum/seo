@@ -1,32 +1,27 @@
 <?php
 
-namespace V17Development\FlarumSeo\SeoMeta\Commands;
+/*
+ * This file is part of fof/seo.
+ *
+ * Copyright (c) FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
-use Illuminate\Contracts\Bus\Dispatcher;
+namespace FoF\Seo\SeoMeta\Commands;
+
+use FoF\Seo\SeoMeta\SeoMeta;
 use Illuminate\Support\Arr;
-use V17Development\FlarumSeo\SeoMeta\SeoMeta;
 
 class UpdateSeoMetaHandler
 {
     /**
-     * @var Dispatcher
+     * Handle SeoMeta update.
      */
-    protected $bus;
-
-    /**
-     * @param Dispatcher $bus
-     */
-    public function __construct(Dispatcher $bus)
+    public function handle(UpdateSeoMeta $command): SeoMeta
     {
-        $this->bus = $bus;
-    }
-
-    /**
-     * Handle language update
-     */
-    public function handle(UpdateSeoMeta $command)
-    {
-        $command->actor->assertAdmin();
+        $command->actor->assertCan('fof-seo.canConfigure');
 
         $seoMeta = SeoMeta::findOrFail($command->id);
 

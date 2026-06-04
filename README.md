@@ -1,71 +1,102 @@
-![](https://img.shields.io/github/issues/v17development/flarum-seo.svg) [![Total Downloads](https://poser.pugx.org/v17development/flarum-seo/downloads)](https://packagist.org/packages/v17development/flarum-seo) ![](https://img.shields.io/github/stars/v17development/flarum-seo.svg) ![](https://img.shields.io/github/license/v17development/flarum-seo.svg) ![](https://img.shields.io/packagist/v/v17development/flarum-seo.svg)
+# FoF SEO
 
-# 🗂️ Flarum SEO 
-First Flarum extension that add SEO tags to your Flarum forum.
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/FriendsOfFlarum/seo/blob/1.x/LICENSE.md) [![Latest Stable Version](https://img.shields.io/packagist/v/fof/seo.svg)](https://packagist.org/packages/fof/seo) [![Total Downloads](https://img.shields.io/packagist/dt/fof/seo.svg)](https://packagist.org/packages/fof/seo)
 
-## 📥 Installation
-If you like to install this extension, run the following command:
+A [Flarum](https://flarum.org) extension that adds SEO tags to your forum — meta description, Open Graph, Twitter cards, and schema.org structured data.
+
+## Documentation
+
+Full documentation lives in the [`docs/`](docs/README.md) folder:
+
+- [Installation](docs/installation.md)
+- [Features & configuration](docs/features.md)
+- [Per-item SEO (the *Configure SEO* dialog)](docs/meta-management.md)
+- [Do-follow link list](docs/do-follow-links.md)
+- [Sitemap & robots.txt](docs/sitemap-and-robots.md)
+- Developers: [SeoMeta objects](docs/developers/seometa-objects.md) · [the `SeoProperties` class](docs/developers/seoproperties.md)
+- [Contributing](docs/contributing.md)
+
+## Installation
+
+```sh
+composer require fof/seo:"*"
 ```
-composer require v17development/flarum-seo
+
+## Updating
+
+```sh
+composer update fof/seo
+php flarum cache:clear
 ```
 
-## ♻ Updating
-Run the following command on your server to update the plugin
-```
-composer update v17development/flarum-seo
-```
+## Migrating from v17development/flarum-seo
 
-## ⚒️ Extending & using in your own extension
-You can use functionalities from this extension in your own extension. For more information, check [this knowledge base article](https://community.v17.dev/knowledgebase/22-extending-the-seo-extension).
+This extension was transferred to FriendsOfFlarum in April 2026 and was previously published as `v17development/flarum-seo`. A migration guide for forum admins and third-party extension authors will be published before release.
 
-## 🎁 Adding SEO tags to the following pages:
+## Features
+
+SEO tags are generated for the following pages:
+
 - Home page
-- Tags page (if extension is enabled)
+- Tags page (if `flarum/tags` is enabled)
 - Discussion page
 - User profile
-- Pages page (if extension is enabled)
+- Pages page (if `fof/pages` is enabled)
 
-## ✅ Works with
-This extension will work with the following extensions enabled or disabled. All extensions are not required, but it will work together if they are installed and enabled:
-- *Flarum likes* from **Flarum** https://github.com/flarum/likes
-- *Flarum tags* from **Flarum** https://github.com/flarum/tags
-- *Selected Post Best answer* from **FriendsOfFlarum** https://discuss.flarum.org/d/21894-friendsofflarum-best-answer
-- *Sitemap* from **FriendsOfFlarum** https://discuss.flarum.org/d/14941-fof-sitemap
-- *Pages* from **FriendsOfFlarum** https://discuss.flarum.org/d/18301-friendsofflarum-pages
+Methods used:
 
-## 🔍 How do the results look like in Google?
-Potential it could look like this, after Google reindex your site. This could take a while before Google or any other crawler does this. The following screenshots are in Dutch, but you get the concept:
-![How it looks like](https://i.ibb.co/5FgjNdp/Screenshot-152.png)
+- HTML meta tags (`application-name`, `description`, `keywords`, `language`)
+- Open Graph tags (`og:type`, `og:title`, `og:description`, `og:url`, `article:published_time`, `article:updated_time`)
+- Twitter cards
+- `inLanguage` on every page
+- Schema.org structured data:
+  - [WebPage](https://schema.org/WebPage) + [WebSite](https://schema.org/WebSite) `SearchAction`
+  - [DiscussionForumPosting](https://schema.org/DiscussionForumPosting) — with `headline`, `text` and comment/like/view [interactionStatistic](https://schema.org/interactionStatistic)s
+  - [QAPage](https://schema.org/QAPage) for Q&A discussions (with `fof/best-answer`)
+  - [CollectionPage](https://schema.org/CollectionPage) — with an `ItemList` of the tag's discussions
+  - [ProfilePage](https://schema.org/ProfilePage) — with a rich `Person` (identity + activity stats)
+- Uses the first image in the post as the social-media image when one is present, falling back to the configured default.
 
-## ⏱️ How long will changes take effect?
-It depends. Recrawling can take a few days, up to a few weeks until most of your results are updated. Use the [FriendsOfFlarum Sitemap](https://discuss.flarum.org/d/14941-fof-sitemap) to let Google know what discussions there are on your forum. You may speed it up by manually update a search result Google via the [Google Search Console](https://search.google.com/search-console/about), but that is no gurantee that the search result will be updated directly.
+> Your `robots.txt` and XML sitemap are provided by [fof/sitemap](https://github.com/FriendsOfFlarum/sitemap). See [Sitemap & robots.txt](docs/sitemap-and-robots.md).
 
-[Read more about how you can let Google recrawl your site](https://support.google.com/webmasters/answer/6065812)
+## Works with
 
-## Using following SEO methods:
-The extension will use the following SEO methods:
-- Default HTML meta tags:
-  - application-name
-  - description
-  - keywords
-  - language
-- Adds ``robots.txt`` to your forum, when Sitemap extension of FriendsOfFlarum is enabled, the link to your sitemap.xml will appear in the robots.txt
-- The Open Graph protocol (for social media, http://ogp.me):
-  - og:type
-  - og:title
-  - og:description
-  - og:url
-  - article:published_time
-  - article:updated_time
- 
-- Schema.org SEO standards (most used by Search engines)
-  - WebPage https://schema.org/WebPage
-  - QAPage (default) https://schema.org/QAPage
-  - DiscussionForumPosting (when Question-Answer SEO results are disabled) https://schema.org/DiscussionForumPosting
-  - CollectionPage https://schema.org/CollectionPage
-  - ProfilePage https://schema.org/ProfilePage
+Compatible — but not required — alongside:
 
-- Sets page image to social media if set. When the first post contains an image, it will be used instead.
+- [flarum/likes](https://github.com/flarum/likes) — like counts in the interaction statistics
+- [flarum/tags](https://github.com/flarum/tags)
+- [fof/best-answer](https://github.com/FriendsOfFlarum/best-answer) — Q&A (`QAPage`) structured data
+- [fof/sitemap](https://github.com/FriendsOfFlarum/sitemap) — sitemap & robots.txt
+- [fof/pages](https://github.com/FriendsOfFlarum/pages)
+- [fof/discussion-views](https://github.com/FriendsOfFlarum/discussion-views) — view counts in the structured data
+- [fof/discussion-language](https://github.com/FriendsOfFlarum/discussion-language) — per-discussion `inLanguage` for multi-language forums
 
-## 👍 You like what I did?
-You may like to [buy me a coffee](https://www.buymeacoffee.com/jaspervriends) and support my work :)
+## Extending
+
+Third-party extensions have three integration points:
+
+- **Page drivers** — emit/replace structured data for your own routes by extending `FoF\Seo\Extend\SEO` and implementing `FoF\Seo\Page\PageDriverInterface`.
+- **`SeoMeta` objects** — give your own models managed, per-object metadata that appears in the *Configure SEO* dialog.
+- **The `PreparingPageMeta` event** — intercept and override the prepared metadata (language, description, any schema.org property) on any page.
+
+See the developer guides for details:
+
+- [SeoMeta objects — developer guide](docs/developers/seometa-objects.md)
+- [The `SeoProperties` class](docs/developers/seoproperties.md)
+- [Extending & intercepting the metadata](docs/developers/extending-metadata.md)
+
+## Credits
+
+This extension was originally created and maintained by [V17 Development](https://v17.dev) as `v17development/flarum-seo`. FriendsOfFlarum is grateful for their work bringing SEO support to the Flarum ecosystem and continues development with their blessing.
+
+## Links
+
+- [Documentation](docs/README.md)
+- [Packagist](https://packagist.org/packages/fof/seo)
+- [GitHub](https://github.com/FriendsOfFlarum/seo)
+- [Issues](https://github.com/FriendsOfFlarum/seo/issues)
+- [Support](https://discuss.flarum.org/d/39374)
+
+## License
+
+This extension is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
