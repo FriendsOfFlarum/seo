@@ -19,7 +19,7 @@ php flarum cache:clear
 
 ## Migrating from v17development/flarum-seo
 
-This extension was transferred to FriendsOfFlarum in April 2026 and was previously published as `v17development/flarum-seo`. A migration guide for forum admins and third-party extension authors will be published before release. The `V17Development\FlarumSeo` PHP namespace is retained as a deprecated alias for one version to ease the transition.
+This extension was transferred to FriendsOfFlarum in April 2026 and was previously published as `v17development/flarum-seo`. A migration guide for forum admins and third-party extension authors will be published before release.
 
 ## Features
 
