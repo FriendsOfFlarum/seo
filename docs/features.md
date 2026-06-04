@@ -50,11 +50,29 @@ For every page, the extension outputs:
 - a `<link rel="canonical">`
 - a `schema.org` JSON-LD block
 
-The JSON-LD is tailored per page type — for example a discussion is described as
-a `DiscussionForumPosting` with its author, publish/modified dates and a
-breadcrumb to its tag, while a tag page is a `CollectionPage`. The forum index
-also advertises a `SearchAction` so Google can offer a search box for your site.
+The JSON-LD is tailored per page type and carries `inLanguage` on every page:
+
+| Page | schema.org type | Notable properties |
+| --- | --- | --- |
+| Index | `WebPage` + `WebSite` | `publisher`, `SearchAction` (sitelinks search box) |
+| Discussion | `DiscussionForumPosting` | `author`, `headline`, `text`, `datePublished`/`dateModified`, breadcrumb, and `interactionStatistic` for comments, likes and views |
+| Q&A discussion | `QAPage` | `Question` with `acceptedAnswer`/`suggestedAnswer`, `upvoteCount`, `answerCount` (needs fof/best-answer) |
+| Tag | `CollectionPage` | `name`, and a `mainEntity` `ItemList` of the tag's recent discussions |
+| User profile | `ProfilePage` | `Person` with `alternateName`, `identifier`, `agentInteractionStatistic` (posts/discussions) |
 
 Discussions, user profiles and tag pages each receive their own title,
 description and image derived from their content. To override any of these for a
 specific item, use the [Configure SEO dialog](meta-management.md).
+
+### Optional extension integrations
+
+The structured data is enriched automatically when these are installed — no
+configuration needed:
+
+- **[fof/discussion-views](https://github.com/FriendsOfFlarum/discussion-views)** — adds a view-count `ViewAction` to discussion structured data.
+- **[fof/discussion-language](https://github.com/FriendsOfFlarum/discussion-language)** — sets `inLanguage` per discussion from its assigned language (multi-language forums).
+- **[fof/best-answer](https://github.com/FriendsOfFlarum/best-answer)** — renders Q&A discussions as a `QAPage`.
+- **[flarum/likes](https://github.com/flarum/likes)** — adds like counts to the interaction statistics.
+
+Developers can add their own data via the `PreparingPageMeta` event — see
+[Extending & intercepting the metadata](developers/extending-metadata.md).

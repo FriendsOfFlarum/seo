@@ -15,9 +15,11 @@ per-item overrides where you need them.
   `robots` directive on every page.
 - **Open Graph & Twitter cards** — `og:*` and `twitter:*` tags so links shared on
   social media render rich previews. The Twitter card size is configurable.
-- **Structured data (JSON-LD)** — `WebPage`, `DiscussionForumPosting`,
-  `CollectionPage`, breadcrumbs, an organization `publisher` block, and a site
-  `SearchAction`.
+- **Structured data (JSON-LD)** — `WebPage`, `DiscussionForumPosting` (with
+  `headline`, `text`, comment/like/view `interactionStatistic`s), `QAPage`,
+  `CollectionPage` (with an `ItemList` of discussions), `ProfilePage`,
+  breadcrumbs, an organization `publisher` block, a site `SearchAction`, and
+  `inLanguage` on every page.
 - **Per-page metadata** — discussions, tags and user profiles each get tailored
   titles, descriptions, images, and published/updated timestamps.
 - **Per-item overrides** — a *Configure SEO* dialog lets you hand-tune the meta
@@ -42,6 +44,7 @@ per-item overrides where you need them.
 
 - [SeoMeta objects — developer guide](developers/seometa-objects.md)
 - [The `SeoProperties` class](developers/seoproperties.md)
+- [Extending & intercepting the metadata](developers/extending-metadata.md)
 
 ### Project
 

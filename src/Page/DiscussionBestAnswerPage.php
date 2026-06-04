@@ -38,7 +38,6 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         protected readonly UserRepository $userRepository,
         protected readonly ExtensionManager $extensionManager,
         protected readonly UrlGenerator $urlGenerator,
-        protected readonly DiscussionPage $discussionFallback,
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
     ) {
@@ -75,15 +74,19 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             return;
         }
 
-        // Fallback to simple discussions for not-answer tags
+        // When best-answer isn't installed, DiscussionPage emits the standard
+        // DiscussionForumPosting, so there's nothing for us to do.
         $enableBestAnswer = $this->extensionManager->isEnabled('fof-best-answer');
+
+        if (!$enableBestAnswer) {
+            return;
+        }
 
         /** @var Collection<Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
-        if (!$enableBestAnswer || !$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna)) {
-            $this->discussionFallback->handle($request, $properties);
-
+        // Not a Q&A discussion — DiscussionPage already emitted DiscussionForumPosting.
+        if (!$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna)) {
             return;
         }
 
@@ -107,6 +110,27 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Generate data
         $properties->generateTagsFromMetaData($seoMeta);
 
+        // Optional fof/discussion-views integration: expose the view count.
+        if ($this->extensionManager->isEnabled('fof-discussion-views')) {
+            $properties->setSchemaJson('interactionStatistic', [
+                [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/ViewAction',
+                    'userInteractionCount' => (int) $discussion->getAttribute('view_count'),
+                ],
+            ]);
+        }
+
+        // Optional fof/discussion-language integration: a discussion's own
+        // language drives inLanguage, overriding the viewer's locale.
+        if ($this->extensionManager->isEnabled('fof-discussion-language')) {
+            $languageCode = data_get($discussion->getAttribute('language'), 'code');
+
+            if ($languageCode !== null) {
+                $properties->setSchemaJson('inLanguage', $languageCode);
+            }
+        }
+
         // Get posted on and Last posted on
         $bestAnswerId = $discussion->best_answer_post_id;
 
@@ -127,6 +151,11 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             'answerCount' => $discussion->comment_count - 1,
         ];
 
+        // Upvotes on the question itself (the first post), when likes are available.
+        if ($enableLikes && $firstPost !== null) {
+            $mainEntity['upvoteCount'] = $firstPost->likes()->count();
+        }
+
         // Generate a breadcrumb if discussion has tags
         if ($discussionTags->count() >= 1) {
             $properties->generateSchemaBreadcrumb(
@@ -141,9 +170,18 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $mainEntity['suggestedAnswer'] = [];
 
         // Get all public comments for this discussion
+        // Eager-load the author (and likes, when the extension is enabled)
+        // relations referenced in the loop below to avoid an N+1 per answer post.
+        $with = ['user'];
+        if ($enableLikes) {
+            $with[] = 'likes';
+        }
+
         /** @var Collection<Post> $posts */
         $posts = $discussion->posts()
-            ->where('number', '>', '1')->get();
+            ->where('number', '>', '1')
+            ->with($with)
+            ->get();
 
         foreach ($posts as $post) {
             /** @var Post $post */

@@ -69,11 +69,33 @@ class TagPage implements PageDriverInterface
         $properties
             // Add Schema.org metadata: CollectionPage https://schema.org/CollectionPage
             ->setSchemaJson('@type', 'CollectionPage')
+            ->setSchemaJson('name', $tag->name)
             ->setSchemaJson('about', $seoMeta->description)
             // Tag URL
             ->setUrl('/t/'.$tag->slug)
 
             // Canonical url
             ->setCanonicalUrl('/t/'.$tag->slug);
+
+        // List the tag's most recent public discussions as a schema.org ItemList.
+        $discussions = $tag->discussions()
+            ->where('is_private', false)
+            ->whereNull('hidden_at')
+            ->latest('last_posted_at')
+            ->limit(20)
+            ->get();
+
+        $itemListElement = $discussions->values()->map(fn ($discussion, int $index) => [
+            '@type'    => 'ListItem',
+            'position' => $index + 1,
+            'url'      => $properties->withApplicationPath('/d/'.$discussion->id.'-'.$discussion->slug),
+            'name'     => $discussion->title,
+        ])->toArray();
+
+        $properties->setSchemaJson('mainEntity', [
+            '@type'           => 'ItemList',
+            'numberOfItems'   => count($itemListElement),
+            'itemListElement' => $itemListElement,
+        ]);
     }
 }

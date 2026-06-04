@@ -97,6 +97,31 @@ class ProfilePageTest extends ForumHtmlTestCase
     }
 
     /**
+     * Google's ProfilePage guidance puts the creator's identity and activity
+     * stats on the `mainEntity` Person.
+     *
+     * @test
+     */
+    public function profile_person_carries_identity_and_interaction_stats(): void
+    {
+        $person = $this->findSchemaEntry($this->fetchForumHtml('/u/victorinox'), 'ProfilePage')['mainEntity'] ?? [];
+
+        $this->assertSame('Person', $person['@type'] ?? null);
+        $this->assertSame('victorinox', $person['alternateName'] ?? null); // username
+        $this->assertSame(2, $person['identifier'] ?? null);               // user id
+
+        $write = null;
+        foreach ((array) ($person['agentInteractionStatistic'] ?? []) as $stat) {
+            if (($stat['interactionType'] ?? null) === 'https://schema.org/WriteAction') {
+                $write = $stat;
+            }
+        }
+        $this->assertNotNull($write, 'Expected a WriteAction agentInteractionStatistic for posts.');
+        $this->assertSame('InteractionCounter', $write['@type'] ?? null);
+        $this->assertSame(12, $write['userInteractionCount'] ?? null);     // comment_count
+    }
+
+    /**
      * Username that contains HTML-dangerous characters must never escape the
      * meta attribute. Flarum itself doesn't accept such usernames at signup,
      * but a malicious username created via DB manipulation or migration must

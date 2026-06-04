@@ -65,11 +65,36 @@ class ProfilePage implements PageDriverInterface
             'comment_count'    => $user->getAttribute('comment_count'),
         ]);
 
-        // Schema
+        // Schema — describe the creator on the Person mainEntity per Google's
+        // ProfilePage guidance (identity + activity statistics).
         $mainEntity = [
-            '@type' => 'Person',
-            'name'  => $user->getAttribute('username'),
+            '@type'         => 'Person',
+            'name'          => $user->getAttribute('display_name'),
+            'alternateName' => $user->getAttribute('username'),
+            'identifier'    => $user->id,
+            'url'           => $properties->withApplicationPath('/u/'.$user->getAttribute('username')),
+            'agentInteractionStatistic' => [
+                [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/WriteAction',
+                    'userInteractionCount' => (int) $user->getAttribute('comment_count'),
+                ],
+                [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/CreateAction',
+                    'userInteractionCount' => (int) $user->getAttribute('discussion_count'),
+                ],
+            ],
         ];
+
+        // Bio / avatar on the Person, when available.
+        if ($user->getAttribute('bio') !== null) {
+            $mainEntity['description'] = $user->getAttribute('bio');
+        }
+
+        if ($user->getAttribute('avatar_url') !== null) {
+            $mainEntity['image'] = $user->getAttribute('avatar_url');
+        }
 
         $properties
             // Page type

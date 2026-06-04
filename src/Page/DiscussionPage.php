@@ -17,6 +17,7 @@ use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
+use Flarum\Post\CommentPost;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
@@ -74,10 +75,14 @@ class DiscussionPage implements PageDriverInterface
         /** @var Collection<Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
-        // Do not continue discussion matches a FriendsOfFlarum BestAnswer discussion (if enabled)
+        // Defer to DiscussionBestAnswerPage only when it will actually emit a
+        // QAPage for this discussion, i.e. when "crawl all posts" is enabled,
+        // best-answer is installed, and this is a Q&A discussion. In every other
+        // case (no best-answer, non-Q&A, crawler off) we emit the standard
+        // DiscussionForumPosting here.
         if (
             $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1 &&
-            $tagsEnabled && (!$enableBestAnswer || $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna))
+            $tagsEnabled && $enableBestAnswer && $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna)
         ) {
             return;
         }
@@ -102,6 +107,61 @@ class DiscussionPage implements PageDriverInterface
 
         // Update topic url
         $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug]), false);
+
+        // Optional fof/discussion-language integration: a discussion's own
+        // language drives inLanguage, overriding the viewer's locale.
+        if ($this->extensionManager->isEnabled('fof-discussion-language')) {
+            $languageCode = data_get($discussion->getAttribute('language'), 'code');
+
+            if ($languageCode !== null) {
+                $properties->setSchemaJson('inLanguage', $languageCode);
+            }
+        }
+
+        // Schema.org DiscussionForumPosting enrichment (Google forum guidelines).
+        $properties->setSchemaJson('headline', $seoMeta->title ?? $discussion->title);
+
+        $replyCount = max(0, $discussion->comment_count - 1);
+        $properties->setSchemaJson('commentCount', $replyCount);
+
+        $interactionStatistic = [
+            [
+                '@type'                => 'InteractionCounter',
+                'interactionType'      => 'https://schema.org/CommentAction',
+                'userInteractionCount' => $replyCount,
+            ],
+        ];
+
+        // Optional fof/discussion-views integration: expose the view count.
+        if ($this->extensionManager->isEnabled('fof-discussion-views')) {
+            $interactionStatistic[] = [
+                '@type'                => 'InteractionCounter',
+                'interactionType'      => 'https://schema.org/ViewAction',
+                'userInteractionCount' => (int) $discussion->getAttribute('view_count'),
+            ];
+        }
+
+        $firstPost = $discussion->firstPost;
+
+        if ($firstPost instanceof CommentPost) {
+            // Full post text for the `text` property.
+            $text = trim(strip_tags($firstPost->formatContent()));
+
+            if ($text !== '') {
+                $properties->setSchemaJson('text', $text);
+            }
+
+            // Like count as a LikeAction interaction, when likes are available.
+            if ($this->extensionManager->isEnabled('flarum-likes')) {
+                $interactionStatistic[] = [
+                    '@type'                => 'InteractionCounter',
+                    'interactionType'      => 'https://schema.org/LikeAction',
+                    'userInteractionCount' => $firstPost->likes()->count(),
+                ];
+            }
+        }
+
+        $properties->setSchemaJson('interactionStatistic', $interactionStatistic);
 
         try {
             // Add author to the page meta data

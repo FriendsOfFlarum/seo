@@ -37,7 +37,9 @@
     "fof/pages": "^1.0",
     "fof/best-answer": "^1.7",
     "flarum/phpstan": "^1.0",
-    "flarum/testing": "^1.0.0"
+    "flarum/testing": "^1.0.0",
+    "fof/discussion-views": "*",
+    "fof/discussion-language": "*"
   },
   "conflict": {
     "zerosonesfun/elint": "*",
@@ -47,7 +49,9 @@
     "v17development/flarum-seo": "*"
   },
   "suggest": {
-    "fof/sitemap": "Provides sitemap and robots.txt functionality."
+    "fof/sitemap": "Provides sitemap and robots.txt functionality.",
+    "fof/discussion-views": "Adds a view-count interaction statistic to discussion structured data.",
+    "fof/discussion-language": "Sets per-discussion inLanguage in structured data for multi-language forums."
   },
   "extra": {
     "flarum-extension": {
@@ -57,7 +61,9 @@
         "flarum/tags",
         "fof/pages",
         "fof/sitemap",
-        "fof/best-answer"
+        "fof/best-answer",
+        "fof/discussion-views",
+        "fof/discussion-language"
       ],
       "icon": {
         "name": "fas fa-check",

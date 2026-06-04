@@ -11,6 +11,7 @@
 
 namespace FoF\Seo\Tests\integration\forum;
 
+use Carbon\Carbon;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 
 /**
@@ -62,6 +63,47 @@ class TagPageTest extends ForumHtmlTestCase
 
         $this->assertSame('Announcements', $this->findMetaByProperty($html, 'og:title'));
         $this->assertSame('Announcements', $this->findMetaByName($html, 'twitter:title'));
+    }
+
+    /**
+     * @test
+     */
+    public function tag_collection_page_lists_its_discussions_as_an_item_list(): void
+    {
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            'discussions' => [
+                ['id' => 1, 'title' => 'First topic', 'slug' => 'first-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
+                ['id' => 2, 'title' => 'Second topic', 'slug' => 'second-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now->copy()->addMinute()],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => 1],
+                ['discussion_id' => 2, 'tag_id' => 1],
+            ],
+        ]);
+
+        $collectionPage = $this->findSchemaEntry($this->fetchForumHtml('/t/announcements'), 'CollectionPage');
+
+        $this->assertSame('Announcements', $collectionPage['name'] ?? null);
+
+        $list = $collectionPage['mainEntity'] ?? [];
+        $this->assertSame('ItemList', $list['@type'] ?? null);
+        $this->assertSame(2, $list['numberOfItems'] ?? null);
+        $this->assertCount(2, $list['itemListElement'] ?? []);
+
+        $first = $list['itemListElement'][0];
+        $this->assertSame('ListItem', $first['@type'] ?? null);
+        $this->assertSame(1, $first['position'] ?? null);
+        $this->assertStringContainsString('/d/', $first['url'] ?? '');
+        $this->assertNotEmpty($first['name'] ?? null);
+
+        // Positions must be sequential, not all 1.
+        $this->assertSame(2, $list['itemListElement'][1]['position'] ?? null);
+        $this->assertSame(
+            [1, 2],
+            array_column($list['itemListElement'], 'position')
+        );
     }
 
     /**

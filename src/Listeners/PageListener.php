@@ -14,10 +14,12 @@ namespace FoF\Seo\Listeners;
 use Flarum\Frontend\Document;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
+use FoF\Seo\Event\PreparingPageMeta;
 use FoF\Seo\Page\PageManager;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -58,6 +60,7 @@ class PageListener
         protected readonly SettingsRepositoryInterface $settings,
         UrlGenerator $url,
         protected readonly PageManager $pageManager,
+        protected readonly Dispatcher $events,
         Container $container,
     ) {
         $this->applicationUrl = $url->to('forum')->base();
@@ -147,7 +150,19 @@ class PageListener
     public function finish(ServerRequestInterface $serverRequest): void
     {
         // Add language attribute to html tag
-        $this->flarumDocument->language = $serverRequest->getAttribute('locale');
+        $locale = $serverRequest->getAttribute('locale');
+        $this->flarumDocument->language = $locale;
+
+        // Declare the document language on the schema.org entity, unless a page
+        // driver has already set its own value.
+        if ($locale !== null && !isset($this->schemaArray['inLanguage'])) {
+            $this->setSchemaJson('inLanguage', $locale);
+        }
+
+        // Let extensions read and modify the prepared metadata before it is written.
+        $this->events->dispatch(
+            new PreparingPageMeta(new SeoProperties($this), $this->flarumDocument, $serverRequest)
+        );
 
         // Write meta property tags
         foreach ($this->metaProperty as $name => $content) {

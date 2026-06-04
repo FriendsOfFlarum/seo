@@ -45,6 +45,139 @@ class DiscussionPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * With "crawl all posts" enabled and tags present but fof/best-answer NOT
+     * installed, DiscussionPage defers and the best-answer driver's fallback is
+     * what must still emit DiscussionForumPosting.
+     *
+     * @test
+     */
+    public function forum_posting_emitted_when_best_answer_absent_but_crawler_enabled(): void
+    {
+        $this->extension('flarum-tags');
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::parse('2025-01-01 00:00:00');
+
+        $this->prepareDatabase([
+            'tags' => [
+                ['id' => 1, 'name' => 'General', 'slug' => 'general', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false],
+            ],
+            'discussions' => [
+                ['id' => 1, 'title' => 'A plain topic', 'slug' => 'plain-topic', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [['discussion_id' => 1, 'tag_id' => 1]],
+        ]);
+
+        $html = $this->fetchForumHtml('/d/1-plain-topic');
+
+        $this->assertNotNull($this->findSchemaEntry($html, 'DiscussionForumPosting'));
+        $this->assertNull($this->findSchemaEntry($html, 'QAPage'));
+    }
+
+    /**
+     * Optional fof/discussion-language integration: a discussion's own language
+     * drives the schema.org inLanguage, overriding the viewer's locale.
+     *
+     * @test
+     */
+    public function discussion_in_language_reflects_its_assigned_language_when_enabled(): void
+    {
+        $this->extension('flarum-tags', 'fof-discussion-language');
+
+        $now = Carbon::parse('2025-01-01 00:00:00');
+
+        $this->prepareDatabase([
+            'discussion_languages' => [
+                ['id' => 1, 'code' => 'de'],
+            ],
+            'discussions' => [
+                ['id' => 1, 'title' => 'Hallo Welt', 'slug' => 'hallo-welt', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'language_id' => 1, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Hallo.</p></t>', 'created_at' => $now],
+            ],
+        ]);
+
+        $fp = $this->findSchemaEntry($this->fetchForumHtml('/d/1-hallo-welt'), 'DiscussionForumPosting');
+
+        // Default locale in tests is 'en'; the discussion is tagged 'de'.
+        $this->assertSame('de', $fp['inLanguage'] ?? null);
+    }
+
+    /**
+     * Optional fof/discussion-views integration: expose the view count as a
+     * schema.org ViewAction interaction counter.
+     *
+     * @test
+     */
+    public function discussion_forum_posting_includes_view_count_when_discussion_views_enabled(): void
+    {
+        $this->extension('fof-discussion-views');
+
+        $now = Carbon::parse('2025-01-01 00:00:00');
+
+        $this->prepareDatabase([
+            'discussions' => [
+                ['id' => 1, 'title' => 'Popular topic', 'slug' => 'popular', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'view_count' => 1234, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => $now],
+            ],
+        ]);
+
+        $fp = $this->findSchemaEntry($this->fetchForumHtml('/d/1-popular'), 'DiscussionForumPosting');
+
+        $view = null;
+        foreach ((array) ($fp['interactionStatistic'] ?? []) as $stat) {
+            if (($stat['interactionType'] ?? null) === 'https://schema.org/ViewAction') {
+                $view = $stat;
+            }
+        }
+
+        $this->assertNotNull($view, 'Expected a ViewAction InteractionCounter when fof/discussion-views is enabled.');
+        $this->assertSame(1234, $view['userInteractionCount'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function discussion_forum_posting_includes_headline_text_and_comment_stats(): void
+    {
+        $now = Carbon::parse('2025-01-01 00:00:00');
+
+        $this->prepareDatabase([
+            'discussions' => [
+                ['id' => 1, 'title' => 'How to bake bread', 'slug' => 'bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 3, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>You need flour and water.</p></t>', 'created_at' => $now],
+            ],
+        ]);
+
+        $fp = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting');
+
+        $this->assertNotNull($fp);
+        $this->assertSame('How to bake bread', $fp['headline'] ?? null);
+        $this->assertStringContainsString('You need flour and water.', $fp['text'] ?? '');
+
+        // comment_count includes the opening post, so replies = comment_count - 1.
+        $this->assertSame(2, $fp['commentCount'] ?? null);
+
+        $comment = null;
+        foreach ((array) ($fp['interactionStatistic'] ?? []) as $stat) {
+            if (($stat['interactionType'] ?? null) === 'https://schema.org/CommentAction') {
+                $comment = $stat;
+            }
+        }
+        $this->assertNotNull($comment, 'Expected a CommentAction InteractionCounter.');
+        $this->assertSame('InteractionCounter', $comment['@type'] ?? null);
+        $this->assertSame(2, $comment['userInteractionCount'] ?? null);
+    }
+
+    /**
      * @test
      */
     public function discussion_title_becomes_og_title_and_twitter_title(): void

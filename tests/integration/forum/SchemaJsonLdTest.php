@@ -57,6 +57,19 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
     /**
      * @test
      */
+    public function web_page_declares_the_document_language(): void
+    {
+        $html = $this->fetchForumHtml('/');
+
+        $webPage = $this->findSchemaEntry($html, 'WebPage');
+
+        $this->assertNotNull($webPage);
+        $this->assertSame('en', $webPage['inLanguage'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function publisher_block_is_populated_from_forum_settings(): void
     {
         $html = $this->fetchForumHtml('/');
