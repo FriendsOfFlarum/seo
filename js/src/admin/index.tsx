@@ -44,10 +44,5 @@ app.initializers.add('fof-seo', () => {
   });
 });
 
-// @deprecated Kept so third-party extensions using
-// `app.initializers.has('v17development-flarum-seo')` continue to detect this
-// extension. Will be removed in fof/seo for Flarum 2.x.
-app.initializers.add('v17development-flarum-seo', () => {});
-
 export * from './components';
 export * from './Pages';
