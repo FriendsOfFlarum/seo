@@ -229,7 +229,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->assertLessThanOrEqual(
             3,
             $large - $small,
-            "Query count grew by ".($large - $small)." between a 2-answer and an 8-answer Q&A page — looks like an N+1 over answer posts."
+            'Query count grew by '.($large - $small).' between a 2-answer and an 8-answer Q&A page — looks like an N+1 over answer posts.'
         );
     }
 

@@ -68,11 +68,11 @@ class ProfilePage implements PageDriverInterface
         // Schema — describe the creator on the Person mainEntity per Google's
         // ProfilePage guidance (identity + activity statistics).
         $mainEntity = [
-            '@type'         => 'Person',
-            'name'          => $user->getAttribute('display_name'),
-            'alternateName' => $user->getAttribute('username'),
-            'identifier'    => $user->id,
-            'url'           => $properties->withApplicationPath('/u/'.$user->getAttribute('username')),
+            '@type'                     => 'Person',
+            'name'                      => $user->getAttribute('display_name'),
+            'alternateName'             => $user->getAttribute('username'),
+            'identifier'                => $user->id,
+            'url'                       => $properties->withApplicationPath('/u/'.$user->getAttribute('username')),
             'agentInteractionStatistic' => [
                 [
                     '@type'                => 'InteractionCounter',

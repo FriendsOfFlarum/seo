@@ -27,72 +27,72 @@ use FoF\Seo\Page as SeoPage;
 use FoF\Seo\SeoMeta\SeoMeta;
 
 return [
-  (new Extend\Frontend('forum'))
-    ->content(PageListener::class)
-    ->js(__DIR__ . '/js/dist/forum.js')
-    ->css(__DIR__ . '/less/Forum.less'),
+    (new Extend\Frontend('forum'))
+      ->content(PageListener::class)
+      ->js(__DIR__.'/js/dist/forum.js')
+      ->css(__DIR__.'/less/Forum.less'),
 
-  (new Extend\Frontend('admin'))
-    ->js(__DIR__ . '/js/dist/admin.js')
-    ->css(__DIR__ . '/less/Admin.less'),
+    (new Extend\Frontend('admin'))
+      ->js(__DIR__.'/js/dist/admin.js')
+      ->css(__DIR__.'/less/Admin.less'),
 
-  (new Extend\Routes('api'))
-    ->post('/seo_social_media_image', 'seo.socialmedia.upload', Api\Controllers\UploadSocialMediaImageController::class)
-    ->delete('/seo_social_media_image', 'seo.socialmedia.delete', Api\Controllers\DeleteSocialMediaImageController::class)
-    ->get('/seo_meta', 'seo_meta.overview', Api\Controllers\ListSeoMetaController::class)
-    ->get('/seo_meta/{id:\d+}', 'seo_meta.get', Api\Controllers\ShowSeoMetaController::class)
-    ->patch('/seo_meta/{id:\d+}', 'seo_meta.update', Api\Controllers\UpdateSeoMetaController::class)
-    ->get('/seo_meta/{object_type}-{id}', 'seo_meta.get_by_type', Api\Controllers\ShowSeoMetaController::class),
+    (new Extend\Routes('api'))
+      ->post('/seo_social_media_image', 'seo.socialmedia.upload', Api\Controllers\UploadSocialMediaImageController::class)
+      ->delete('/seo_social_media_image', 'seo.socialmedia.delete', Api\Controllers\DeleteSocialMediaImageController::class)
+      ->get('/seo_meta', 'seo_meta.overview', Api\Controllers\ListSeoMetaController::class)
+      ->get('/seo_meta/{id:\d+}', 'seo_meta.get', Api\Controllers\ShowSeoMetaController::class)
+      ->patch('/seo_meta/{id:\d+}', 'seo_meta.update', Api\Controllers\UpdateSeoMetaController::class)
+      ->get('/seo_meta/{object_type}-{id}', 'seo_meta.get_by_type', Api\Controllers\ShowSeoMetaController::class),
 
-  new Extend\Locales(__DIR__ . '/locale'),
+    new Extend\Locales(__DIR__.'/locale'),
 
-  (new Extend\Formatter())
-    ->render(FormatLinks::class)
-    ->configure(ConfigureLinks::class),
+    (new Extend\Formatter())
+      ->render(FormatLinks::class)
+      ->configure(ConfigureLinks::class),
 
-  // Add Seo Meta model relation
-  (new Extend\Model(FlarumDiscussion::class))
-    ->relationship('seoMeta', function (AbstractModel $model) {
-      return $model->hasOne(SeoMeta::class, 'object_id', 'id')
-        ->where('object_type', 'discussions');
-    }),
+    // Add Seo Meta model relation
+    (new Extend\Model(FlarumDiscussion::class))
+      ->relationship('seoMeta', function (AbstractModel $model) {
+          return $model->hasOne(SeoMeta::class, 'object_id', 'id')
+            ->where('object_type', 'discussions');
+      }),
 
-  (new Extend\ApiSerializer(BasicDiscussionSerializer::class))
-    ->hasOne('seoMeta', SeoMetaSerializer::class),
+    (new Extend\ApiSerializer(BasicDiscussionSerializer::class))
+      ->hasOne('seoMeta', SeoMetaSerializer::class),
 
-  (new Extend\ApiController(ShowDiscussionController::class))
-    ->addInclude('seoMeta'),
+    (new Extend\ApiController(ShowDiscussionController::class))
+      ->addInclude('seoMeta'),
 
-  (new Extend\ApiController(ListDiscussionsController::class))
-    ->addOptionalInclude('seoMeta'),
+    (new Extend\ApiController(ListDiscussionsController::class))
+      ->addOptionalInclude('seoMeta'),
 
-  (new SEO())
-    ->addExtender('index', SeoPage\IndexPage::class)
-    ->addExtender('profile', SeoPage\ProfilePage::class)
-    ->addExtender('discussion', SeoPage\DiscussionPage::class),
+    (new SEO())
+      ->addExtender('index', SeoPage\IndexPage::class)
+      ->addExtender('profile', SeoPage\ProfilePage::class)
+      ->addExtender('discussion', SeoPage\DiscussionPage::class),
 
-  // Add support ticket language relation to the forum and add attributes to the forum
-  (new Extend\ApiSerializer(ForumSerializer::class))
-    ->attributes(AttachForumSerializerAttributes::class),
+    // Add support ticket language relation to the forum and add attributes to the forum
+    (new Extend\ApiSerializer(ForumSerializer::class))
+      ->attributes(AttachForumSerializerAttributes::class),
 
-  (new Extend\Event())
-    ->subscribe(Subscribers\DiscussionSubscriber::class)
-    ->subscribe(Subscribers\PostSubscriber::class),
+    (new Extend\Event())
+      ->subscribe(Subscribers\DiscussionSubscriber::class)
+      ->subscribe(Subscribers\PostSubscriber::class),
 
-  (new Extend\Conditional())
-    ->whenExtensionEnabled('flarum-tags', fn() => [
-      (new Extend\Event())
-        ->subscribe(Subscribers\TagSubscriber::class),
+    (new Extend\Conditional())
+      ->whenExtensionEnabled('flarum-tags', fn () => [
+          (new Extend\Event())
+            ->subscribe(Subscribers\TagSubscriber::class),
 
-      (new SEO())
-        ->addExtender('tag', SeoPage\TagPage::class),
-    ])
-    ->whenExtensionEnabled('fof-best-answer', fn() => [
-      (new SEO())
-        ->addExtender('discussion_best_answer', SeoPage\DiscussionBestAnswerPage::class),
-    ])
-    ->whenExtensionEnabled('fof-pages', fn() => [
-      (new SEO())
-        ->addExtender('page_extension', SeoPage\PageExtensionPage::class),
-    ]),
+          (new SEO())
+            ->addExtender('tag', SeoPage\TagPage::class),
+      ])
+      ->whenExtensionEnabled('fof-best-answer', fn () => [
+          (new SEO())
+            ->addExtender('discussion_best_answer', SeoPage\DiscussionBestAnswerPage::class),
+      ])
+      ->whenExtensionEnabled('fof-pages', fn () => [
+          (new SEO())
+            ->addExtender('page_extension', SeoPage\PageExtensionPage::class),
+      ]),
 ];
