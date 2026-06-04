@@ -383,6 +383,56 @@ class DiscussionPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * A per-discussion social image (set on its SeoMeta) is used for the
+     * og:image / twitter:image, instead of the forum-wide default.
+     *
+     * Regression lock for GH #30 (social image meta tag per post).
+     *
+     * @test
+     */
+    public function discussion_uses_its_own_social_image_for_crawlers(): void
+    {
+        $this->seedDiscussion(title: 'Has an image', slug: 'has-image', metaOverrides: [
+            'auto_update_data'        => 0,
+            'open_graph_image'        => 'https://example.com/custom-social.png',
+            'open_graph_image_source' => 'custom',
+        ]);
+
+        $html = $this->fetchForumHtml('/d/1-has-image');
+
+        $this->assertSame('https://example.com/custom-social.png', $this->findMetaByProperty($html, 'og:image'));
+        $this->assertSame('https://example.com/custom-social.png', $this->findMetaByName($html, 'twitter:image'));
+    }
+
+    /**
+     * A discussion with no custom SeoMeta still gets a description generated
+     * from its first post, not the forum-wide description.
+     *
+     * Regression lock for GH #114 (meta-description not generated).
+     *
+     * @test
+     */
+    public function discussion_description_is_generated_from_its_first_post(): void
+    {
+        $this->setting('forum_description', 'The forum-wide description.');
+
+        $now = Carbon::parse('2025-01-01 00:00:00');
+        $this->prepareDatabase([
+            'discussions' => [
+                ['id' => 1, 'title' => 'Generated', 'slug' => 'generated', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            'posts' => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>A unique opening sentence for this thread.</p></t>', 'created_at' => $now],
+            ],
+        ]);
+
+        $description = $this->findMetaByName($this->fetchForumHtml('/d/1-generated'), 'description');
+
+        $this->assertSame('A unique opening sentence for this thread.', $description);
+        $this->assertNotSame('The forum-wide description.', $description);
+    }
+
+    /**
      * @param array<string, mixed> $metaOverrides Column overrides for the auto-created seo_meta row.
      */
     private function seedDiscussion(

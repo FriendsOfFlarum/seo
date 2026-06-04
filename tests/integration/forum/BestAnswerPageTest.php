@@ -98,6 +98,9 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         $this->assertSame('article', $this->findMetaByProperty($html, 'og:type'));
 
+        // GH #92 — the QAPage must carry a top-level `url`.
+        $this->assertSame('http://localhost/d/1-how-do-i-bake-bread', $qaPage['url'] ?? null);
+
         $question = $qaPage['mainEntity'] ?? [];
         $this->assertSame('Question', $question['@type'] ?? null);
         $this->assertSame('How do I bake bread?', $question['name'] ?? null);
