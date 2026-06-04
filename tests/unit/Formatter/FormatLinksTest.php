@@ -38,12 +38,16 @@ class FormatLinksTest extends TestCase
 
         $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
 
-        $this->assertStringContainsString('rel="ugc noopener"', $result);
+        // Do-follow links (the forum's own domain) must pass ranking signals:
+        // no `nofollow`, and no `ugc` (which Google also treats as nofollow).
+        $this->assertStringContainsString('rel="noopener"', $result);
+        $this->assertStringNotContainsString('ugc', $result);
         $this->assertStringNotContainsString('nofollow', $result);
     }
 
     /**
-     * External links on a domain not in the do-follow list receive nofollow.
+     * External links on a domain not in the do-follow list receive `ugc` and
+     * `nofollow` (untrusted user-generated content).
      */
     public function test_external_link_gets_nofollow(): void
     {
@@ -53,11 +57,12 @@ class FormatLinksTest extends TestCase
 
         $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
 
-        $this->assertStringContainsString('nofollow', $result);
+        $this->assertStringContainsString('rel="ugc noopener nofollow"', $result);
     }
 
     /**
-     * Domains listed in the do-follow setting should not receive nofollow.
+     * Domains on the do-follow list must pass ranking signals — no `nofollow`
+     * and no `ugc` (GH #113).
      */
     public function test_dofollow_listed_external_link_does_not_get_nofollow(): void
     {
@@ -70,6 +75,8 @@ class FormatLinksTest extends TestCase
 
         $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
 
+        $this->assertStringContainsString('rel="noopener"', $result);
+        $this->assertStringNotContainsString('ugc', $result);
         $this->assertStringNotContainsString('nofollow', $result);
     }
 

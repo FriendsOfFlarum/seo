@@ -47,8 +47,11 @@ class FormatLinks
         return Utils::replaceAttributes($xml, 'URL', function (array $attributes): array {
             $domain = $this->urlToDomain($attributes['url']);
 
-            // Do we add a nofollow?
-            $attributes['rel'] = 'ugc noopener'.($this->addNofollow($domain) ? ' nofollow' : '');
+            // Do-follow domains (the forum itself + the configured allow-list)
+            // should pass ranking signals, so they get neither `nofollow` nor
+            // `ugc` (Google treats `ugc` as a nofollow hint too). Untrusted
+            // user-generated links get both.
+            $attributes['rel'] = $this->addNofollow($domain) ? 'ugc noopener nofollow' : 'noopener';
 
             // Open link in new tab
             if (!isset($attributes['target'])) {
