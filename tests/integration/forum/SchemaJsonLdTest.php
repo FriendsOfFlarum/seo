@@ -32,6 +32,20 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
     }
 
     /**
+     * The WebSite entry must carry the forum name so search engines display it
+     * (rather than the bare domain). Regression lock for GH #115.
+     *
+     * @test
+     */
+    public function website_entry_includes_the_forum_name(): void
+    {
+        $website = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebSite');
+
+        $this->assertNotNull($website);
+        $this->assertSame('Example Forum', $website['name'] ?? null);
+    }
+
+    /**
      * @test
      */
     public function every_forum_page_emits_the_website_search_action_entry(): void

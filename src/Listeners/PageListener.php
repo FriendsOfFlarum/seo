@@ -205,6 +205,7 @@ class PageListener
         return [
             '@context'        => 'http://schema.org',
             '@type'           => 'WebSite',
+            'name'            => $this->settings->get('forum_title'),
             'url'             => $this->applicationUrl.'/',
             'potentialAction' => [
                 '@type'       => 'SearchAction',
