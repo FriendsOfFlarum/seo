@@ -3,6 +3,10 @@ import Component from 'flarum/common/Component';
 import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import saveSettings from 'flarum/admin/utils/saveSettings';
+// @ts-ignore - resolved from flarum/tags at runtime; this component is only rendered when that extension is enabled.
+import TagSelectionModal from 'flarum/tags/components/TagSelectionModal';
+// @ts-ignore
+import tagsLabel from 'flarum/tags/helpers/tagsLabel';
 import type Mithril from 'mithril';
 
 /**
@@ -10,10 +14,9 @@ import type Mithril from 'mithril';
  * should be kept out of the search index — the `seo_noindex_tags` setting
  * consumed by the page drivers (GH #117).
  *
- * Reuses flarum/tags' own `TagSelectionModal` for the picker. flarum/tags is an
- * optional dependency, so its exports are resolved at runtime rather than via a
- * static import (which would break the admin bundle when tags is disabled).
- * This component is only rendered when flarum/tags is enabled.
+ * Reuses flarum/tags' own `TagSelectionModal` for the picker. The selection is
+ * persisted as a JSON array of tag IDs. Only rendered when flarum/tags is
+ * enabled (see SeoSettings#tagsEnabled).
  */
 export default class NoindexTagsSetting extends Component {
   loading: boolean = true;
@@ -51,7 +54,7 @@ export default class NoindexTagsSetting extends Component {
       <div className="SeoNoindexTags">
         <div className="SeoNoindexTags-selection">
           {selected.length > 0 ? (
-            this.renderLabels(selected)
+            tagsLabel(selected)
           ) : (
             <span className="helpText">{app.translator.trans('fof-seo.admin.settings.indexing.tags_none_selected')}</span>
           )}
@@ -63,21 +66,11 @@ export default class NoindexTagsSetting extends Component {
     );
   }
 
-  renderLabels(tags: any[]): Mithril.Children {
-    const tagsLabel = this.tagsCompat('tags/helpers/tagsLabel');
-
-    return tagsLabel ? tagsLabel(tags) : tags.map((tag) => tag.name()).join(', ');
-  }
-
   selectedTags(): any[] {
     return this.selectedIds.map((id) => this.tagsById[id]).filter(Boolean);
   }
 
   openModal() {
-    const TagSelectionModal = this.tagsCompat('tags/components/TagSelectionModal');
-
-    if (!TagSelectionModal) return;
-
     app.modal.show(TagSelectionModal, {
       selectedTags: this.selectedTags(),
       canSelect: () => true,
@@ -111,14 +104,5 @@ export default class NoindexTagsSetting extends Component {
     } catch {
       return [];
     }
-  }
-
-  /**
-   * Resolve an export from flarum/tags' compat registry at runtime, returning
-   * undefined if the extension isn't loaded.
-   */
-  tagsCompat(key: string): any {
-    // @ts-ignore - `flarum` is a global provided by the platform.
-    return typeof flarum !== 'undefined' ? flarum.extensions?.['flarum-tags']?.[key] : undefined;
   }
 }
