@@ -15,6 +15,7 @@ use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Tags\TagRepository;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,6 +28,7 @@ class TagPage implements PageDriverInterface
     public function __construct(
         protected readonly TranslatorInterface $translator,
         Dispatcher $events,
+        protected readonly TagIndexingPolicy $tagIndexingPolicy,
     ) {
         $this->events = $events;
     }
@@ -97,5 +99,11 @@ class TagPage implements PageDriverInterface
             'numberOfItems'   => count($itemListElement),
             'itemListElement' => $itemListElement,
         ]);
+
+        // Keep the listing page of an admin-excluded tag out of the index (GH #117).
+        // Overrides the robots directive set by generateTagsFromMetaData above.
+        if ($this->tagIndexingPolicy->shouldNoindex([$tag])) {
+            $properties->setMetaTag('robots', 'noindex, follow');
+        }
     }
 }

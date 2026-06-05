@@ -24,6 +24,7 @@ use Flarum\User\User;
 use Flarum\User\UserRepository;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -40,6 +41,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         protected readonly UrlGenerator $urlGenerator,
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
+        protected readonly TagIndexingPolicy $tagIndexingPolicy,
     ) {
         $this->events = $events;
     }
@@ -217,5 +219,11 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         }
 
         $properties->setSchemaJson('mainEntity', $mainEntity);
+
+        // Keep discussions in admin-excluded tags out of the index (GH #117).
+        // Overrides the robots directive set by generateTagsFromMetaData above.
+        if ($this->tagIndexingPolicy->shouldNoindex($discussionTags)) {
+            $properties->setMetaTag('robots', 'noindex, follow');
+        }
     }
 }
