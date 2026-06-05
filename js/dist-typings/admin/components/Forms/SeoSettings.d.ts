@@ -15,6 +15,7 @@ export default class SeoSettings extends Component {
     viewItems(): ItemList<Mithril.Children>;
     infoText(): Mithril.Children;
     changed(): boolean;
+    tagsEnabled(): boolean;
     onsubmit(e: SubmitEvent): void;
     saveSingleSetting(setting: string, value: unknown): void;
 }
