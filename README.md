@@ -68,6 +68,7 @@ Methods used:
   - [CollectionPage](https://schema.org/CollectionPage) — with an `ItemList` of the tag's discussions
   - [ProfilePage](https://schema.org/ProfilePage) — with a rich `Person` (identity + activity stats)
 - Uses the first image in the post as the social-media image when one is present, falling back to the configured default.
+- Optional **indexing controls** — e.g. de-index user profile pages (`noindex, follow`) to keep thin pages out of search results.
 
 > Your `robots.txt` and XML sitemap are provided by [fof/sitemap](https://github.com/FriendsOfFlarum/sitemap). See [Sitemap & robots.txt](https://github.com/FriendsOfFlarum/seo/blob/1.x/docs/sitemap-and-robots.md).
 

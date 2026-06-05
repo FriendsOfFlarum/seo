@@ -30,6 +30,7 @@ of months.
 | **Twitter card size** | Whether shared links render as a large image card (`summary_large_image`) or a small summary card (`summary`). |
 | **Social media image** | The image used when a page is shared on Facebook, Twitter/X, Reddit, etc. A square 1200×1200 image is recommended; otherwise a 1200×630 landscape image. Falls back to your logo, then favicon. |
 | **Discussion post crawl settings** | Whether search engines index only the first post of a discussion (default) or all posts. See below. |
+| **De-index profile pages** | When enabled, user profile pages emit `noindex, follow` so thin profile pages are kept out of search results. See below. |
 | **No-follow / do-follow links** | External links get `rel="nofollow"` by default; manage exceptions in the [do-follow list](do-follow-links.md). |
 | **Open external links in new tab** | External links open in a new tab. (Always on.) |
 
@@ -40,6 +41,19 @@ You can switch to indexing **all posts** in a discussion, which gives search
 engines more context (and, with [fof/best-answer](https://github.com/FriendsOfFlarum/best-answer)
 installed, lets them surface the answer) at some extra rendering cost. Choose
 based on how much load your server can handle.
+
+### Indexing controls
+
+**De-index profile pages** keeps user profiles (`/u/*`) out of search results.
+Profile pages are often thin, near-duplicate content, and dropping them can raise
+the overall proportion of "quality" pages a search engine indexes. When enabled,
+profiles emit `<meta name="robots" content="noindex, follow">` — the `follow`
+keeps crawlers traversing the links on the page, which is the recommended
+treatment for low-value pages you want out of the index.
+
+> `robots.txt`-level rules (e.g. `Disallow: /u/`) are handled by
+> [fof/sitemap](sitemap-and-robots.md); this setting controls the per-page
+> `robots` meta tag.
 
 ## What gets rendered
 

@@ -164,6 +164,49 @@ class ProfilePageTest extends ForumHtmlTestCase
     }
 
     /**
+     * Profiles inherit the site-wide `index, follow` robots default unless the
+     * admin opts to deindex them (GH #62).
+     *
+     * @test
+     */
+    public function profile_pages_are_indexable_by_default(): void
+    {
+        $html = $this->fetchForumHtml('/u/victorinox');
+
+        $this->assertSame('index, follow', $this->findMetaByName($html, 'robots'));
+    }
+
+    /**
+     * When `seo_noindex_profiles` is enabled, profile pages emit
+     * `noindex, follow` so thin profile pages drop out of the index while
+     * crawlers still follow the links on them (GH #62).
+     *
+     * @test
+     */
+    public function profile_pages_are_noindexed_when_the_setting_is_enabled(): void
+    {
+        $this->setting('seo_noindex_profiles', '1');
+
+        $html = $this->fetchForumHtml('/u/victorinox');
+
+        $this->assertSame('noindex, follow', $this->findMetaByName($html, 'robots'));
+    }
+
+    /**
+     * Explicitly disabling the setting keeps profiles indexable.
+     *
+     * @test
+     */
+    public function disabling_the_noindex_setting_keeps_profiles_indexable(): void
+    {
+        $this->setting('seo_noindex_profiles', '0');
+
+        $html = $this->fetchForumHtml('/u/victorinox');
+
+        $this->assertSame('index, follow', $this->findMetaByName($html, 'robots'));
+    }
+
+    /**
      * @test
      */
     public function missing_profile_does_not_crash_the_seo_extension(): void
