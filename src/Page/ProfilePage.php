@@ -11,6 +11,7 @@
 
 namespace FoF\Seo\Page;
 
+use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\UserRepository;
 use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
@@ -22,6 +23,7 @@ class ProfilePage implements PageDriverInterface
     public function __construct(
         protected readonly UserRepository $userRepository,
         protected readonly TranslatorInterface $translator,
+        protected readonly SettingsRepositoryInterface $settings,
     ) {
     }
 
@@ -131,5 +133,11 @@ class ProfilePage implements PageDriverInterface
 
             // Canonical url
             ->setCanonicalUrl('/u/'.$user->getAttribute('username'));
+
+        // Optionally keep thin profile pages out of the search index (GH #62).
+        // Links are still followed so crawlers can reach the content they link to.
+        if ($this->settings->get('seo_noindex_profiles')) {
+            $properties->setMetaTag('robots', 'noindex, follow');
+        }
     }
 }

@@ -5,6 +5,7 @@ import Button from 'flarum/common/components/Button';
 import LinkButton from 'flarum/common/components/LinkButton';
 import Link from 'flarum/common/components/Link';
 import Select from 'flarum/common/components/Select';
+import Switch from 'flarum/common/components/Switch';
 import UploadImageButton from 'flarum/admin/components/UploadImageButton';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 import Stream from 'flarum/common/utils/Stream';
@@ -152,6 +153,24 @@ export default class SeoSettings extends Component {
         </Button>
       </FieldSet>,
       50
+    );
+
+    items.add(
+      'noindexProfiles',
+      <FieldSet
+        label={app.translator.trans('fof-seo.admin.settings.indexing.heading')}
+        className={this.showField !== 'all' ? 'hidden' : ''}
+      >
+        <div className="helpText">{app.translator.trans('fof-seo.admin.settings.indexing.profiles_help')}</div>
+        <Switch
+          state={app.data.settings.seo_noindex_profiles === '1'}
+          loading={this.saving}
+          onchange={(value: boolean) => this.saveSingleSetting('seo_noindex_profiles', value ? '1' : '0')}
+        >
+          {app.translator.trans('fof-seo.admin.settings.indexing.profiles_label')}
+        </Switch>
+      </FieldSet>,
+      45
     );
 
     items.add(

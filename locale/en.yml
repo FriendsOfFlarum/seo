@@ -70,6 +70,11 @@ fof-seo:
         help: This is an important setting about crawling your discussion posts in search results.
         button: Setup post crawl settings
 
+      indexing:
+        heading: Indexing controls
+        profiles_label: De-index profile pages
+        profiles_help: When enabled, user profile pages emit a 'noindex' meta tag so they are kept out of search results. Links on the page are still followed, so crawlers can still reach the content they point to.
+
       nofollow:
         heading: No-follow links
         help: All links to external domains will receive a '<i>nofollow</i>' attribute by default. This will make sure people do not spam your forum with links to other domains in order to get more referrals.
