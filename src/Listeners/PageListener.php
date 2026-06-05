@@ -366,15 +366,16 @@ class PageListener
     {
         // Check post content is not empty
         if ($content !== null) {
-            // Read Post content and filter image url
-            $pattern = '/(?<=src=")((http.*?\.)(jpe?g|png|[tg]iff?|svg|webp)(\?[a-zA-Z0-9\_\-\=\&]*)?)(?=")/';
+            // Match http(s) and protocol-relative ("//host/img.png") image URLs.
+            $pattern = '/(?<=src=")((?:https?:)?\/\/.*?\.)(jpe?g|png|[tg]iff?|svg|webp)(\?[a-zA-Z0-9\_\-\=\&]*)?(?=")/';
 
             // Use image from post for social media og:image
-            if (preg_match_all($pattern, $content, $matches) && count($matches) > 0) {
+            if (preg_match_all($pattern, $content, $matches)) {
                 $contentImage = $matches[0][0];
 
-                if ($contentImage !== null) {
-                    return $contentImage;
+                if ($contentImage !== '') {
+                    // Normalise protocol-relative URLs so og:image is absolute.
+                    return str_starts_with($contentImage, '//') ? 'https:'.$contentImage : $contentImage;
                 }
             }
         }
