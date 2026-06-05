@@ -63,7 +63,7 @@ Methods used:
 - `inLanguage` on every page
 - Schema.org structured data:
   - [WebPage](https://schema.org/WebPage) + [WebSite](https://schema.org/WebSite) `SearchAction`
-  - [DiscussionForumPosting](https://schema.org/DiscussionForumPosting) — with `headline`, `text` and comment/like/view [interactionStatistic](https://schema.org/interactionStatistic)s
+  - [DiscussionForumPosting](https://schema.org/DiscussionForumPosting) — with `headline`, `text`, comment/like/view [interactionStatistic](https://schema.org/interactionStatistic)s, and (with post crawling on) per-reply `comment` nodes carrying like/upvote counts
   - [QAPage](https://schema.org/QAPage) for Q&A discussions (with `fof/best-answer`)
   - [CollectionPage](https://schema.org/CollectionPage) — with an `ItemList` of the tag's discussions
   - [ProfilePage](https://schema.org/ProfilePage) — with a rich `Person` (identity + activity stats)
@@ -79,6 +79,7 @@ Compatible — but not required — alongside:
 - [flarum/likes](https://github.com/flarum/likes) — like counts in the interaction statistics
 - [flarum/tags](https://github.com/flarum/tags)
 - [fof/best-answer](https://github.com/FriendsOfFlarum/best-answer) — Q&A (`QAPage`) structured data
+- [fof/gamification](https://github.com/FriendsOfFlarum/gamification) — per-reply upvote counts in the structured data
 - [fof/sitemap](https://github.com/FriendsOfFlarum/sitemap) — sitemap & robots.txt
 - [fof/pages](https://github.com/FriendsOfFlarum/pages)
 - [fof/discussion-views](https://github.com/FriendsOfFlarum/discussion-views) — view counts in the structured data

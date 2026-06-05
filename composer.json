@@ -36,6 +36,7 @@
     "flarum/likes": "^1.8",
     "fof/pages": "^1.0",
     "fof/best-answer": "^1.7",
+    "fof/gamification": "*",
     "flarum/phpstan": "^1.0",
     "flarum/testing": "^1.0.0",
     "fof/discussion-views": "*",

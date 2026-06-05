@@ -18,6 +18,7 @@ use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
+use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
@@ -73,6 +74,8 @@ class DiscussionPage implements PageDriverInterface
 
         $tagsEnabled = $this->extensionManager->isEnabled('flarum-tags');
         $enableBestAnswer = $this->extensionManager->isEnabled('fof-best-answer');
+        $enableLikes = $this->extensionManager->isEnabled('flarum-likes');
+        $enableGamification = $this->extensionManager->isEnabled('fof-gamification');
 
         /** @var Collection<Tag> $discussionTags */
         $discussionTags = $discussion->tags;
@@ -153,17 +156,86 @@ class DiscussionPage implements PageDriverInterface
                 $properties->setSchemaJson('text', $text);
             }
 
-            // Like count as a LikeAction interaction, when likes are available.
-            if ($this->extensionManager->isEnabled('flarum-likes')) {
+            // Like/upvote count as a LikeAction interaction. Combines flarum/likes
+            // and fof/gamification upvotes when either (or both) is enabled.
+            if ($enableLikes || $enableGamification) {
                 $interactionStatistic[] = [
                     '@type'                => 'InteractionCounter',
                     'interactionType'      => 'https://schema.org/LikeAction',
-                    'userInteractionCount' => $firstPost->likes()->count(),
+                    'userInteractionCount' => $this->approvalCount($firstPost, $enableLikes, $enableGamification),
                 ];
             }
         }
 
         $properties->setSchemaJson('interactionStatistic', $interactionStatistic);
+
+        // Expose replies as schema.org Comment nodes (each with its like/upvote
+        // count) when post crawling is enabled. This restores the per-reply
+        // approval signal search engines use to surface standout replies (GH #130),
+        // using the standards-compliant DiscussionForumPosting > comment structure.
+        if ($this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1) {
+            $countRelations = [];
+
+            if ($enableLikes) {
+                $countRelations[] = 'likes';
+            }
+
+            if ($enableGamification) {
+                $countRelations[] = 'upvotes';
+            }
+
+            /** @var Collection<Post> $replies */
+            $replies = $discussion->posts()
+                ->where('number', '>', 1)
+                ->where('type', 'comment')
+                ->where('is_private', false)
+                ->with('user')
+                ->withCount($countRelations)
+                ->orderBy('number')
+                ->get();
+
+            $comments = $replies->map(function (Post $post) use ($discussion, $enableLikes, $enableGamification) {
+                $comment = [
+                    '@type'       => 'Comment',
+                    'text'        => trim(strip_tags($post->content)),
+                    'dateCreated' => $post->created_at->toIso8601String(),
+                    'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
+                ];
+
+                // Author, when the post still has one (skip for deleted users).
+                if ($post->user !== null) {
+                    $comment['author'] = [
+                        '@type' => 'Person',
+                        'name'  => $post->user->getAttribute('display_name'),
+                        'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($post->user)]),
+                    ];
+                }
+
+                if ($enableLikes || $enableGamification) {
+                    $count = 0;
+
+                    if ($enableLikes) {
+                        $count += (int) $post->getAttribute('likes_count');
+                    }
+
+                    if ($enableGamification) {
+                        $count += (int) $post->getAttribute('upvotes_count');
+                    }
+
+                    $comment['interactionStatistic'] = [
+                        '@type'                => 'InteractionCounter',
+                        'interactionType'      => 'https://schema.org/LikeAction',
+                        'userInteractionCount' => $count,
+                    ];
+                }
+
+                return $comment;
+            })->toArray();
+
+            if (count($comments) > 0) {
+                $properties->setSchemaJson('comment', $comments);
+            }
+        }
 
         try {
             // Add author to the page meta data
@@ -197,5 +269,25 @@ class DiscussionPage implements PageDriverInterface
         if ($tagsEnabled && $this->tagIndexingPolicy->shouldNoindex($discussionTags)) {
             $properties->setMetaTag('robots', 'noindex, follow');
         }
+    }
+
+    /**
+     * Total community approval for a single post: flarum/likes likes plus
+     * fof/gamification upvotes (downvotes excluded), for whichever is enabled.
+     */
+    private function approvalCount(Post $post, bool $enableLikes, bool $enableGamification): int
+    {
+        $count = 0;
+
+        if ($enableLikes) {
+            $count += $post->likes()->count();
+        }
+
+        if ($enableGamification) {
+            // Positive gamification votes only (mirrors its `upvotes` relation).
+            $count += $post->votes()->where('value', '>', 0)->count();
+        }
+
+        return $count;
     }
 }
