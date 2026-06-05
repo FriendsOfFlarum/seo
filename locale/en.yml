@@ -30,7 +30,7 @@ fof-seo:
         mode_main_title: Only index the main post (default)
         mode_main_help: Search engine will only show the main post in the search results. It won't affect loading speed when you navigate to it via forum links.
         mode_all_title: Index all posts in a discussion (setting enabled)
-        mode_all_help: Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you have the extension '<a>best answer</a>' installed and enabled on your forum, it will mark the discussion as 'answered' on the search results and redirect the user to that specific post. <b>However, depending on your server settings, this can be heavier</b>. It may cost some performance, so it depends on how fast your server is to enable this feature.
+        mode_all_help: Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you have the extension '<a>best answer</a>' installed and enabled on your forum, it will mark the discussion as 'answered' on the search results and redirect the user to that specific post. Each reply is also exposed with its like and upvote counts, so search engines can identify the most helpful answers even without the best answer extension. <b>However, depending on your server settings, this can be heavier</b>. It may cost some performance, so it depends on how fast your server is to enable this feature.
         question: Do you want to enable this feature?
         switch_label: "Crawl all posts (it's slower on page refresh, but search results will be better)"
 
