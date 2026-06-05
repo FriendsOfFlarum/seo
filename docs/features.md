@@ -31,6 +31,7 @@ of months.
 | **Social media image** | The image used when a page is shared on Facebook, Twitter/X, Reddit, etc. A square 1200×1200 image is recommended; otherwise a 1200×630 landscape image. Falls back to your logo, then favicon. |
 | **Discussion post crawl settings** | Whether search engines index only the first post of a discussion (default) or all posts. See below. |
 | **De-index profile pages** | When enabled, user profile pages emit `noindex, follow` so thin profile pages are kept out of search results. See below. |
+| **De-index tags** | Discussions in chosen tags — and those tags' own listing pages — emit `noindex, follow`. Requires [flarum/tags](https://github.com/flarum/tags). See below. |
 | **No-follow / do-follow links** | External links get `rel="nofollow"` by default; manage exceptions in the [do-follow list](do-follow-links.md). |
 | **Open external links in new tab** | External links open in a new tab. (Always on.) |
 
@@ -54,6 +55,13 @@ treatment for low-value pages you want out of the index.
 > `robots.txt`-level rules (e.g. `Disallow: /u/`) are handled by
 > [fof/sitemap](sitemap-and-robots.md); this setting controls the per-page
 > `robots` meta tag.
+
+**De-index tags** (shown when [flarum/tags](https://github.com/flarum/tags) is
+enabled) lets you pick tags whose content should stay out of the index. Every
+discussion in a selected tag, and the tag's own listing page, emits
+`noindex, follow`. Selecting a parent tag also covers its child tags. Excluding
+low-value or noisy sections this way raises the overall proportion of quality
+pages a search engine indexes, which can help the rest of the forum rank.
 
 ## What gets rendered
 

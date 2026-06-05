@@ -15,6 +15,7 @@ import type Mithril from 'mithril';
 
 import CrawlPostModal from '../Modals/CrawlPostModal';
 import DoFollowListModal from '../Modals/DoFollowListModal';
+import NoindexTagsSetting from './NoindexTagsSetting';
 import countKeywords from '../../utils/countKeywords';
 
 const SETTING_FIELDS = ['forum_title', 'forum_description', 'forum_keywords', 'seo_twitter_card_size'] as const;
@@ -156,7 +157,7 @@ export default class SeoSettings extends Component {
     );
 
     items.add(
-      'noindexProfiles',
+      'indexingControls',
       <FieldSet
         label={app.translator.trans('fof-seo.admin.settings.indexing.heading')}
         className={this.showField !== 'all' ? 'hidden' : ''}
@@ -169,6 +170,13 @@ export default class SeoSettings extends Component {
         >
           {app.translator.trans('fof-seo.admin.settings.indexing.profiles_label')}
         </Switch>
+
+        {this.tagsEnabled() && (
+          <div className="SeoNoindexTags-section" style={{ marginTop: '15px' }}>
+            <div className="helpText">{app.translator.trans('fof-seo.admin.settings.indexing.tags_help')}</div>
+            <NoindexTagsSetting />
+          </div>
+        )}
       </FieldSet>,
       45
     );
@@ -230,6 +238,14 @@ export default class SeoSettings extends Component {
 
   changed(): boolean {
     return SETTING_FIELDS.some((key) => this.values[key]() !== app.data.settings[key]);
+  }
+
+  tagsEnabled(): boolean {
+    try {
+      return JSON.parse(app.data.settings.extensions_enabled || '[]').includes('flarum-tags');
+    } catch {
+      return false;
+    }
   }
 
   onsubmit(e: SubmitEvent) {

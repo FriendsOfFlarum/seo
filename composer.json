@@ -29,10 +29,10 @@
   "require": {
     "php": "^8.2",
     "flarum/core": "^1.8.0",
+    "flarum/tags": "^1.8",
     "ext-json": "*"
   },
   "require-dev": {
-    "flarum/tags": "^1.8",
     "flarum/likes": "^1.8",
     "fof/pages": "^1.0",
     "fof/best-answer": "^1.7",
