@@ -1,12 +1,14 @@
+import Form from 'flarum/common/components/Form';
 import app from 'flarum/common/app';
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Button from 'flarum/common/components/Button';
 import Switch from 'flarum/common/components/Switch';
 import Link from 'flarum/common/components/Link';
 import Stream from 'flarum/common/utils/Stream';
 import Alert from 'flarum/common/components/Alert';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
-import icon from 'flarum/common/helpers/icon';
+import Icon from 'flarum/common/components/Icon';
 import classList from 'flarum/common/utils/classList';
 import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
@@ -16,7 +18,7 @@ import countKeywords from '../../admin/utils/countKeywords';
 
 declare const require: (id: string) => any;
 
-export interface MetaSeoModalAttrs extends IInternalModalAttrs {
+export interface MetaSeoModalAttrs extends IFormModalAttrs {
   object?: {
     seoMeta?: () => SeoMeta;
   };
@@ -24,7 +26,7 @@ export interface MetaSeoModalAttrs extends IInternalModalAttrs {
   objectId?: string | number;
 }
 
-export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
+export default class MetaSeoModal extends FormModal<MetaSeoModalAttrs> {
   initialized = true;
   initialLoading = false;
   loading = false;
@@ -161,7 +163,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
     return (
       <div>
         <div className="Modal-body" onkeyup={() => this.updateHasChanges()}>
-          <div className="Form">
+          <Form>
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.auto_update.label')}</div>
@@ -181,13 +183,11 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.meta_title.label')}</div>
                 <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.meta_title.help')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
                   <input
@@ -196,22 +196,19 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     placeholder={extractText(app.translator.trans('fof-seo.forum.meta_seo.meta_title.placeholder'))}
                     disabled={this.autoUpdateData()}
                   />
-
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.meta_description.label')}</div>
                 <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.meta_description.help')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
                   <textarea
@@ -220,22 +217,19 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     placeholder={extractText(app.translator.trans('fof-seo.forum.meta_seo.keywords.placeholder'))}
                     disabled={this.autoUpdateData()}
                   />
-
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.keywords.label')}</div>
                 <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.keywords.help')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <textarea
                   className="FormControl"
@@ -248,13 +242,11 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.image.label')}</div>
                 <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.image.help')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
                   <input
@@ -263,34 +255,31 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     placeholder={extractText(app.translator.trans('fof-seo.forum.meta_seo.image.placeholder'))}
                     disabled={this.autoUpdateData() && this.openGraphImageSource() === 'auto'}
                   />
-
                   {this.autoUpdateData() && this.openGraphImageSource() !== 'custom' && (
                     <div className="ManagedText">
-                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
-
                   {!this.autoUpdateData() &&
                     this.returnFoFUploadButton((fileUrl: string) => {
                       this.openGraphImage(fileUrl);
                       this.openGraphImageSource('fof-upload');
                     })}
-
                   {this.openGraphImageSource() !== 'auto' && this.openGraphImageSource() !== 'custom' && (
                     <div className="SeoItemContent-helpertext">
-                      {app.translator.trans('fof-seo.forum.meta_seo.image.managed_by', { source: this.openGraphImageSource() })}
+                      {app.translator.trans('fof-seo.forum.meta_seo.image.managed_by', {
+                        source: this.openGraphImageSource(),
+                      })}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.robots.label')}</div>
                 <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.robots.help')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className={classList('SeoTags-dropdown-container', this.seoTagsOpened && 'SeoTags-dropdown-open')}>
                   <div className="SeoTags" onclick={() => (this.seoTagsOpened = !this.seoTagsOpened)}>
@@ -311,7 +300,6 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     {this.robotsNosnippet() &&
                       this.returnTag(false, '', app.translator.trans('fof-seo.forum.meta_seo.robots.tags.snippet_not_allowed'))}
                   </div>
-
                   <div className="SeoTags-dropdown">
                     <Switch
                       state={!this.robotsNoindex()}
@@ -362,13 +350,11 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.reading_time.label')}</div>
                 <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.reading_time.help')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
                   <input
@@ -378,21 +364,18 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                     type="number"
                     disabled={this.autoUpdateData()}
                   />
-
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.label')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
                   <Switch
@@ -402,22 +385,19 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                   >
                     {app.translator.trans('fof-seo.forum.meta_seo.twitter.auto_switch')}
                   </Switch>
-
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
             {this.enableCustomTwitter && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
                   <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.title')}</div>
                 </div>
-
                 <div className="SeoItemContent">
                   <div className="ManagedContainer">
                     <input className="FormControl" bidi={this.twitterTitle} placeholder={this.metaTitle() ?? ''} disabled={this.autoUpdateData()} />
@@ -425,13 +405,11 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             )}
-
             {this.enableCustomTwitter && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
                   <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.description')}</div>
                 </div>
-
                 <div className="SeoItemContent">
                   <div className="ManagedContainer">
                     <textarea
@@ -444,14 +422,12 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             )}
-
             {this.enableCustomTwitter && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
                   <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.twitter.image.label')}</div>
                   <div className="helpText">{app.translator.trans('fof-seo.forum.meta_seo.twitter.image.help')}</div>
                 </div>
-
                 <div className="SeoItemContent">
                   <div className="ManagedContainer">
                     <input
@@ -460,15 +436,16 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                       placeholder={this.openGraphImage() ?? extractText(app.translator.trans('fof-seo.forum.meta_seo.image.placeholder'))}
                       disabled={this.autoUpdateData() && this.twitterImage() === 'auto'}
                     />
-
                     {this.returnFoFUploadButton((fileUrl: string) => {
                       this.twitterImage(fileUrl);
                       this.twitterImageSource('fof-upload');
                     })}
-
                     {this.twitterImageSource() !== 'auto' && this.twitterImageSource() !== 'custom' && (
                       <div className="SeoItemContent-helpertext">
-                        {app.translator.trans('fof-seo.forum.meta_seo.image.managed_by', { source: this.twitterImageSource() })} -{' '}
+                        {app.translator.trans('fof-seo.forum.meta_seo.image.managed_by', {
+                          source: this.twitterImageSource(),
+                        })}
+                        -{' '}
                         <a
                           href="#"
                           onclick={(e: Event) => {
@@ -487,12 +464,10 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             )}
-
             <div className="SeoItemContainer">
               <div className="SeoItemInfo">
                 <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.og.label')}</div>
               </div>
-
               <div className="SeoItemContent">
                 <div className="ManagedContainer">
                   <Switch
@@ -502,22 +477,19 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                   >
                     {app.translator.trans('fof-seo.forum.meta_seo.og.auto_switch')}
                   </Switch>
-
                   {this.autoUpdateData() && (
                     <div className="ManagedText">
-                      {icon('fas fa-check')} {app.translator.trans('fof-seo.forum.meta_seo.managed')}
+                      <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.forum.meta_seo.managed')}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
             {this.enableCustomOpenGraph && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
                   <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.og.title')}</div>
                 </div>
-
                 <div className="SeoItemContent">
                   <div className="ManagedContainer">
                     <input className="FormControl" bidi={this.openGraphTitle} placeholder={this.metaTitle() ?? ''} disabled={this.autoUpdateData()} />
@@ -525,13 +497,11 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             )}
-
             {this.enableCustomOpenGraph && (
               <div className="SeoItemContainer">
                 <div className="SeoItemInfo">
                   <div className="SeoItemInfo-title">{app.translator.trans('fof-seo.forum.meta_seo.og.description.label')}</div>
                 </div>
-
                 <div className="SeoItemContent">
                   <div className="ManagedContainer">
                     <textarea
@@ -544,7 +514,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
                 </div>
               </div>
             )}
-          </div>
+          </Form>
         </div>
         <div style="padding: 25px 30px; text-align: center;">
           {this.closeInfoText && (

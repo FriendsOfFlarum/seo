@@ -12,7 +12,7 @@ export default function extendPermissionGrid() {
       {
         label: app.translator.trans('fof-seo.admin.permissions.category_label'),
         children: extensionId
-          ? app.extensionData.getExtensionPermissions(extensionId, SEO_PERMISSION_CATEGORY).toArray()
+          ? app.registry.getExtensionPermissions(extensionId, SEO_PERMISSION_CATEGORY).toArray()
           : app.extensionData.getAllExtensionPermissions(SEO_PERMISSION_CATEGORY).toArray(),
       },
       80

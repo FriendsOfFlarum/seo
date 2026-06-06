@@ -5,7 +5,7 @@ import extendDashboardPage from './extenders/extendDashboardPage';
 import extendPermissionGrid from './extenders/extendPermissionGrid';
 
 app.initializers.add('fof-seo', () => {
-  app.extensionData
+  app.registry
     .for('fof-seo')
     .registerPage(SettingsPage)
     .registerPermission(

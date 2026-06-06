@@ -1,5 +1,6 @@
 import app from 'flarum/admin/app';
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Button from 'flarum/common/components/Button';
 import Link from 'flarum/common/components/Link';
 import saveSettings from 'flarum/admin/utils/saveSettings';
@@ -7,7 +8,7 @@ import Stream from 'flarum/common/utils/Stream';
 import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
 
-export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
+export default class DoFollowListModal extends FormModal<IFormModalAttrs> {
   domainDoFollowList!: Stream<string[]>;
   startValue!: Stream<string[]>;
   newDomain!: Stream<string>;
@@ -15,7 +16,7 @@ export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
   hasChanges: boolean = false;
   loading: boolean = false;
 
-  oninit(vnode: Mithril.Vnode<IInternalModalAttrs, this>) {
+  oninit(vnode: Mithril.Vnode<IFormModalAttrs, this>) {
     super.oninit(vnode);
 
     this.baseUrl = this.getDomainFromBase();

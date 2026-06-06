@@ -3,7 +3,7 @@ import Page from 'flarum/common/components/Page';
 import Button from 'flarum/common/components/Button';
 import Link from 'flarum/common/components/Link';
 import saveSettings from 'flarum/admin/utils/saveSettings';
-import icon from 'flarum/common/helpers/icon';
+import Icon from 'flarum/common/components/Icon';
 import type Mithril from 'mithril';
 
 export default class RegisterToSearchEngines extends Page {
@@ -21,20 +21,18 @@ export default class RegisterToSearchEngines extends Page {
       <div>
         <h2>{app.translator.trans('fof-seo.admin.pages.search_engines.heading')}</h2>
         <p>{app.translator.trans('fof-seo.admin.pages.search_engines.intro')}</p>
-
         <p>
           {app.translator.trans('fof-seo.admin.pages.search_engines.sitemap_tip', {
             a: <Link href={app.route('extension', { id: 'fof-seo', page: 'sitemap' })} />,
           })}
         </p>
-
         <div>
           <h4>{app.translator.trans('fof-seo.admin.pages.search_engines.google_heading')}</h4>
           <p>
             {app.translator.trans('fof-seo.admin.pages.search_engines.google_visit', {
               link: (
                 <Link external={true} href="https://search.google.com/search-console" target="_blank">
-                  Google Search Console {icon('fas fa-external-link-alt')}
+                  Google Search Console <Icon name="fas fa-external-link-alt" />
                 </Link>
               ),
             })}
@@ -44,14 +42,13 @@ export default class RegisterToSearchEngines extends Page {
 
           <p>{app.translator.trans('fof-seo.admin.pages.search_engines.google_sitemap', { b: <b /> })}</p>
         </div>
-
         <div>
           <h4>{app.translator.trans('fof-seo.admin.pages.search_engines.bing_heading')}</h4>
           <p>
             {app.translator.trans('fof-seo.admin.pages.search_engines.bing_visit', {
               link: (
                 <Link external={true} href="https://www.bing.com/toolbox/webmaster" target="_blank">
-                  Bing Webmaster Tools {icon('fas fa-external-link-alt')}
+                  Bing Webmaster Tools <Icon name="fas fa-external-link-alt" />
                 </Link>
               ),
             })}
@@ -59,14 +56,13 @@ export default class RegisterToSearchEngines extends Page {
 
           <p>{app.translator.trans('fof-seo.admin.pages.search_engines.bing_sitemap')}</p>
         </div>
-
         <div>
           <h4>{app.translator.trans('fof-seo.admin.pages.search_engines.yandex_heading')}</h4>
           <p>
             {app.translator.trans('fof-seo.admin.pages.search_engines.yandex_visit', {
               link: (
                 <Link external={true} href="https://webmaster.yandex.com" target="_blank">
-                  Yandex.Webmaster {icon('fas fa-external-link-alt')}
+                  Yandex.Webmaster <Icon name="fas fa-external-link-alt" />
                 </Link>
               ),
             })}
@@ -74,12 +70,10 @@ export default class RegisterToSearchEngines extends Page {
 
           <p>{app.translator.trans('fof-seo.admin.pages.search_engines.yandex_sitemap')}</p>
         </div>
-
         <div>
           <h4>{app.translator.trans('fof-seo.admin.pages.search_engines.yahoo_heading')}</h4>
           <p>{app.translator.trans('fof-seo.admin.pages.search_engines.yahoo_body')}</p>
         </div>
-
         <div className="clear"></div>
         <Button
           className={'Button pull-right ' + (this.hasConfirmed ? 'hidden' : '')}

@@ -6,7 +6,7 @@ import LinkButton from 'flarum/common/components/LinkButton';
 import Link from 'flarum/common/components/Link';
 import Select from 'flarum/common/components/Select';
 import Switch from 'flarum/common/components/Switch';
-import UploadImageButton from 'flarum/admin/components/UploadImageButton';
+import UploadImageButton from 'flarum/common/components/UploadImageButton';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 import Stream from 'flarum/common/utils/Stream';
 import ItemList from 'flarum/common/utils/ItemList';
@@ -137,7 +137,12 @@ export default class SeoSettings extends Component {
           <br />
           {app.translator.trans('fof-seo.admin.settings.social_media_image.help_usage')}
         </div>
-        <UploadImageButton name="seo_social_media_image" />
+        <UploadImageButton
+          name="seo_social_media_image"
+          routePath="seo_social_media_image"
+          value={app.data.settings['seo_social_media_image_path']}
+          url={app.forum.attribute('seo_social_media_imageUrl')}
+        />
       </FieldSet>,
       60
     );

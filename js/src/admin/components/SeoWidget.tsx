@@ -1,7 +1,7 @@
 import app from 'flarum/admin/app';
 import DashboardWidget from 'flarum/admin/components/DashboardWidget';
 import LinkButton from 'flarum/common/components/LinkButton';
-import icon from 'flarum/common/helpers/icon';
+import Icon from 'flarum/common/components/Icon';
 import type Mithril from 'mithril';
 
 export default class SeoWidget extends DashboardWidget {
@@ -26,7 +26,7 @@ export default class SeoWidget extends DashboardWidget {
   content() {
     return (
       <div>
-        {icon('fas fa-check seo-check-icon')} {app.translator.trans('fof-seo.admin.dashboard.widget.review_prompt')}
+        <Icon name="fas fa-check seo-check-icon" /> {app.translator.trans('fof-seo.admin.dashboard.widget.review_prompt')}
         <LinkButton className="" icon="far fa-thumbs-up" href={app.route('extension', { id: 'fof-seo' })}>
           {app.translator.trans('fof-seo.admin.dashboard.widget.cta')}
         </LinkButton>
