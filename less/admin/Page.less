@@ -11,7 +11,7 @@
   }
 
   .seo-menu {
-    background: @control-bg;
+    background: var(--control-bg);
     margin-bottom: 15px;
 
 
@@ -20,7 +20,7 @@
       border-radius: 0;
 
       &.item-selected {
-        background: darken(@control-bg, 10%);
+        background: var(--control-bg-darken-10);
       }
     }
   }
@@ -127,4 +127,11 @@
       display: inline-block;
     }
   }
+}
+
+[data-theme^=light] {
+  --control-bg-darken-10: darken(@control-bg-light, 10%);
+}
+[data-theme^=dark] {
+  --control-bg-darken-10: darken(@control-bg-dark, 10%);
 }
