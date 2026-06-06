@@ -30,7 +30,7 @@ class DeleteSocialMediaImageController extends AbstractDeleteController
         $this->disk = $container->make('filesystem')->disk('flarum-assets');
     }
 
-    protected function delete(ServerRequestInterface $request): ResponseInterface
+    protected function delete(ServerRequestInterface $request): void
     {
         $request->getAttribute('actor')->assertAdmin();
 

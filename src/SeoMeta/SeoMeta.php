@@ -60,10 +60,7 @@ class SeoMeta extends AbstractModel
         'updated_at',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
-    protected $dates = ['created_at', 'updated_at'];
+    protected $casts = ['created_at' => 'datetime', 'updated_at' => 'datetime'];
 
     public static function build(string $objectType, int $objectId, bool $autoUpdate = true): self
     {
