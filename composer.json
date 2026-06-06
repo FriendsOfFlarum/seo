@@ -1,94 +1,94 @@
 {
-  "name": "fof/seo",
-  "description": "Adds SEO tags for your Flarum forum",
-  "type": "flarum-extension",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "FriendsOfFlarum",
-      "homepage": "https://github.com/FriendsOfFlarum"
-    }
-  ],
-  "homepage": "https://friendsofflarum.org",
-  "support": {
-    "issues": "https://github.com/FriendsOfFlarum/seo/issues",
-    "source": "https://github.com/FriendsOfFlarum/seo",
-    "forum": "https://discuss.flarum.org/d/39374",
-    "docs": "https://github.com/FriendsOfFlarum/seo/blob/1.x/docs/README.md"
-  },
-  "autoload": {
-    "psr-4": {
-      "FoF\\Seo\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "FoF\\Seo\\Tests\\": "tests/"
-    }
-  },
-  "require": {
-    "php": "^8.2",
-    "flarum/core": "^1.8.0",
-    "flarum/tags": "^1.8",
-    "ext-json": "*"
-  },
-  "require-dev": {
-    "flarum/likes": "^1.8",
-    "fof/pages": "^1.0",
-    "fof/best-answer": "^1.7",
-    "fof/gamification": "*",
-    "flarum/phpstan": "^1.0",
-    "flarum/testing": "^1.0.0",
-    "fof/discussion-views": "*",
-    "fof/discussion-language": "*"
-  },
-  "conflict": {
-    "zerosonesfun/elint": "*",
-    "franzl/flarum-open-links-in-new-tab": "*"
-  },
-  "replace": {
-    "v17development/flarum-seo": "*"
-  },
-  "suggest": {
-    "fof/sitemap": "Provides sitemap and robots.txt functionality.",
-    "fof/discussion-views": "Adds a view-count interaction statistic to discussion structured data.",
-    "fof/discussion-language": "Sets per-discussion inLanguage in structured data for multi-language forums."
-  },
-  "extra": {
-    "flarum-extension": {
-      "title": "FoF SEO",
-      "category": "feature",
-      "optional-dependencies": [
-        "flarum/tags",
-        "fof/pages",
-        "fof/sitemap",
-        "fof/best-answer",
-        "fof/discussion-views",
-        "fof/discussion-language"
-      ],
-      "icon": {
-        "name": "fas fa-check",
-        "backgroundColor": "#e74c3c",
-        "color": "#fff"
-      }
-    }
-  },
-  "scripts": {
-    "analyse:phpstan": "phpstan analyse",
-    "clear-cache:phpstan": "phpstan clear-result-cache",
-    "test": [
-      "@test:unit",
-      "@test:integration"
+    "name": "fof/seo",
+    "description": "Adds SEO tags for your Flarum forum",
+    "type": "flarum-extension",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "FriendsOfFlarum",
+            "homepage": "https://github.com/FriendsOfFlarum"
+        }
     ],
-    "test:unit": "phpunit -c tests/phpunit.unit.xml",
-    "test:integration": "phpunit -c tests/phpunit.integration.xml",
-    "test:setup": "@php tests/integration/setup.php"
-  },
-  "scripts-descriptions": {
-    "analyse:phpstan": "Run static analysis",
-    "test": "Runs all tests.",
-    "test:unit": "Runs all unit tests.",
-    "test:integration": "Runs all integration tests.",
-    "test:setup": "Sets up a database for use with integration tests. Execute this only once."
-  }
+    "homepage": "https://friendsofflarum.org",
+    "support": {
+        "issues": "https://github.com/FriendsOfFlarum/seo/issues",
+        "source": "https://github.com/FriendsOfFlarum/seo",
+        "forum": "https://discuss.flarum.org/d/39374",
+        "docs": "https://github.com/FriendsOfFlarum/seo/blob/1.x/docs/README.md"
+    },
+    "autoload": {
+        "psr-4": {
+            "FoF\\Seo\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "FoF\\Seo\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "flarum/core": "^2.0.0-beta",
+        "flarum/tags": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "flarum/likes": "*",
+        "fof/pages": "^1.0",
+        "fof/best-answer": "^1.7",
+        "fof/gamification": "*",
+        "flarum/phpstan": "^2.0.0-beta",
+        "flarum/testing": "^2.0.0-beta",
+        "fof/discussion-views": "*",
+        "fof/discussion-language": "*"
+    },
+    "conflict": {
+        "zerosonesfun/elint": "*",
+        "franzl/flarum-open-links-in-new-tab": "*"
+    },
+    "replace": {
+        "v17development/flarum-seo": "*"
+    },
+    "suggest": {
+        "fof/sitemap": "Provides sitemap and robots.txt functionality.",
+        "fof/discussion-views": "Adds a view-count interaction statistic to discussion structured data.",
+        "fof/discussion-language": "Sets per-discussion inLanguage in structured data for multi-language forums."
+    },
+    "extra": {
+        "flarum-extension": {
+            "title": "FoF SEO",
+            "category": "feature",
+            "optional-dependencies": [
+                "flarum/tags",
+                "fof/pages",
+                "fof/sitemap",
+                "fof/best-answer",
+                "fof/discussion-views",
+                "fof/discussion-language"
+            ],
+            "icon": {
+                "name": "fas fa-check",
+                "backgroundColor": "#e74c3c",
+                "color": "#fff"
+            }
+        }
+    },
+    "scripts": {
+        "analyse:phpstan": "phpstan analyse",
+        "clear-cache:phpstan": "phpstan clear-result-cache",
+        "test": [
+            "@test:unit",
+            "@test:integration"
+        ],
+        "test:unit": "phpunit -c tests/phpunit.unit.xml",
+        "test:integration": "phpunit -c tests/phpunit.integration.xml",
+        "test:setup": "@php tests/integration/setup.php"
+    },
+    "scripts-descriptions": {
+        "analyse:phpstan": "Run static analysis",
+        "test": "Runs all tests.",
+        "test:unit": "Runs all unit tests.",
+        "test:integration": "Runs all integration tests.",
+        "test:setup": "Sets up a database for use with integration tests. Execute this only once."
+    }
 }
