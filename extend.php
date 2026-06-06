@@ -25,6 +25,10 @@ use FoF\Seo\Formatter\FormatLinks;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\Page as SeoPage;
 use FoF\Seo\SeoMeta\SeoMeta;
+use Flarum\Api\Context;
+use Flarum\Api\Endpoint;
+use Flarum\Api\Resource;
+use Flarum\Api\Schema;
 
 return [
     (new Extend\Frontend('forum'))
@@ -57,12 +61,15 @@ return [
             ->where('object_type', 'discussions');
       }),
 
+    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
     (new Extend\ApiSerializer(BasicDiscussionSerializer::class))
       ->hasOne('seoMeta', SeoMetaSerializer::class),
 
+    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
     (new Extend\ApiController(ShowDiscussionController::class))
       ->addInclude('seoMeta'),
 
+    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
     (new Extend\ApiController(ListDiscussionsController::class))
       ->addOptionalInclude('seoMeta'),
 
@@ -71,7 +78,7 @@ return [
       ->addExtender('profile', SeoPage\ProfilePage::class)
       ->addExtender('discussion', SeoPage\DiscussionPage::class),
 
-    // Add support ticket language relation to the forum and add attributes to the forum
+    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
     (new Extend\ApiSerializer(ForumSerializer::class))
       ->attributes(AttachForumSerializerAttributes::class),
 
@@ -95,4 +102,5 @@ return [
           (new SEO())
             ->addExtender('page_extension', SeoPage\PageExtensionPage::class),
       ]),
+    new Extend\ApiResource(Api\Resource\SeoMetaResource::class),
 ];
