@@ -158,10 +158,7 @@ export default class SeoSettings extends Component {
 
     items.add(
       'indexingControls',
-      <FieldSet
-        label={app.translator.trans('fof-seo.admin.settings.indexing.heading')}
-        className={this.showField !== 'all' ? 'hidden' : ''}
-      >
+      <FieldSet label={app.translator.trans('fof-seo.admin.settings.indexing.heading')} className={this.showField !== 'all' ? 'hidden' : ''}>
         <div className="helpText">{app.translator.trans('fof-seo.admin.settings.indexing.profiles_help')}</div>
         <Switch
           state={app.data.settings.seo_noindex_profiles === '1'}
