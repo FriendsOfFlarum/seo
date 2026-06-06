@@ -9,11 +9,13 @@ parameters:
     - vendor/flarum/tags/extend.php
     - vendor/flarum/likes/extend.php
     - vendor/fof/best-answer/extend.php
+    - vendor/fof/gamification/extend.php
   excludePaths:
     analyse:
       - *.blade.php
       - vendor/flarum/tags/extend.php
       - vendor/flarum/likes/extend.php
       - vendor/fof/best-answer/extend.php
+      - vendor/fof/gamification/extend.php
   checkMissingIterableValueType: false
   databaseMigrationsPath: ['migrations']

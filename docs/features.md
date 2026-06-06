@@ -43,6 +43,13 @@ engines more context (and, with [fof/best-answer](https://github.com/FriendsOfFl
 installed, lets them surface the answer) at some extra rendering cost. Choose
 based on how much load your server can handle.
 
+With this enabled, each reply is also emitted as a schema.org `comment`
+(`Comment`) node on the `DiscussionForumPosting`, carrying its own approval
+count as a `LikeAction`. The count combines [flarum/likes](https://github.com/flarum/likes)
+likes and [fof/gamification](https://github.com/FriendsOfFlarum/gamification)
+upvotes when either (or both) is enabled — so search engines can tell the
+standout replies apart even when you don't use the best-answer extension.
+
 ### Indexing controls
 
 **De-index profile pages** keeps user profiles (`/u/*`) out of search results.
@@ -77,7 +84,7 @@ The JSON-LD is tailored per page type and carries `inLanguage` on every page:
 | Page | schema.org type | Notable properties |
 | --- | --- | --- |
 | Index | `WebPage` + `WebSite` | `publisher`, `SearchAction` (sitelinks search box) |
-| Discussion | `DiscussionForumPosting` | `author`, `headline`, `text`, `datePublished`/`dateModified`, breadcrumb, and `interactionStatistic` for comments, likes and views |
+| Discussion | `DiscussionForumPosting` | `author`, `headline`, `text`, `datePublished`/`dateModified`, breadcrumb, `interactionStatistic` for comments, likes and views, and (with post crawling on) a `comment[]` of replies each with their like/upvote count |
 | Q&A discussion | `QAPage` | `Question` with `acceptedAnswer`/`suggestedAnswer`, `upvoteCount`, `answerCount` (needs fof/best-answer) |
 | Tag | `CollectionPage` | `name`, and a `mainEntity` `ItemList` of the tag's recent discussions |
 | User profile | `ProfilePage` | `Person` with `alternateName`, `identifier`, `agentInteractionStatistic` (posts/discussions) |
@@ -94,7 +101,8 @@ configuration needed:
 - **[fof/discussion-views](https://github.com/FriendsOfFlarum/discussion-views)** — adds a view-count `ViewAction` to discussion structured data.
 - **[fof/discussion-language](https://github.com/FriendsOfFlarum/discussion-language)** — sets `inLanguage` per discussion from its assigned language (multi-language forums).
 - **[fof/best-answer](https://github.com/FriendsOfFlarum/best-answer)** — renders Q&A discussions as a `QAPage`.
-- **[flarum/likes](https://github.com/flarum/likes)** — adds like counts to the interaction statistics.
+- **[flarum/likes](https://github.com/flarum/likes)** — adds like counts to the interaction statistics, including per-reply `LikeAction` counts when post crawling is on.
+- **[fof/gamification](https://github.com/FriendsOfFlarum/gamification)** — adds per-reply upvote counts to the `comment[]` `LikeAction`s (combined with likes when both are enabled).
 
 Developers can add their own data via the `PreparingPageMeta` event — see
 [Extending & intercepting the metadata](developers/extending-metadata.md).
