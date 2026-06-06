@@ -17,5 +17,4 @@ parameters:
       - vendor/flarum/likes/extend.php
       - vendor/fof/best-answer/extend.php
       - vendor/fof/gamification/extend.php
-  checkMissingIterableValueType: false
   databaseMigrationsPath: ['migrations']
