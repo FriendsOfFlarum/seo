@@ -14,6 +14,12 @@ namespace FoF\Seo\Tests\integration\api;
 use Carbon\Carbon;
 use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use Flarum\User\User;
+use Flarum\Group\Group;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\Post;
 
 /**
  * Tests the `canConfigureSeo` attribute that this extension appends to
@@ -37,7 +43,7 @@ class ForumAttributesTest extends TestCase
         $this->extension('fof-seo');
 
         $this->prepareDatabase([
-            'users' => [
+            User::class => [
                 $this->normalUser(),
                 [
                     'id'                 => self::TRUSTED_USER_ID,
@@ -47,7 +53,7 @@ class ForumAttributesTest extends TestCase
                     'is_email_confirmed' => 1,
                 ],
             ],
-            'groups' => [
+            Group::class => [
                 [
                     'id'            => self::SEO_MANAGER_GROUP_ID,
                     'name_singular' => 'SEO Manager',
@@ -67,7 +73,7 @@ class ForumAttributesTest extends TestCase
     /**
      * @return array<string, array{0: ?int, 1: bool}>
      */
-    public function canConfigureSeoProvider(): array
+    public static function canConfigureSeoProvider(): array
     {
         return [
             'admin sees canConfigureSeo true'                => [1, true],
@@ -77,11 +83,8 @@ class ForumAttributesTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider canConfigureSeoProvider
-     */
+    #[Test]
+    #[DataProvider('canConfigureSeoProvider')]
     public function forum_endpoint_exposes_can_configure_seo_per_actor(?int $authenticatedAs, bool $expected): void
     {
         $options = [];
@@ -103,7 +106,7 @@ class ForumAttributesTest extends TestCase
     /**
      * @return array<string, array{0: ?int, 1: bool}>
      */
-    public function socialMediaImageVisibilityProvider(): array
+    public static function socialMediaImageVisibilityProvider(): array
     {
         return [
             'admin sees social media image url'                => [1, true],
@@ -118,10 +121,10 @@ class ForumAttributesTest extends TestCase
      * attribute (the name core's UploadImageButton expects) and is gated behind
      * the same `fof-seo.canConfigure` permission as the rest of the SEO admin.
      *
-     * @test
      *
-     * @dataProvider socialMediaImageVisibilityProvider
      */
+    #[Test]
+    #[DataProvider('socialMediaImageVisibilityProvider')]
     public function forum_endpoint_exposes_social_media_image_url_only_to_seo_managers(?int $authenticatedAs, bool $shouldSee): void
     {
         $this->setting('seo_social_media_image_url', self::SOCIAL_IMAGE_URL);
@@ -150,8 +153,8 @@ class ForumAttributesTest extends TestCase
      * When no social media image has been uploaded, SEO managers still receive
      * the attribute (as null) so the admin upload button renders its empty state.
      *
-     * @test
      */
+    #[Test]
     public function social_media_image_url_is_null_when_unset(): void
     {
         $response = $this->send($this->request('GET', '/api/', ['authenticatedAs' => 1]));
@@ -162,21 +165,19 @@ class ForumAttributesTest extends TestCase
         $this->assertNull($attributes['seo_social_media_imageUrl']);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_api_response_can_include_seo_meta_relationship(): void
     {
         $now = Carbon::now();
 
         $this->prepareDatabase([
-            'users' => [
+            User::class => [
                 $this->normalUser(),
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Hello', 'slug' => 'hello', 'user_id' => 1, 'created_at' => $now, 'comment_count' => 1],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => $now],
             ],
             'seo_meta' => [

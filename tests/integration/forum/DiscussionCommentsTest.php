@@ -13,6 +13,10 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
+use Flarum\User\User;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\Post;
 
 /**
  * When "crawl all posts" is enabled, a discussion's replies are exposed as
@@ -36,14 +40,14 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
     private function seedThread(): void
     {
         $this->prepareDatabase([
-            'users' => [
+            User::class => [
                 ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
                 ['id' => 3, 'username' => 'bob', 'email' => 'b@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 3, 'created_at' => Carbon::now()],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
                 ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 3, 'type' => 'comment', 'content' => '<t><p>The popular reply.</p></t>', 'created_at' => Carbon::now()],
                 ['id' => 3, 'discussion_id' => 1, 'number' => 3, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>Another reply.</p></t>', 'created_at' => Carbon::now()],
@@ -51,9 +55,7 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function replies_are_not_exposed_when_post_crawler_is_disabled(): void
     {
         $this->setting('seo_post_crawler', '0');
@@ -65,9 +67,7 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
         $this->assertArrayNotHasKey('comment', $entry);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function replies_are_emitted_as_comment_nodes_when_crawler_enabled(): void
     {
         $this->extension('flarum-likes');
@@ -87,9 +87,7 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
         $this->assertStringContainsString('/d/1-bake-bread', $first['url'] ?? '');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function comment_like_count_is_exposed_from_flarum_likes(): void
     {
         $this->extension('flarum-likes');
@@ -113,8 +111,8 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
      * With only fof/gamification enabled, the count comes from its votes and
      * only positive votes count (downvotes are excluded).
      *
-     * @test
      */
+    #[Test]
     public function comment_upvote_count_is_exposed_from_gamification_votes(): void
     {
         $this->extension('fof-gamification');
@@ -138,8 +136,8 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
      * When BOTH flarum/likes and fof/gamification are enabled, the counts are
      * combined (they are independent signals stored in separate tables).
      *
-     * @test
      */
+    #[Test]
     public function comment_count_combines_likes_and_gamification_when_both_enabled(): void
     {
         $this->extension('flarum-likes');

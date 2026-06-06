@@ -14,6 +14,7 @@ namespace FoF\Seo\Tests\integration\forum;
 use Flarum\Extend;
 use FoF\Seo\Event\PreparingPageMeta;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Third-party extensions must be able to intercept and modify the prepared
@@ -43,9 +44,7 @@ class PageMetaExtensibilityTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function listener_can_override_language_on_the_schema(): void
     {
         $webPage = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebPage');
@@ -53,9 +52,7 @@ class PageMetaExtensibilityTest extends ForumHtmlTestCase
         $this->assertSame('de', $webPage['inLanguage'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function listener_can_add_arbitrary_schema_properties(): void
     {
         $webPage = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebPage');
@@ -63,9 +60,7 @@ class PageMetaExtensibilityTest extends ForumHtmlTestCase
         $this->assertTrue($webPage['isAccessibleForFree'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function listener_can_override_content(): void
     {
         $html = $this->fetchForumHtml('/');

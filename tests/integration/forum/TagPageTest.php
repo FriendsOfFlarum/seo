@@ -13,6 +13,9 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
+use Flarum\Tags\Tag;
+use Flarum\Discussion\Discussion;
 
 /**
  * What crawlers see on a tag page (`GET /t/{slug}`).
@@ -29,7 +32,7 @@ class TagPageTest extends ForumHtmlTestCase
         $this->extension('fof-seo');
 
         $this->prepareDatabase([
-            'tags' => [
+            Tag::class => [
                 [
                     'id'            => 1,
                     'name'          => 'Announcements',
@@ -54,9 +57,7 @@ class TagPageTest extends ForumHtmlTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function tag_page_emits_og_title_from_tag_name(): void
     {
         $html = $this->fetchForumHtml('/t/announcements');
@@ -65,15 +66,13 @@ class TagPageTest extends ForumHtmlTestCase
         $this->assertSame('Announcements', $this->findMetaByName($html, 'twitter:title'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function tag_collection_page_lists_its_discussions_as_an_item_list(): void
     {
         $now = Carbon::now();
 
         $this->prepareDatabase([
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'First topic', 'slug' => 'first-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
                 ['id' => 2, 'title' => 'Second topic', 'slug' => 'second-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now->copy()->addMinute()],
             ],
@@ -106,9 +105,7 @@ class TagPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function tag_page_emits_description_from_tag_description(): void
     {
         $html = $this->fetchForumHtml('/t/announcements');
@@ -118,9 +115,7 @@ class TagPageTest extends ForumHtmlTestCase
         $this->assertSame('Important site announcements.', $this->findMetaByName($html, 'twitter:description'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function tag_page_canonical_url_points_to_tag_slug(): void
     {
         $html = $this->fetchForumHtml('/t/announcements');
@@ -131,9 +126,7 @@ class TagPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function tag_page_emits_schema_org_collection_page(): void
     {
         $html = $this->fetchForumHtml('/t/announcements');
@@ -149,8 +142,8 @@ class TagPageTest extends ForumHtmlTestCase
      * Tag names or descriptions containing UGC-style HTML must be escaped
      * in meta tags; the raw `<script>` must never reach the rendered page.
      *
-     * @test
      */
+    #[Test]
     public function tag_with_html_in_name_is_escaped_in_meta_tags(): void
     {
         $html = $this->fetchForumHtml('/t/hostile');
@@ -167,9 +160,7 @@ class TagPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function tag_with_html_in_description_is_escaped_in_meta_tags(): void
     {
         $html = $this->fetchForumHtml('/t/hostile');
@@ -185,9 +176,7 @@ class TagPageTest extends ForumHtmlTestCase
         $this->assertSame('Description with "quotes" & <em>markup</em>.', $decoded);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function missing_tag_does_not_crash_the_seo_extension(): void
     {
         $response = $this->send($this->request('GET', '/t/nonexistent'));

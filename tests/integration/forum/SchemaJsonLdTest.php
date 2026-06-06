@@ -13,6 +13,10 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\Post;
+use Flarum\Tags\Tag;
 
 /**
  * Structural tests for the JSON-LD schema.org block that the extension
@@ -35,8 +39,8 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
      * The WebSite entry must carry the forum name so search engines display it
      * (rather than the bare domain). Regression lock for GH #115.
      *
-     * @test
      */
+    #[Test]
     public function website_entry_includes_the_forum_name(): void
     {
         $website = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebSite');
@@ -45,9 +49,7 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertSame('Example Forum', $website['name'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function every_forum_page_emits_the_website_search_action_entry(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -68,9 +70,7 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function web_page_declares_the_document_language(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -81,9 +81,7 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertSame('en', $webPage['inLanguage'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function publisher_block_is_populated_from_forum_settings(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -99,21 +97,19 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertSame('http://localhost', $publisher['url'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_page_json_ld_breadcrumb_is_emitted_when_tags_present(): void
     {
         $this->extension('flarum-tags');
 
         $this->prepareDatabase([
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Help with bread', 'slug' => 'help-bread', 'user_id' => 1, 'created_at' => Carbon::now(), 'comment_count' => 1],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => Carbon::now()],
             ],
-            'tags' => [
+            Tag::class => [
                 ['id' => 1, 'name' => 'Baking', 'slug' => 'baking', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false],
             ],
             'discussion_tag' => [
@@ -135,9 +131,7 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertSame('http://localhost/t/baking', $first['item']['url'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function json_ld_block_is_always_valid_json(): void
     {
         // Sample across several pages to confirm JSON validity universally.

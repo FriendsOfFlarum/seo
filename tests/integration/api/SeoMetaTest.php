@@ -16,6 +16,12 @@ use Flarum\Extend;
 use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
 use FoF\Seo\SeoMeta\SeoMeta;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use Flarum\User\User;
+use Flarum\Group\Group;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\Post;
 
 class SeoMetaTest extends TestCase
 {
@@ -52,7 +58,7 @@ class SeoMetaTest extends TestCase
         );
 
         $this->prepareDatabase([
-            'users' => [
+            User::class => [
                 $this->normalUser(),
                 [
                     'id'                 => self::TRUSTED_USER_ID,
@@ -62,7 +68,7 @@ class SeoMetaTest extends TestCase
                     'is_email_confirmed' => 1,
                 ],
             ],
-            'groups' => [
+            Group::class => [
                 [
                     'id'            => self::SEO_MANAGER_GROUP_ID,
                     'name_singular' => 'SEO Manager',
@@ -76,10 +82,10 @@ class SeoMetaTest extends TestCase
             'group_permission' => [
                 ['group_id' => self::SEO_MANAGER_GROUP_ID, 'permission' => 'fof-seo.canConfigure'],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Test discussion', 'user_id' => 1, 'created_at' => Carbon::now(), 'comment_count' => 1],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<p>body</p>', 'created_at' => Carbon::now()],
             ],
             'seo_meta' => [
@@ -110,7 +116,7 @@ class SeoMetaTest extends TestCase
      *
      * @return array<string, array{0: ?int, 1: bool}>
      */
-    public function seoMetaAccessProvider(): array
+    public static function seoMetaAccessProvider(): array
     {
         return [
             // [authenticatedAs, expectedAllowed]
@@ -121,11 +127,8 @@ class SeoMetaTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider seoMetaAccessProvider
-     */
+    #[Test]
+    #[DataProvider('seoMetaAccessProvider')]
     public function listing_seo_meta_respects_permission(?int $authenticatedAs, bool $allowed): void
     {
         $response = $this->send($this->buildRequest('GET', '/api/seo_meta', $authenticatedAs));
@@ -142,11 +145,8 @@ class SeoMetaTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider seoMetaAccessProvider
-     */
+    #[Test]
+    #[DataProvider('seoMetaAccessProvider')]
     public function showing_seo_meta_by_id_respects_permission(?int $authenticatedAs, bool $allowed): void
     {
         $response = $this->send($this->buildRequest('GET', '/api/seo_meta/1', $authenticatedAs));
@@ -163,11 +163,8 @@ class SeoMetaTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider seoMetaAccessProvider
-     */
+    #[Test]
+    #[DataProvider('seoMetaAccessProvider')]
     public function showing_seo_meta_by_object_type_respects_permission(?int $authenticatedAs, bool $allowed): void
     {
         $response = $this->send($this->buildRequest('GET', '/api/seo_meta/discussions-1', $authenticatedAs));
@@ -182,11 +179,8 @@ class SeoMetaTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider seoMetaAccessProvider
-     */
+    #[Test]
+    #[DataProvider('seoMetaAccessProvider')]
     public function showing_seo_meta_by_object_type_auto_creates_row_when_permitted(?int $authenticatedAs, bool $allowed): void
     {
         $response = $this->send($this->buildRequest('GET', '/api/seo_meta/discussions-999', $authenticatedAs));
@@ -209,11 +203,8 @@ class SeoMetaTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider seoMetaAccessProvider
-     */
+    #[Test]
+    #[DataProvider('seoMetaAccessProvider')]
     public function updating_seo_meta_respects_permission(?int $authenticatedAs, bool $allowed): void
     {
         $response = $this->send(
