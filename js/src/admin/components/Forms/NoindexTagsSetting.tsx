@@ -4,9 +4,9 @@ import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 // @ts-ignore - resolved from flarum/tags at runtime; this component is only rendered when that extension is enabled.
-import TagSelectionModal from 'flarum/tags/components/TagSelectionModal';
+import TagSelectionModal from 'ext:flarum/tags/components/TagSelectionModal';
 // @ts-ignore
-import tagsLabel from 'flarum/tags/helpers/tagsLabel';
+import tagsLabel from 'ext:flarum/tags/helpers/tagsLabel';
 import type Mithril from 'mithril';
 
 /**

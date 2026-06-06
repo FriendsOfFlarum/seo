@@ -565,7 +565,7 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
 
     const {
       components: { Uploader, FileManagerModal },
-    } = require('@fof-upload');
+    } = require('@fof-upload'); // @TODO: import from `ext:vendor/extension/module-path` format.
 
     const uploader = new Uploader();
 
