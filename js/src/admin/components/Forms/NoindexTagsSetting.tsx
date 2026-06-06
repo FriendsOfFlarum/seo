@@ -4,7 +4,6 @@ import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import saveSettings from 'flarum/admin/utils/saveSettings';
 // @ts-ignore - resolved from flarum/tags at runtime; this component is only rendered when that extension is enabled.
-import TagSelectionModal from 'ext:flarum/tags/components/TagSelectionModal';
 // @ts-ignore
 import tagsLabel from 'ext:flarum/tags/helpers/tagsLabel';
 import type Mithril from 'mithril';
@@ -71,7 +70,7 @@ export default class NoindexTagsSetting extends Component {
   }
 
   openModal() {
-    app.modal.show(TagSelectionModal, {
+    app.modal.show(() => import('ext:flarum/tags/components/TagSelectionModal'), {
       selectedTags: this.selectedTags(),
       canSelect: () => true,
       onsubmit: (selected: any[]) => this.save(selected),
