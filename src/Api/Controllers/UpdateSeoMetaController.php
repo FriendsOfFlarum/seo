@@ -11,44 +11,28 @@
 
 namespace FoF\Seo\Api\Controllers;
 
-use Flarum\Api\Controller\AbstractShowController;
-use Flarum\Http\RequestUtil;
-use FoF\Seo\Api\Serializers\SeoMetaSerializer;
-use FoF\Seo\SeoMeta\Commands\UpdateSeoMeta;
-use Illuminate\Contracts\Bus\Dispatcher;
-use Illuminate\Support\Arr;
+use Flarum\Api\JsonApi;
+use FoF\Seo\Api\Resource\SeoMetaResource;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Tobscure\JsonApi\Document;
+use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
+ * Serves `PATCH /api/seo_meta/{id}` by delegating to the SeoMetaResource Update
+ * endpoint, which dispatches the UpdateSeoMeta command.
  */
-class UpdateSeoMetaController extends AbstractShowController
+class UpdateSeoMetaController implements RequestHandlerInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public $serializer = SeoMetaSerializer::class;
-
     public function __construct(
-        private readonly Dispatcher $events,
+        protected readonly JsonApi $api,
     ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function data(ServerRequestInterface $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $actor = RequestUtil::getActor($request);
-        $id = Arr::get($request->getQueryParams(), 'id');
-        $data = Arr::get($request->getParsedBody(), 'data', false);
-
-        return $this->events->dispatch(
-            new UpdateSeoMeta($actor, (int) $id, $data)
-        );
+        return $this->api
+            ->forResource(SeoMetaResource::class)
+            ->forEndpoint('update')
+            ->handle($request);
     }
 }

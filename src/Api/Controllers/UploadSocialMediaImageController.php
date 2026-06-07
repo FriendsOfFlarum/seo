@@ -12,29 +12,34 @@
 namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\ShowForumController;
+use Flarum\Api\JsonApi;
+use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
-use Tobscure\JsonApi\Document;
 
 class UploadSocialMediaImageController extends ShowForumController
 {
     protected Cloud $disk;
 
     public function __construct(
+        JsonApi $api,
         protected readonly SettingsRepositoryInterface $settings,
         Container $container,
     ) {
+        parent::__construct($api);
+
         $this->disk = $container->make('filesystem')->disk('flarum-assets');
     }
 
-    public function data(ServerRequestInterface $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $request->getAttribute('actor')->assertAdmin();
+        RequestUtil::getActor($request)->assertAdmin();
 
         /** @var UploadedFileInterface $file */
         $file = Arr::get($request->getUploadedFiles(), 'seo_social_media_image');
@@ -50,6 +55,8 @@ class UploadSocialMediaImageController extends ShowForumController
         $this->settings->set('seo_social_media_image_path', $uploadName);
         $this->settings->set('seo_social_media_image_url', $this->disk->url($uploadName));
 
-        return parent::data($request, $document);
+        // Respond with the forum resource (as the GET /api request would), so the
+        // frontend receives the refreshed `seo_social_media_imageUrl` attribute.
+        return parent::handle($request->withMethod('GET'));
     }
 }

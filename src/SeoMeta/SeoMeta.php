@@ -60,7 +60,16 @@ class SeoMeta extends AbstractModel
         'updated_at',
     ];
 
-    protected $casts = ['created_at' => 'datetime', 'updated_at' => 'datetime'];
+    protected $casts = [
+        'auto_update_data'    => 'bool',
+        'robots_noindex'      => 'bool',
+        'robots_nofollow'     => 'bool',
+        'robots_noarchive'    => 'bool',
+        'robots_noimageindex' => 'bool',
+        'robots_nosnippet'    => 'bool',
+        'created_at'          => 'datetime',
+        'updated_at'          => 'datetime',
+    ];
 
     public static function build(string $objectType, int $objectId, bool $autoUpdate = true): self
     {

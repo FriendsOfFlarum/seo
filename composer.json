@@ -14,7 +14,7 @@
         "issues": "https://github.com/FriendsOfFlarum/seo/issues",
         "source": "https://github.com/FriendsOfFlarum/seo",
         "forum": "https://discuss.flarum.org/d/39374",
-        "docs": "https://github.com/FriendsOfFlarum/seo/blob/1.x/docs/README.md"
+        "docs": "https://github.com/FriendsOfFlarum/seo/blob/2.x/docs/README.md"
     },
     "autoload": {
         "psr-4": {
@@ -27,20 +27,19 @@
         }
     },
     "require": {
-        "php": "^8.2",
-        "flarum/core": "^2.0.0-beta",
+        "flarum/core": "^2.0.0",
         "flarum/tags": "*",
         "ext-json": "*"
     },
     "require-dev": {
         "flarum/likes": "*",
-        "fof/pages": "^1.0",
-        "fof/best-answer": "^1.7",
+        "fof/pages": "^2.0.0",
+        "fof/best-answer": "^2.0.0",
         "fof/gamification": "*",
-        "flarum/phpstan": "^2.0.0-beta",
-        "flarum/testing": "^2.0.0-beta",
+        "flarum/phpstan": "^2.0.0",
+        "flarum/testing": "^2.0.0",
         "fof/discussion-views": "*",
-        "fof/discussion-language": "*"
+        "fof/upload": "*"
     },
     "conflict": {
         "zerosonesfun/elint": "*",
@@ -59,7 +58,6 @@
             "title": "FoF SEO",
             "category": "feature",
             "optional-dependencies": [
-                "flarum/tags",
                 "fof/pages",
                 "fof/sitemap",
                 "fof/best-answer",
@@ -90,5 +88,7 @@
         "test:unit": "Runs all unit tests.",
         "test:integration": "Runs all integration tests.",
         "test:setup": "Sets up a database for use with integration tests. Execute this only once."
-    }
+    },
+    "minimum-stability": "beta",
+    "prefer-stable": true
 }

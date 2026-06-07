@@ -6,8 +6,6 @@ import MetaSeoModal from '../common/Components/MetaSeoModal';
 
 export { default as extend } from './extend';
 
-export * from '../common/extend';
-
 app.initializers.add('fof-seo', () => {
   extend(DiscussionControls, 'moderationControls', function (items, discussion) {
     if (!app.forum.attribute('canConfigureSeo')) return;

@@ -11,24 +11,19 @@
 
 namespace FoF\Seo;
 
-use Flarum\Api\Controller\ListDiscussionsController;
-use Flarum\Api\Controller\ShowDiscussionController;
-use Flarum\Api\Serializer\BasicDiscussionSerializer;
-use Flarum\Api\Serializer\ForumSerializer;
+use Flarum\Api\Endpoint;
+use Flarum\Api\Resource\DiscussionResource;
+use Flarum\Api\Resource\ForumResource;
+use Flarum\Api\Schema;
 use Flarum\Database\AbstractModel;
 use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Extend;
-use FoF\Seo\Api\AttachForumSerializerAttributes;
-use FoF\Seo\Api\Serializers\SeoMetaSerializer;
+use FoF\Seo\Api\AttachForumResourceFields;
 use FoF\Seo\Extend\SEO;
 use FoF\Seo\Formatter\FormatLinks;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\Page as SeoPage;
 use FoF\Seo\SeoMeta\SeoMeta;
-use Flarum\Api\Context;
-use Flarum\Api\Endpoint;
-use Flarum\Api\Resource;
-use Flarum\Api\Schema;
 
 return [
     (new Extend\Frontend('forum'))
@@ -44,9 +39,10 @@ return [
       ->post('/seo_social_media_image', 'seo.socialmedia.upload', Api\Controllers\UploadSocialMediaImageController::class)
       ->delete('/seo_social_media_image', 'seo.socialmedia.delete', Api\Controllers\DeleteSocialMediaImageController::class)
       ->get('/seo_meta', 'seo_meta.overview', Api\Controllers\ListSeoMetaController::class)
-      ->get('/seo_meta/{id:\d+}', 'seo_meta.get', Api\Controllers\ShowSeoMetaController::class)
-      ->patch('/seo_meta/{id:\d+}', 'seo_meta.update', Api\Controllers\UpdateSeoMetaController::class)
-      ->get('/seo_meta/{object_type}-{id}', 'seo_meta.get_by_type', Api\Controllers\ShowSeoMetaController::class),
+      // `{id}` accepts either a numeric primary key or an `{object_type}-{id}`
+      // pair (e.g. `discussions-123`); the resource's find() handles both.
+      ->get('/seo_meta/{id}', 'seo_meta.get', Api\Controllers\ShowSeoMetaController::class)
+      ->patch('/seo_meta/{id}', 'seo_meta.update', Api\Controllers\UpdateSeoMetaController::class),
 
     new Extend\Locales(__DIR__.'/locale'),
 
@@ -54,33 +50,33 @@ return [
       ->render(FormatLinks::class)
       ->configure(ConfigureLinks::class),
 
-    // Add Seo Meta model relation
+    // Add SEO Meta model relation
     (new Extend\Model(FlarumDiscussion::class))
       ->relationship('seoMeta', function (AbstractModel $model) {
           return $model->hasOne(SeoMeta::class, 'object_id', 'id')
             ->where('object_type', 'discussions');
       }),
 
-    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
-    (new Extend\ApiSerializer(BasicDiscussionSerializer::class))
-      ->hasOne('seoMeta', SeoMetaSerializer::class),
+    new Extend\ApiResource(Api\Resource\SeoMetaResource::class),
 
-    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
-    (new Extend\ApiController(ShowDiscussionController::class))
-      ->addInclude('seoMeta'),
+    // Expose the discussion's SEO meta as an includable relationship, included
+    // by default on the single-discussion endpoint (as in 1.x).
+    (new Extend\ApiResource(DiscussionResource::class))
+      ->fields(fn () => [
+          Schema\Relationship\ToOne::make('seoMeta')
+            ->type('seoMeta')
+            ->includable(),
+      ])
+      ->endpoint(Endpoint\Show::class, fn (Endpoint\Show $endpoint) => $endpoint->addDefaultInclude(['seoMeta'])),
 
-    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
-    (new Extend\ApiController(ListDiscussionsController::class))
-      ->addOptionalInclude('seoMeta'),
+    // Expose the forum-level SEO admin attributes.
+    (new Extend\ApiResource(ForumResource::class))
+      ->fields(AttachForumResourceFields::class),
 
     (new SEO())
       ->addExtender('index', SeoPage\IndexPage::class)
       ->addExtender('profile', SeoPage\ProfilePage::class)
       ->addExtender('discussion', SeoPage\DiscussionPage::class),
-
-    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
-    (new Extend\ApiSerializer(ForumSerializer::class))
-      ->attributes(AttachForumSerializerAttributes::class),
 
     (new Extend\Event())
       ->subscribe(Subscribers\DiscussionSubscriber::class)
@@ -102,5 +98,4 @@ return [
           (new SEO())
             ->addExtender('page_extension', SeoPage\PageExtensionPage::class),
       ]),
-    new Extend\ApiResource(Api\Resource\SeoMetaResource::class),
 ];

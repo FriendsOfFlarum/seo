@@ -16,8 +16,6 @@ import type Mithril from 'mithril';
 import SeoMeta, { SeoImageSource } from '../Models/SeoMeta';
 import countKeywords from '../../admin/utils/countKeywords';
 
-declare const require: (id: string) => any;
-
 export interface MetaSeoModalAttrs extends IFormModalAttrs {
   object?: {
     seoMeta?: () => SeoMeta;
@@ -38,6 +36,9 @@ export default class MetaSeoModal extends FormModal<MetaSeoModalAttrs> {
   enableCustomOpenGraph = false;
   wasManaged = true;
   seoTagsOpened = false;
+
+  // Lazily-loaded fof/upload modules, when that (optional) extension is enabled.
+  fofUpload: { Uploader: any; FileManagerModal: any } | null = null;
 
   meta?: SeoMeta;
 
@@ -64,6 +65,8 @@ export default class MetaSeoModal extends FormModal<MetaSeoModalAttrs> {
 
   oninit(vnode: Mithril.Vnode<MetaSeoModalAttrs, this>) {
     super.oninit(vnode);
+
+    this.loadFoFUpload();
 
     if (this.attrs.object) {
       if (!this.attrs.object.seoMeta) {
@@ -528,14 +531,36 @@ export default class MetaSeoModal extends FormModal<MetaSeoModalAttrs> {
     );
   }
 
+  /**
+   * Lazily load the fof/upload modules when that (optional) extension is enabled.
+   *
+   * Flarum 2.0 exposes other extensions' modules through the `ext:` scheme, which
+   * resolves to async (externalised) imports — so we load them up front and redraw
+   * once they're available rather than `require()`-ing synchronously during render.
+   */
+  loadFoFUpload() {
+    if (this.fofUpload || !('fof-upload' in (flarum as any).extensions)) {
+      return;
+    }
+
+    Promise.all([import('ext:fof/upload/forum/handler/Uploader'), import('ext:fof/upload/forum/components/FileManagerModal')]).then(
+      ([uploader, fileManagerModal]) => {
+        this.fofUpload = {
+          Uploader: uploader.default,
+          FileManagerModal: fileManagerModal.default,
+        };
+
+        m.redraw();
+      }
+    );
+  }
+
   returnFoFUploadButton(onSelect: (fileUrl: string) => void): Mithril.Children {
-    if (!('fof-upload' in (flarum as any).extensions) || !app.forum.attribute('fof-upload.canUpload')) {
+    if (!this.fofUpload || !app.forum.attribute('fof-upload.canUpload')) {
       return null;
     }
 
-    const {
-      components: { Uploader, FileManagerModal },
-    } = require('@fof-upload'); // @TODO: import from `ext:vendor/extension/module-path` format.
+    const { Uploader, FileManagerModal } = this.fofUpload;
 
     const uploader = new Uploader();
 

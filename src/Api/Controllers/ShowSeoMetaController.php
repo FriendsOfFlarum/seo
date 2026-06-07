@@ -11,70 +11,29 @@
 
 namespace FoF\Seo\Api\Controllers;
 
-use Flarum\Api\Controller\AbstractShowController;
-use Flarum\Foundation\DispatchEventsTrait;
-use Flarum\Foundation\ValidationException;
-use Flarum\Http\RequestUtil;
-use FoF\Seo\Api\Serializers\SeoMetaSerializer;
-use FoF\Seo\SeoMeta\SeoMeta;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Arr;
+use Flarum\Api\JsonApi;
+use FoF\Seo\Api\Resource\SeoMetaResource;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Tobscure\JsonApi\Document;
+use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
+ * Serves `GET /api/seo_meta/{id}` by delegating to the SeoMetaResource Show
+ * endpoint. The `{id}` segment may be a numeric primary key or an
+ * `{object_type}-{id}` pair; the resource's find() override handles both.
  */
-class ShowSeoMetaController extends AbstractShowController
+class ShowSeoMetaController implements RequestHandlerInterface
 {
-    use DispatchEventsTrait;
-
-    /**
-     * {@inheritdoc}
-     */
-    public $serializer = SeoMetaSerializer::class;
-
-    public function __construct(Dispatcher $events)
-    {
-        $this->events = $events;
+    public function __construct(
+        protected readonly JsonApi $api,
+    ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function data(ServerRequestInterface $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $actor = RequestUtil::getActor($request);
-
-        // Make sure the person can access the agents
-        $actor->assertCan('fof-seo.canConfigure');
-
-        $id = Arr::get($request->getQueryParams(), 'id');
-        $objectType = Arr::get($request->getQueryParams(), 'object_type');
-
-        // Make sure the ID part is numeric
-        if ($id === null || !is_numeric($id)) {
-            throw new ValidationException([
-                'message' => 'Invalid slug/id combination',
-            ]);
-        }
-
-        // Find SeoMeta by it's unique ID
-        if ($objectType === null) {
-            return SeoMeta::findOrFail($id);
-        }
-
-        // Find SeoMeta by a object-type combination
-        $seoMeta = SeoMeta::findByObjectTypeOrCreate(
-            $objectType,
-            $id
-        );
-
-        $this->dispatchEventsFor($seoMeta, $actor);
-
-        return $seoMeta;
+        return $this->api
+            ->forResource(SeoMetaResource::class)
+            ->forEndpoint('show')
+            ->handle($request);
     }
 }
