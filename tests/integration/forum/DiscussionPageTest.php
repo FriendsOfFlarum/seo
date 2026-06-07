@@ -81,7 +81,10 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * Optional fof/discussion-language integration: a discussion's own language
      * drives the schema.org inLanguage, overriding the viewer's locale.
+     *
+     * @TODO Disabled until fof/discussion-language is released for Flarum 2.0.
      */
+    /*
     #[Test]
     public function discussion_in_language_reflects_its_assigned_language_when_enabled(): void
     {
@@ -106,6 +109,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         // Default locale in tests is 'en'; the discussion is tagged 'de'.
         $this->assertSame('de', $fp['inLanguage'] ?? null);
     }
+    */
 
     /**
      * Optional fof/discussion-views integration: expose the view count as a

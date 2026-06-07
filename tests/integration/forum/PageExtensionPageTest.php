@@ -43,7 +43,7 @@ class PageExtensionPageTest extends ForumHtmlTestCase
                     'is_html'       => 1,
                     'is_hidden'     => 0,
                     'is_restricted' => 0,
-                    'time'          => Carbon::now(),
+                    'created_at'    => Carbon::now(),
                 ],
             ],
         ]);

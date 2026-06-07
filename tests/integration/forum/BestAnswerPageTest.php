@@ -295,7 +295,10 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
     /**
      * Optional fof/discussion-language integration on the Q&A path.
+     *
+     * @TODO Disabled until fof/discussion-language is released for Flarum 2.0.
      */
+    /*
     #[Test]
     public function qa_page_in_language_reflects_discussion_language_when_enabled(): void
     {
@@ -313,6 +316,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         $this->assertSame('fr', $qaPage['inLanguage'] ?? null);
     }
+    */
 
     #[Test]
     public function qa_question_upvote_count_reflects_first_post_likes(): void
