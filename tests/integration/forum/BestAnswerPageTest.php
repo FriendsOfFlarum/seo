@@ -13,6 +13,7 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use Flarum\Discussion\Discussion;
+use Flarum\Foundation\Application;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
@@ -250,6 +251,14 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     #[Test]
     public function qa_page_does_not_issue_per_answer_queries(): void
     {
+        // The per-answer N+1 this guards against lives in core's UserResource
+        // `groups` field getter (re-queries per serialized user, ignoring the
+        // eager-loaded relation) and is fixed in flarum/core 2.0.0-rc.3.
+        // See flarum/framework#4695. Skip on cores that still have the bug.
+        if (version_compare(Application::VERSION, '2.0.0-rc.3', '<')) {
+            $this->markTestSkipped('Core N+1 in UserResource groups getter, fixed in flarum/core 2.0.0-rc.3 — flarum/framework#4695');
+        }
+
         $this->extension('flarum-likes');
         $this->setting('seo_post_crawler', '1');
 
@@ -290,7 +299,9 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         }
 
         $this->assertNotNull($view, 'Expected a ViewAction InteractionCounter on the QAPage.');
-        $this->assertSame(999, $view['userInteractionCount'] ?? null);
+        // 999 seeded + 1: rendering the page is itself a view, which
+        // fof/discussion-views counts before we read the (current) count.
+        $this->assertSame(1000, $view['userInteractionCount'] ?? null);
     }
 
     /**

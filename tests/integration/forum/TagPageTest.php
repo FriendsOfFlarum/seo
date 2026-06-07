@@ -172,7 +172,9 @@ class TagPageTest extends ForumHtmlTestCase
         );
 
         $decoded = $this->findMetaByName($html, 'description');
-        $this->assertSame('Description with "quotes" & <em>markup</em>.', $decoded);
+        // The description is reduced to plain text — inline markup is stripped, the
+        // remaining content is attribute-escaped (the regex above asserts safety).
+        $this->assertSame('Description with "quotes" & markup.', $decoded);
     }
 
     #[Test]

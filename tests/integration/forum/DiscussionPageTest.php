@@ -141,7 +141,9 @@ class DiscussionPageTest extends ForumHtmlTestCase
         }
 
         $this->assertNotNull($view, 'Expected a ViewAction InteractionCounter when fof/discussion-views is enabled.');
-        $this->assertSame(1234, $view['userInteractionCount'] ?? null);
+        // 1234 seeded + 1: rendering the page is itself a view, which
+        // fof/discussion-views counts before we read the (current) count.
+        $this->assertSame(1235, $view['userInteractionCount'] ?? null);
     }
 
     #[Test]
