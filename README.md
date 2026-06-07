@@ -58,7 +58,7 @@ SEO tags are generated for the following pages:
 Methods used:
 
 - HTML meta tags (`application-name`, `description`, `keywords`, `language`)
-- Open Graph tags (`og:type`, `og:title`, `og:description`, `og:url`, `article:published_time`, `article:updated_time`)
+- Open Graph tags (`og:type`, `og:title`, `og:description`, `og:url`, `og:image`, `og:locale`, and `article:published_time` / `article:modified_time` on article pages)
 - Twitter cards
 - `inLanguage` on every page
 - Schema.org structured data:
