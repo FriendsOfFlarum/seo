@@ -41,7 +41,12 @@ class PageExtensionPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        $pageId = Arr::get($request->getQueryParams(), 'id');
+        // The route param is the `{id}-{slug}` form (e.g. "1-about-us"). Extract
+        // the numeric id so the lookup works on all databases (SQLite won't coerce
+        // "1-about-us" to 1), falling back to the raw value so bare-slug URLs still
+        // resolve via the repository's slug match.
+        $rawId = Arr::get($request->getQueryParams(), 'id');
+        $pageId = (int) $rawId ?: $rawId;
 
         try {
             $page = $this->pageRepository->findOrFail($pageId);
@@ -58,9 +63,9 @@ class PageExtensionPage implements PageDriverInterface
             function (SeoMeta $meta) use ($page, $properties, $content) {
                 $meta->title = $page->title;
 
-                $meta->created_at = $page->time ?? Carbon::now();
+                $meta->created_at = $page->created_at ?? Carbon::now();
 
-                $meta->updated_at = $page->edit_time;
+                $meta->updated_at = $page->updated_at;
 
                 // Get Tag description
                 $meta->description = $properties->generateDescriptionFromContent(e(strip_tags($content)));

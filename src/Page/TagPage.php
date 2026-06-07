@@ -25,6 +25,8 @@ class TagPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
+    protected Dispatcher $events;
+
     public function __construct(
         protected readonly TranslatorInterface $translator,
         Dispatcher $events,

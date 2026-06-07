@@ -13,6 +13,7 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Tests the optional fof/pages integration.
@@ -42,15 +43,13 @@ class PageExtensionPageTest extends ForumHtmlTestCase
                     'is_html'       => 1,
                     'is_hidden'     => 0,
                     'is_restricted' => 0,
-                    'time'          => Carbon::now(),
+                    'created_at'    => Carbon::now(),
                 ],
             ],
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function page_emits_webpage_schema_and_title(): void
     {
         $html = $this->fetchForumHtml('/p/1-about-us');
@@ -62,9 +61,7 @@ class PageExtensionPageTest extends ForumHtmlTestCase
         $this->assertStringContainsString('About our lovely community.', $webPage['text'] ?? '');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function page_description_is_derived_from_content(): void
     {
         $html = $this->fetchForumHtml('/p/1-about-us');
@@ -72,9 +69,7 @@ class PageExtensionPageTest extends ForumHtmlTestCase
         $this->assertSame('About our lovely community.', $this->findMetaByName($html, 'description'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function page_sets_canonical_url(): void
     {
         $html = $this->fetchForumHtml('/p/1-about-us');

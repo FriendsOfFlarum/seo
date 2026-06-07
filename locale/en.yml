@@ -30,7 +30,7 @@ fof-seo:
         mode_main_title: Only index the main post (default)
         mode_main_help: Search engine will only show the main post in the search results. It won't affect loading speed when you navigate to it via forum links.
         mode_all_title: Index all posts in a discussion (setting enabled)
-        mode_all_help: Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you have the extension '<a>best answer</a>' installed and enabled on your forum, it will mark the discussion as 'answered' on the search results and redirect the user to that specific post. Each reply is also exposed with its like and upvote counts, so search engines can identify the most helpful answers even without the best answer extension. <b>However, depending on your server settings, this can be heavier</b>. It may cost some performance, so it depends on how fast your server is to enable this feature.
+        mode_all_help: Search engines will understand the discussions and are even able to show some relevant posts underneath the search results. When you have the extension ''<a>best answer</a>'' installed and enabled on your forum, it will mark the discussion as 'answered' on the search results and redirect the user to that specific post. Each reply is also exposed with its like and upvote counts, so search engines can identify the most helpful answers even without the best answer extension. <b>However, depending on your server settings, this can be heavier</b>. It may cost some performance, so it depends on how fast your server is to enable this feature.
         question: Do you want to enable this feature?
         switch_label: "Crawl all posts (it's slower on page refresh, but search results will be better)"
 
@@ -80,7 +80,7 @@ fof-seo:
 
       nofollow:
         heading: No-follow links
-        help: All links to external domains will receive a '<i>nofollow</i>' attribute by default. This will make sure people do not spam your forum with links to other domains in order to get more referrals.
+        help: All links to external domains will receive a ''<i>nofollow</i>'' attribute by default. This will make sure people do not spam your forum with links to other domains in order to get more referrals.
         help_dofollow: With this setting you are able to add domains to the 'do-follow' list. For example, you can add <i>flarum.org</i> to make sure links to this website do not receive a 'nofollow' attribute.
         button: Open domain do-follow list
 
@@ -135,7 +135,7 @@ fof-seo:
         how_heading: How to add SSL to your website?
         how_body: For people who are using a webhosting, the most common way is to enter the webhosting panel, go to the hosting-settings of your website and click SSL. You can follow the steps to add SSL to your website. The most webhosting companies nowadays are supporting the popular certificate issuer {link}.
         added_heading: Okay, I added SSL!
-        added_body: Great! Now, change your <b>config.php</b> and change the <b>'url'</b> to <b>https</b>!
+        added_body: Great! Now, change your <b>config.php</b> and change the <b>''url''</b> to <b>https</b>!
         no_ssl_heading: What if I do not want to add SSL?
         no_ssl_body: In that case, you can uninstall this extension as search engines <b>won't index your forum</b> or rank them far below other sites due safety reasons.
 

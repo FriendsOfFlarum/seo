@@ -12,9 +12,13 @@
 namespace FoF\Seo\Tests\integration\formatter;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
 use Flarum\Extend;
+use Flarum\Post\Post;
 use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
+use Flarum\User\User;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Integration test for the FormatLinks render callback.
@@ -41,19 +45,17 @@ class FormatLinksTest extends TestCase
         );
 
         $this->prepareDatabase([
-            'users'       => [$this->normalUser()],
-            'discussions' => [
+            User::class       => [$this->normalUser()],
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Test', 'slug' => 'test', 'user_id' => 2, 'created_at' => Carbon::now(), 'comment_count' => 1],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>Opener.</p></t>', 'created_at' => Carbon::now()],
             ],
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function external_link_in_post_content_gets_nofollow_and_new_tab(): void
     {
         $html = $this->postReplyAndGetContentHtml('Please visit https://external.test/path for more info.');
@@ -63,9 +65,7 @@ class FormatLinksTest extends TestCase
         $this->assertStringContainsString('rel="ugc noopener', $html);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function link_to_the_forum_itself_does_not_get_nofollow(): void
     {
         // The internal/forum URL under test is http://localhost, which the
@@ -77,9 +77,7 @@ class FormatLinksTest extends TestCase
         $this->assertStringContainsString('target="_self"', $html);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function domain_on_dofollow_list_does_not_get_nofollow(): void
     {
         $this->setting('seo_dofollow_domains', json_encode(['trusted.test']));
@@ -97,9 +95,8 @@ class FormatLinksTest extends TestCase
      * Rendering hostile text via TextFormatter must not allow a URL to break
      * out of its rel/target attribute and inject markup. Even a URL with a
      * closing quote + script tag must come through safely encoded.
-     *
-     * @test
      */
+    #[Test]
     public function hostile_url_does_not_break_out_of_attributes(): void
     {
         $html = $this->postReplyAndGetContentHtml('Evil: https://evil.test/"><script>alert(1)</script>');

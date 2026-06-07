@@ -11,70 +11,29 @@
 
 namespace FoF\Seo\Api\Controllers;
 
-use Flarum\Api\Controller\AbstractListController;
-use Flarum\Http\RequestUtil;
-use Flarum\Http\UrlGenerator;
-use FoF\Seo\Api\Serializers\SeoMetaSerializer;
-use FoF\Seo\SeoMeta\SeoMeta;
+use Flarum\Api\JsonApi;
+use FoF\Seo\Api\Resource\SeoMetaResource;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Tobscure\JsonApi\Document;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class ListSeoMetaController extends AbstractListController
+/**
+ * Serves `GET /api/seo_meta` by delegating to the SeoMetaResource Index
+ * endpoint. The dedicated route lets us keep the established `/seo_meta` URL
+ * while the resource (type `seoMeta`) owns all of the logic.
+ */
+class ListSeoMetaController implements RequestHandlerInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public $serializer = SeoMetaSerializer::class;
-
-    public $include = [];
-
-    public $sortFields = ['id'];
-
-    public $limit = 50;
-
     public function __construct(
-        protected readonly UrlGenerator $url,
+        protected readonly JsonApi $api,
     ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function data(ServerRequestInterface $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $actor = RequestUtil::getActor($request);
-
-        // Make sure the person can access the agents
-        $actor->assertCan('fof-seo.canConfigure');
-
-        // Params
-        $limit = $this->extractLimit($request);
-        $offset = $this->extractOffset($request);
-
-        $results = SeoMeta::select()
-            ->with($this->extractInclude($request))
-            ->latest('seo_meta.created_at')
-            ->skip($offset)
-            ->take($limit + 1)
-            ->get();
-
-        // Check for more results
-        $hasMoreResults = $limit > 0 && $results->count() > $limit;
-
-        // Pop
-        if ($hasMoreResults) {
-            $results->pop();
-        }
-
-        // Add pagination to the request
-        $document->addPaginationLinks(
-            $this->url->to('api')->route('seo_meta.overview'),
-            $request->getQueryParams(),
-            $offset,
-            $limit,
-            $hasMoreResults ? null : 0
-        );
-
-        return $results;
+        return $this->api
+            ->forResource(SeoMetaResource::class)
+            ->forEndpoint('index')
+            ->handle($request);
     }
 }

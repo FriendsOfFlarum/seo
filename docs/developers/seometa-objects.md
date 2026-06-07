@@ -51,15 +51,22 @@ in the dialog). For example, a blog extension might set the source to
 
 ## Frontend integration
 
-To open the *Configure SEO* dialog from your extension, add `fof-seo` to the
-`useExtensions` array in your `webpack.config.js`:
+The *Configure SEO* dialog lives in FoF SEO's `MetaSeoModal` component. In
+Flarum 2.0 you reach another extension's modules through the `ext:` import
+scheme — no `webpack.config.js` changes are needed; Flarum resolves the module
+from the extension registry at runtime (`ext:fof/seo/common/Components/MetaSeoModal`).
 
-```js
-const config = require('flarum-webpack-config');
+So that TypeScript can resolve the import, add FoF SEO as a dev dependency and
+map it in your `tsconfig.json`:
 
-module.exports = config({
-  useExtensions: ['fof-upload', 'fof-seo'], // example list
-});
+```jsonc
+// composer.json — "require-dev"
+"fof/seo": "*"
+```
+
+```jsonc
+// js/tsconfig.json — "compilerOptions": { "paths": { … } }
+"ext:fof/seo/*": ["../vendor/fof/seo/js/dist-typings/*"]
 ```
 
 > **Guard your code.** If your extension can run without FoF SEO, wrap the
@@ -69,14 +76,13 @@ module.exports = config({
 
 ### Open the dialog by object type and ID
 
+`app.modal.show` accepts a lazy loader, so the modal can be `import()`-ed on
+demand — it's only fetched when FoF SEO is installed and the dialog is opened:
+
 ```js
 // `discussion` is a Discussion model from the store
 if ('fof-seo' in flarum.extensions && app.forum.attribute('canConfigureSeo')) {
-  const {
-    components: { MetaSeoModal },
-  } = require('@fof-seo');
-
-  app.modal.show(MetaSeoModal, {
+  app.modal.show(() => import('ext:fof/seo/common/Components/MetaSeoModal'), {
     objectType: 'discussions',
     objectId: discussion.id(),
   });
@@ -90,11 +96,7 @@ that relationship must be **registered and loaded** on the model.
 
 ```js
 if ('fof-seo' in flarum.extensions && app.forum.attribute('canConfigureSeo')) {
-  const {
-    components: { MetaSeoModal },
-  } = require('@fof-seo');
-
-  app.modal.show(MetaSeoModal, {
+  app.modal.show(() => import('ext:fof/seo/common/Components/MetaSeoModal'), {
     object: discussion, // automatically queries the .seoMeta relationship
   });
 }

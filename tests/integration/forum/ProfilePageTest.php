@@ -12,7 +12,9 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
+use Flarum\User\User;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * What crawlers see on a user profile page (`GET /u/{username}`).
@@ -26,7 +28,7 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->extension('fof-seo');
 
         $this->prepareDatabase([
-            'users' => [
+            User::class => [
                 [
                     'id'                 => 2,
                     'username'           => 'victorinox',
@@ -41,9 +43,7 @@ class ProfilePageTest extends ForumHtmlTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function profile_page_sets_og_type_to_profile(): void
     {
         $html = $this->fetchForumHtml('/u/victorinox');
@@ -51,9 +51,7 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->assertSame('profile', $this->findMetaByProperty($html, 'og:type'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function profile_page_emits_profile_username_meta_tag(): void
     {
         $html = $this->fetchForumHtml('/u/victorinox');
@@ -61,9 +59,7 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->assertSame('victorinox', $this->findMetaByProperty($html, 'profile:username'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function profile_page_canonical_url_points_to_profile(): void
     {
         $html = $this->fetchForumHtml('/u/victorinox');
@@ -74,9 +70,7 @@ class ProfilePageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function profile_page_emits_schema_org_profile_page_entry(): void
     {
         $html = $this->fetchForumHtml('/u/victorinox');
@@ -99,9 +93,8 @@ class ProfilePageTest extends ForumHtmlTestCase
     /**
      * Google's ProfilePage guidance puts the creator's identity and activity
      * stats on the `mainEntity` Person.
-     *
-     * @test
      */
+    #[Test]
     public function profile_person_carries_identity_and_interaction_stats(): void
     {
         $person = $this->findSchemaEntry($this->fetchForumHtml('/u/victorinox'), 'ProfilePage')['mainEntity'] ?? [];
@@ -126,14 +119,13 @@ class ProfilePageTest extends ForumHtmlTestCase
      * meta attribute. Flarum itself doesn't accept such usernames at signup,
      * but a malicious username created via DB manipulation or migration must
      * still not break crawler-visible output.
-     *
-     * @test
      */
+    #[Test]
     public function username_with_html_characters_is_escaped_in_meta_tags(): void
     {
         // Flarum's username regex would reject this on creation, so insert directly.
         $this->prepareDatabase([
-            'users' => [
+            User::class => [
                 [
                     'id'                 => 3,
                     'username'           => 'ab"cd',
@@ -166,9 +158,8 @@ class ProfilePageTest extends ForumHtmlTestCase
     /**
      * Profiles inherit the site-wide `index, follow` robots default unless the
      * admin opts to deindex them (GH #62).
-     *
-     * @test
      */
+    #[Test]
     public function profile_pages_are_indexable_by_default(): void
     {
         $html = $this->fetchForumHtml('/u/victorinox');
@@ -180,9 +171,8 @@ class ProfilePageTest extends ForumHtmlTestCase
      * When `seo_noindex_profiles` is enabled, profile pages emit
      * `noindex, follow` so thin profile pages drop out of the index while
      * crawlers still follow the links on them (GH #62).
-     *
-     * @test
      */
+    #[Test]
     public function profile_pages_are_noindexed_when_the_setting_is_enabled(): void
     {
         $this->setting('seo_noindex_profiles', '1');
@@ -194,9 +184,8 @@ class ProfilePageTest extends ForumHtmlTestCase
 
     /**
      * Explicitly disabling the setting keeps profiles indexable.
-     *
-     * @test
      */
+    #[Test]
     public function disabling_the_noindex_setting_keeps_profiles_indexable(): void
     {
         $this->setting('seo_noindex_profiles', '0');
@@ -206,9 +195,7 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->assertSame('index, follow', $this->findMetaByName($html, 'robots'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function missing_profile_does_not_crash_the_seo_extension(): void
     {
         $response = $this->send($this->request('GET', '/u/nobody'));

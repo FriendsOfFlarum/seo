@@ -33,6 +33,8 @@ class DiscussionBestAnswerPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
+    protected Dispatcher $events;
+
     public function __construct(
         protected readonly SettingsRepositoryInterface $settingsRepositoryInterface,
         protected readonly DiscussionRepository $discussionRepository,
@@ -66,7 +68,9 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         }
 
         // Get discussion ID from params
-        $discussionId = Arr::get($request->getQueryParams(), 'id');
+        // Cast to int to extract the numeric id from the `{id}-{slug}` route
+        // param so the lookup works on all databases (SQLite won't coerce it).
+        $discussionId = (int) Arr::get($request->getQueryParams(), 'id');
 
         try {
             // Find discussion
@@ -84,7 +88,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             return;
         }
 
-        /** @var Collection<Tag> $discussionTags */
+        /** @var Collection<int, Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
         // Not a Q&A discussion — DiscussionPage already emitted DiscussionForumPosting.
@@ -180,7 +184,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             $with[] = 'likes';
         }
 
-        /** @var Collection<Post> $posts */
+        /** @var Collection<int, Post> $posts */
         $posts = $discussion->posts()
             ->where('number', '>', '1')
             ->with($with)

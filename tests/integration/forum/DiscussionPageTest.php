@@ -12,7 +12,11 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\Post;
+use Flarum\Tags\Tag;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * What crawlers see on a discussion page (`GET /d/{id}-{slug}`).
@@ -32,9 +36,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->setting('forum_title', 'Example Forum');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_page_emits_og_type_article(): void
     {
         $this->seedDiscussion(title: 'How to bake bread', slug: 'bake-bread');
@@ -48,9 +50,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * With "crawl all posts" enabled and tags present but fof/best-answer NOT
      * installed, DiscussionPage defers and the best-answer driver's fallback is
      * what must still emit DiscussionForumPosting.
-     *
-     * @test
      */
+    #[Test]
     public function forum_posting_emitted_when_best_answer_absent_but_crawler_enabled(): void
     {
         $this->extension('flarum-tags');
@@ -59,13 +60,13 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $now = Carbon::parse('2025-01-01 00:00:00');
 
         $this->prepareDatabase([
-            'tags' => [
+            Tag::class => [
                 ['id' => 1, 'name' => 'General', 'slug' => 'general', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'A plain topic', 'slug' => 'plain-topic', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => $now],
             ],
             'discussion_tag' => [['discussion_id' => 1, 'tag_id' => 1]],
@@ -81,8 +82,10 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * Optional fof/discussion-language integration: a discussion's own language
      * drives the schema.org inLanguage, overriding the viewer's locale.
      *
-     * @test
+     * @TODO Disabled until fof/discussion-language is released for Flarum 2.0.
      */
+    /*
+    #[Test]
     public function discussion_in_language_reflects_its_assigned_language_when_enabled(): void
     {
         $this->extension('flarum-tags', 'fof-discussion-language');
@@ -93,10 +96,10 @@ class DiscussionPageTest extends ForumHtmlTestCase
             'discussion_languages' => [
                 ['id' => 1, 'code' => 'de'],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Hallo Welt', 'slug' => 'hallo-welt', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'language_id' => 1, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Hallo.</p></t>', 'created_at' => $now],
             ],
         ]);
@@ -106,13 +109,13 @@ class DiscussionPageTest extends ForumHtmlTestCase
         // Default locale in tests is 'en'; the discussion is tagged 'de'.
         $this->assertSame('de', $fp['inLanguage'] ?? null);
     }
+    */
 
     /**
      * Optional fof/discussion-views integration: expose the view count as a
      * schema.org ViewAction interaction counter.
-     *
-     * @test
      */
+    #[Test]
     public function discussion_forum_posting_includes_view_count_when_discussion_views_enabled(): void
     {
         $this->extension('fof-discussion-views');
@@ -120,10 +123,10 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $now = Carbon::parse('2025-01-01 00:00:00');
 
         $this->prepareDatabase([
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Popular topic', 'slug' => 'popular', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'view_count' => 1234, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => $now],
             ],
         ]);
@@ -138,21 +141,21 @@ class DiscussionPageTest extends ForumHtmlTestCase
         }
 
         $this->assertNotNull($view, 'Expected a ViewAction InteractionCounter when fof/discussion-views is enabled.');
-        $this->assertSame(1234, $view['userInteractionCount'] ?? null);
+        // 1234 seeded + 1: rendering the page is itself a view, which
+        // fof/discussion-views counts before we read the (current) count.
+        $this->assertSame(1235, $view['userInteractionCount'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_forum_posting_includes_headline_text_and_comment_stats(): void
     {
         $now = Carbon::parse('2025-01-01 00:00:00');
 
         $this->prepareDatabase([
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'How to bake bread', 'slug' => 'bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 3, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>You need flour and water.</p></t>', 'created_at' => $now],
             ],
         ]);
@@ -177,9 +180,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertSame(2, $comment['userInteractionCount'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_title_becomes_og_title_and_twitter_title(): void
     {
         $this->seedDiscussion(title: 'How to bake bread', slug: 'bake-bread');
@@ -190,9 +191,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertSame('How to bake bread', $this->findMetaByName($html, 'twitter:title'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_page_sets_canonical_url_to_the_discussion_slug(): void
     {
         $this->seedDiscussion(title: 'How to bake bread', slug: 'bake-bread');
@@ -207,9 +206,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_page_emits_article_published_time(): void
     {
         $publishedAt = Carbon::parse('2025-06-01 12:34:56');
@@ -228,9 +225,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * Critical defence-in-depth check: a discussion title crafted to break
      * out of the meta content attribute must be escaped. The raw `<script>`
      * must not appear anywhere; only the entity-encoded form is acceptable.
-     *
-     * @test
      */
+    #[Test]
     public function discussion_title_with_script_tag_is_html_escaped_in_meta(): void
     {
         $this->seedDiscussion(
@@ -258,9 +254,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_title_with_quote_characters_is_attribute_safe(): void
     {
         $this->seedDiscussion(
@@ -284,9 +278,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_page_emits_schema_org_discussion_forum_posting(): void
     {
         $this->seedDiscussion(title: 'How to bake bread', slug: 'bake-bread');
@@ -305,9 +297,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * Even under UGC abuse the JSON-LD block must remain valid JSON — any
      * unescaped double-quote in a title would break the parser and crash
      * structured data consumers.
-     *
-     * @test
      */
+    #[Test]
     public function schema_json_ld_remains_valid_json_with_hostile_ugc(): void
     {
         $this->seedDiscussion(
@@ -327,9 +318,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertNotNull($posting);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function non_existent_discussion_does_not_crash_the_seo_extension(): void
     {
         // Flarum returns 404 for unknown discussions. We just need to confirm
@@ -343,9 +332,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * A discussion with `robotsNoindex` on its SeoMeta row must emit a
      * `noindex` robots meta tag so crawlers skip it.
-     *
-     * @test
      */
+    #[Test]
     public function discussion_with_noindex_seo_meta_emits_noindex_robots_tag(): void
     {
         $this->seedDiscussion(title: 'Hidden from crawlers', slug: 'hidden', metaOverrides: [
@@ -363,9 +351,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * A discussion overridden with a custom SeoMeta title should surface that
      * title in the crawler-visible tags, overriding the discussion title.
-     *
-     * @test
      */
+    #[Test]
     public function custom_seo_meta_title_overrides_discussion_title_for_crawlers(): void
     {
         $this->seedDiscussion(title: 'Internal name', slug: 'thing', metaOverrides: [
@@ -387,9 +374,8 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * og:image / twitter:image, instead of the forum-wide default.
      *
      * Regression lock for GH #30 (social image meta tag per post).
-     *
-     * @test
      */
+    #[Test]
     public function discussion_uses_its_own_social_image_for_crawlers(): void
     {
         $this->seedDiscussion(title: 'Has an image', slug: 'has-image', metaOverrides: [
@@ -409,19 +395,18 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * from its first post, not the forum-wide description.
      *
      * Regression lock for GH #114 (meta-description not generated).
-     *
-     * @test
      */
+    #[Test]
     public function discussion_description_is_generated_from_its_first_post(): void
     {
         $this->setting('forum_description', 'The forum-wide description.');
 
         $now = Carbon::parse('2025-01-01 00:00:00');
         $this->prepareDatabase([
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Generated', 'slug' => 'generated', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>A unique opening sentence for this thread.</p></t>', 'created_at' => $now],
             ],
         ]);

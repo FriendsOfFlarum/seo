@@ -1,19 +1,21 @@
+import Form from 'flarum/common/components/Form';
 import app from 'flarum/admin/app';
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Button from 'flarum/common/components/Button';
 import Switch from 'flarum/common/components/Switch';
 import Link from 'flarum/common/components/Link';
 import saveSettings from 'flarum/admin/utils/saveSettings';
-import icon from 'flarum/common/helpers/icon';
+import Icon from 'flarum/common/components/Icon';
 import type Mithril from 'mithril';
 
-export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
+export default class CrawlPostModal extends FormModal<IFormModalAttrs> {
   value: string | boolean = false;
   startValue: string | boolean = false;
   closeText: Mithril.Children = app.translator.trans('fof-seo.admin.common.close');
   loading: boolean = false;
 
-  oninit(vnode: Mithril.Vnode<IInternalModalAttrs, this>) {
+  oninit(vnode: Mithril.Vnode<IFormModalAttrs, this>) {
     super.oninit(vnode);
 
     const stored = app.data.settings.seo_post_crawler;
@@ -37,26 +39,33 @@ export default class CrawlPostModal extends Modal<IInternalModalAttrs> {
     return (
       <div>
         <div className="Modal-body">
-          <div className="Form">
-            {app.translator.trans('fof-seo.admin.modals.crawl_post.intro', { b: <b /> })}
+          <Form>
+            {app.translator.trans('fof-seo.admin.modals.crawl_post.intro', {
+              b: <b />,
+            })}
             <div style="padding: 10px 0;">
               <b style="display: block; padding-bottom: 10px;">
-                <span style="display: inline-block; width: 25px;">{icon('fas fa-check')}</span>
+                <span style="display: inline-block; width: 25px;">
+                  <Icon name="fas fa-check" />
+                </span>
                 {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_main_title')}
               </b>
               {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_main_help')}
             </div>
             <div style="padding: 10px 0;">
               <b style="display: block; padding-bottom: 10px;">
-                <span style="display: inline-block; width: 25px;">{icon('fas fa-check-double')}</span>{' '}
+                <span style="display: inline-block; width: 25px;">
+                  <Icon name="fas fa-check-double" />
+                </span>{' '}
                 {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_title')}
               </b>
               {app.translator.trans('fof-seo.admin.modals.crawl_post.mode_all_help', {
                 a: <Link external={true} href="https://discuss.flarum.org/d/21894-friendsofflarum-best-answer" target="_blank" />,
+
                 b: <b />,
               })}
             </div>
-          </div>
+          </Form>
         </div>
         <div style="padding: 25px 30px; text-align: center;">
           <b style="display: block; padding-bottom: 10px;">{app.translator.trans('fof-seo.admin.modals.crawl_post.question')}</b>

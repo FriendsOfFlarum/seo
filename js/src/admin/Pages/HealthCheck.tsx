@@ -2,7 +2,7 @@ import app from 'flarum/admin/app';
 import Page from 'flarum/common/components/Page';
 import Button from 'flarum/common/components/Button';
 import saveSettings from 'flarum/admin/utils/saveSettings';
-import icon from 'flarum/common/helpers/icon';
+import Icon from 'flarum/common/components/Icon';
 import type Mithril from 'mithril';
 
 type PassState = true | false | 'must';
@@ -293,7 +293,7 @@ export default class HealthCheck extends Page {
     if (passed === 'must') {
       return (
         <td className="row-must">
-          {icon('fas fa-exclamation-circle')} {app.translator.trans('fof-seo.admin.pages.health.status.warning')}
+          <Icon name="fas fa-exclamation-circle" /> {app.translator.trans('fof-seo.admin.pages.health.status.warning')}
         </td>
       );
     }
@@ -301,14 +301,14 @@ export default class HealthCheck extends Page {
     if (!passed) {
       return (
         <td className="row-warning">
-          {icon('fas fa-exclamation-circle')} {app.translator.trans('fof-seo.admin.pages.health.status.warning')}
+          <Icon name="fas fa-exclamation-circle" /> {app.translator.trans('fof-seo.admin.pages.health.status.warning')}
         </td>
       );
     }
 
     return (
       <td className="row-passed">
-        {icon('fas fa-check')} {app.translator.trans('fof-seo.admin.pages.health.status.passed')}
+        <Icon name="fas fa-check" /> {app.translator.trans('fof-seo.admin.pages.health.status.passed')}
       </td>
     );
   }

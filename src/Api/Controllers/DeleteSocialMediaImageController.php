@@ -12,11 +12,10 @@
 namespace FoF\Seo\Api\Controllers;
 
 use Flarum\Api\Controller\AbstractDeleteController;
+use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Filesystem\Cloud;
-use Laminas\Diactoros\Response\EmptyResponse;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class DeleteSocialMediaImageController extends AbstractDeleteController
@@ -30,18 +29,16 @@ class DeleteSocialMediaImageController extends AbstractDeleteController
         $this->disk = $container->make('filesystem')->disk('flarum-assets');
     }
 
-    protected function delete(ServerRequestInterface $request): ResponseInterface
+    protected function delete(ServerRequestInterface $request): void
     {
-        $request->getAttribute('actor')->assertAdmin();
+        RequestUtil::getActor($request)->assertAdmin();
 
         $path = $this->settings->get('seo_social_media_image_path');
         $this->settings->set('seo_social_media_image_path', null);
         $this->settings->set('seo_social_media_image_url', null);
 
-        if ($this->disk->exists($path)) {
+        if ($path && $this->disk->exists($path)) {
             $this->disk->delete($path);
         }
-
-        return new EmptyResponse(204);
     }
 }

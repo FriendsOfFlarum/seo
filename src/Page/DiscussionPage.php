@@ -34,6 +34,8 @@ class DiscussionPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
 
+    protected Dispatcher $events;
+
     public function __construct(
         protected readonly SettingsRepositoryInterface $settingsRepositoryInterface,
         protected readonly DiscussionRepository $discussionRepository,
@@ -61,8 +63,10 @@ class DiscussionPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        // Get discussion ID from params
-        $discussionId = Arr::get($request->getQueryParams(), 'id');
+        // Get discussion ID from params. The route param is the `{id}-{slug}`
+        // form (e.g. "1-bake-bread"); cast to int to extract the numeric id so
+        // the lookup works regardless of database (SQLite won't coerce it).
+        $discussionId = (int) Arr::get($request->getQueryParams(), 'id');
 
         try {
             // Find discussion
@@ -77,7 +81,7 @@ class DiscussionPage implements PageDriverInterface
         $enableLikes = $this->extensionManager->isEnabled('flarum-likes');
         $enableGamification = $this->extensionManager->isEnabled('fof-gamification');
 
-        /** @var Collection<Tag> $discussionTags */
+        /** @var Collection<int, Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
         // Defer to DiscussionBestAnswerPage only when it will actually emit a
@@ -184,7 +188,7 @@ class DiscussionPage implements PageDriverInterface
                 $countRelations[] = 'upvotes';
             }
 
-            /** @var Collection<Post> $replies */
+            /** @var Collection<int, Post> $replies */
             $replies = $discussion->posts()
                 ->where('number', '>', 1)
                 ->where('type', 'comment')

@@ -48,6 +48,13 @@ class SeoMeta extends AbstractModel
 
     protected $table = 'seo_meta';
 
+    /**
+     * Let Eloquent manage created_at/updated_at on every save (Flarum's
+     * AbstractModel disables this by default). The table already uses the
+     * standard column names, so both timestamps populate automatically.
+     */
+    public $timestamps = true;
+
     protected $fillable = [
         'object_id',
         'object_type',
@@ -60,10 +67,16 @@ class SeoMeta extends AbstractModel
         'updated_at',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
-    protected $dates = ['created_at', 'updated_at'];
+    protected $casts = [
+        'auto_update_data'    => 'bool',
+        'robots_noindex'      => 'bool',
+        'robots_nofollow'     => 'bool',
+        'robots_noarchive'    => 'bool',
+        'robots_noimageindex' => 'bool',
+        'robots_nosnippet'    => 'bool',
+        'created_at'          => 'datetime',
+        'updated_at'          => 'datetime',
+    ];
 
     public static function build(string $objectType, int $objectId, bool $autoUpdate = true): self
     {

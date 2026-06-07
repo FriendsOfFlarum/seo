@@ -12,6 +12,7 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Asserts what crawlers receive when hitting the forum index (`GET /`).
@@ -28,9 +29,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->setting('forum_description', 'A place for examples.');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function index_page_renders_successfully_for_a_guest(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -38,9 +37,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertNotEmpty($html);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function index_page_sets_application_name_and_description_meta_from_settings(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -49,9 +46,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertSame('A place for examples.', $this->findMetaByName($html, 'description'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function index_page_emits_open_graph_tags(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -63,9 +58,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertStringStartsWith('http://', $this->findMetaByProperty($html, 'og:url'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function index_page_emits_twitter_card_tags(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -75,9 +68,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertSame('A place for examples.', $this->findMetaByName($html, 'twitter:description'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function twitter_card_type_respects_the_seo_twitter_card_size_setting(): void
     {
         $this->setting('seo_twitter_card_size', 'summary');
@@ -87,9 +78,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertSame('summary', $this->findMetaByName($html, 'twitter:card'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function default_robots_meta_allows_indexing(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -97,9 +86,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertSame('index, follow', $this->findMetaByName($html, 'robots'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function index_page_emits_canonical_url(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -107,9 +94,7 @@ class IndexPageTest extends ForumHtmlTestCase
         $this->assertNotEmpty($this->findCanonicalUrl($html));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function index_page_emits_schema_org_webpage_and_website_entries(): void
     {
         $html = $this->fetchForumHtml('/');
@@ -129,9 +114,8 @@ class IndexPageTest extends ForumHtmlTestCase
      * HTML escaping is applied to the forum_title coming from settings so
      * that crawler-visible meta tag values cannot contain raw HTML. The HTML
      * entities should appear escaped, never as live markup.
-     *
-     * @test
      */
+    #[Test]
     public function forum_title_containing_html_is_escaped_in_meta_tags(): void
     {
         $this->setting('forum_title', 'Example <script>alert(1)</script> Forum');

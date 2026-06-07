@@ -12,7 +12,12 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
+use Flarum\Foundation\Application;
+use Flarum\Post\Post;
+use Flarum\Tags\Tag;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Tests the optional fof/best-answer integration.
@@ -49,11 +54,11 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $now = Carbon::now();
 
         $this->prepareDatabase([
-            'tags' => [
+            Tag::class => [
                 ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
                 ['id' => self::PLAIN_TAG_ID, 'name' => 'Chatter', 'slug' => 'chatter', 'description' => null, 'color' => '#000', 'position' => 1, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => false],
             ],
-            'discussions' => [
+            Discussion::class => [
                 array_merge([
                     'id'                  => 1,
                     'title'               => 'How do I bake bread?',
@@ -66,7 +71,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
                     'last_posted_at'      => $now,
                 ], $extra),
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>How do I bake bread?</p></t>', 'created_at' => $now],
                 ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Use flour, water and yeast.</p></t>', 'created_at' => $now],
                 ['id' => 3, 'discussion_id' => 1, 'number' => 3, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Try a sourdough starter.</p></t>', 'created_at' => $now],
@@ -77,9 +82,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function qa_discussion_emits_qapage_schema_when_post_crawler_enabled(): void
     {
         $this->setting('seo_post_crawler', '1');
@@ -111,9 +114,8 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     /**
      * A discussion tagged only with a *child* of a Q&A tag should still be
      * treated as Q&A and emit a QAPage. Regression lock for GH #108.
-     *
-     * @test
      */
+    #[Test]
     public function qa_page_emitted_for_discussion_in_child_of_qna_tag(): void
     {
         $this->setting('seo_post_crawler', '1');
@@ -121,14 +123,14 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $now = Carbon::now();
 
         $this->prepareDatabase([
-            'tags' => [
+            Tag::class => [
                 ['id' => 10, 'name' => 'Support', 'slug' => 'support', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
                 ['id' => 11, 'name' => 'Install', 'slug' => 'install', 'description' => null, 'color' => '#000', 'position' => 0, 'parent_id' => 10, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => false],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'How to install?', 'slug' => 'how-to-install', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>How?</p></t>', 'created_at' => $now],
                 ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Like this.</p></t>', 'created_at' => $now],
             ],
@@ -144,9 +146,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function qa_page_marks_accepted_and_suggested_answers(): void
     {
         $this->setting('seo_post_crawler', '1');
@@ -173,9 +173,8 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     /**
      * The optional flarum/likes integration: when it's enabled, an answer's
      * `upvoteCount` reflects its like count.
-     *
-     * @test
      */
+    #[Test]
     public function upvote_count_reflects_likes_when_likes_enabled(): void
     {
         $this->extension('flarum-likes');
@@ -219,15 +218,15 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         }
 
         $this->prepareDatabase([
-            'tags' => [
+            Tag::class => [
                 ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => $discussionId, 'title' => 'Q '.$slug, 'slug' => $slug, 'user_id' => 1, 'first_post_id' => $base + 1, 'comment_count' => $answers + 1, 'best_answer_post_id' => $base + 2, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts'          => $posts,
-            'discussion_tag' => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
-            'post_likes'     => $likes,
+            Post::class          => $posts,
+            'discussion_tag'     => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
+            'post_likes'         => $likes,
         ]);
     }
 
@@ -248,11 +247,18 @@ class BestAnswerPageTest extends ForumHtmlTestCase
      * Regression guard against an N+1 over answer posts (their `user` and
      * `likes` relations). The query count for an 8-answer Q&A page must not be
      * materially higher than for a 2-answer one.
-     *
-     * @test
      */
+    #[Test]
     public function qa_page_does_not_issue_per_answer_queries(): void
     {
+        // The per-answer N+1 this guards against lives in core's UserResource
+        // `groups` field getter (re-queries per serialized user, ignoring the
+        // eager-loaded relation) and is fixed in flarum/core 2.0.0-rc.3.
+        // See flarum/framework#4695. Skip on cores that still have the bug.
+        if (version_compare(Application::VERSION, '2.0.0-rc.3', '<')) {
+            $this->markTestSkipped('Core N+1 in UserResource groups getter, fixed in flarum/core 2.0.0-rc.3 — flarum/framework#4695');
+        }
+
         $this->extension('flarum-likes');
         $this->setting('seo_post_crawler', '1');
 
@@ -274,9 +280,8 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
     /**
      * Optional fof/discussion-views integration on the Q&A path.
-     *
-     * @test
      */
+    #[Test]
     public function qa_page_includes_view_count_when_discussion_views_enabled(): void
     {
         $this->extension('fof-discussion-views');
@@ -294,14 +299,18 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         }
 
         $this->assertNotNull($view, 'Expected a ViewAction InteractionCounter on the QAPage.');
-        $this->assertSame(999, $view['userInteractionCount'] ?? null);
+        // 999 seeded + 1: rendering the page is itself a view, which
+        // fof/discussion-views counts before we read the (current) count.
+        $this->assertSame(1000, $view['userInteractionCount'] ?? null);
     }
 
     /**
      * Optional fof/discussion-language integration on the Q&A path.
      *
-     * @test
+     * @TODO Disabled until fof/discussion-language is released for Flarum 2.0.
      */
+    /*
+    #[Test]
     public function qa_page_in_language_reflects_discussion_language_when_enabled(): void
     {
         $this->extension('fof-discussion-language');
@@ -318,10 +327,9 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         $this->assertSame('fr', $qaPage['inLanguage'] ?? null);
     }
+    */
 
-    /**
-     * @test
-     */
+    #[Test]
     public function qa_question_upvote_count_reflects_first_post_likes(): void
     {
         $this->extension('flarum-likes');
@@ -341,9 +349,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->assertSame(1, $question['upvoteCount'] ?? null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function regular_discussion_schema_is_used_when_post_crawler_disabled(): void
     {
         // seo_post_crawler defaults to off — no QAPage even for a Q&A discussion.
@@ -361,9 +367,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function discussion_outside_a_qna_tag_falls_back_to_forum_posting(): void
     {
         $this->setting('seo_post_crawler', '1');
@@ -372,13 +376,13 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         // A discussion in a non-Q&A tag, even with the crawler enabled.
         $this->prepareDatabase([
-            'tags' => [
+            Tag::class => [
                 ['id' => self::PLAIN_TAG_ID, 'name' => 'Chatter', 'slug' => 'chatter', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => false],
             ],
-            'discussions' => [
+            Discussion::class => [
                 ['id' => 1, 'title' => 'Just chatting', 'slug' => 'just-chatting', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            'posts' => [
+            Post::class => [
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Hello.</p></t>', 'created_at' => $now],
             ],
             'discussion_tag' => [

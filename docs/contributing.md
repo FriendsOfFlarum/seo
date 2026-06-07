@@ -13,7 +13,7 @@ The frontend lives in `js/`.
 
 ```bash
 cd js
-yern install        # or: yarn
+yarn install        # or: yarn
 yarn run dev        # watch + rebuild during development
 yarn run build      # production build
 yarn run format     # prettier
@@ -25,7 +25,7 @@ extensible lists, and so on).
 
 ## Backend (PHP)
 
-The extension targets **PHP 8.2+** and **Flarum 1.8+**.
+The extension targets **PHP 8.3+** and **Flarum 2.0+**.
 
 ```bash
 composer analyse:phpstan   # static analysis

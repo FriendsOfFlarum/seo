@@ -11,6 +11,7 @@
 
 namespace FoF\Seo\Tests\unit\Listeners;
 
+use Flarum\Http\RouteCollectionUrlGenerator;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Testing\unit\TestCase;
@@ -31,7 +32,9 @@ class PageListenerTest extends TestCase
 
     private function makeListener(): PageListener
     {
-        $forumUrl = m::mock();
+        // UrlGenerator::to() declares a RouteCollectionUrlGenerator return type,
+        // so the mock it returns must satisfy that type.
+        $forumUrl = m::mock(RouteCollectionUrlGenerator::class);
         $forumUrl->shouldReceive('base')->andReturn('https://forum.example.com');
 
         $url = m::mock(UrlGenerator::class);
