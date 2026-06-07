@@ -164,6 +164,10 @@ class PageListener
             new PreparingPageMeta(new SeoProperties($this), $this->flarumDocument, $serverRequest)
         );
 
+        // Open Graph article dates only belong on article-type pages; emit them
+        // from the recorded schema.org dates when this page is an article.
+        $this->emitArticleDates();
+
         // Expose the resolved document language as og:locale (mirrors schema.org
         // inLanguage), unless a driver/listener already set one explicitly.
         $documentLanguage = $this->schemaArray['inLanguage'] ?? $locale;
@@ -326,6 +330,26 @@ class PageListener
     }
 
     /**
+     * Emit the Open Graph article:published_time / article:modified_time tags
+     * from the recorded schema.org dates, but only when the page is an article.
+     * On other page types (tag listings, profiles, …) these tags don't apply.
+     */
+    private function emitArticleDates(): void
+    {
+        if (($this->metaProperty['og:type'] ?? null) !== 'article') {
+            return;
+        }
+
+        if (isset($this->schemaArray['datePublished'])) {
+            $this->setMetaPropertyTag('article:published_time', $this->schemaArray['datePublished']);
+        }
+
+        if (isset($this->schemaArray['dateModified'])) {
+            $this->setMetaPropertyTag('article:modified_time', $this->schemaArray['dateModified']);
+        }
+    }
+
+    /**
      * Normalise a Flarum locale (e.g. "en", "pt-br") to the Open Graph
      * "language_TERRITORY" form (e.g. "en", "pt_BR").
      */
@@ -433,10 +457,10 @@ class PageListener
             ? $published->format('c')
             : (new \DateTime($published))->format('c');
 
-        $this
-            // Open Graph article dates are `property` tags, not `name` tags.
-            ->setMetaPropertyTag('article:published_time', $date)
-            ->setSchemaJson('datePublished', $date);
+        // Record the date on the schema.org entity. The matching Open Graph
+        // article:published_time tag is emitted in finish(), but only for
+        // article-type pages (see emitArticleDates()).
+        $this->setSchemaJson('datePublished', $date);
 
         return $this;
     }
@@ -451,10 +475,9 @@ class PageListener
             ? $updated->format('c')
             : (new \DateTime($updated))->format('c');
 
-        $this
-            // Open Graph uses `article:modified_time` (a `property` tag).
-            ->setMetaPropertyTag('article:modified_time', $date)
-            ->setSchemaJson('dateModified', $date);
+        // As with datePublished, the og:article:modified_time tag is emitted in
+        // finish() only when og:type is "article".
+        $this->setSchemaJson('dateModified', $date);
 
         return $this;
     }
