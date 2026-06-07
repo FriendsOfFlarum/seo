@@ -58,6 +58,20 @@ class TagPageTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function tag_page_is_website_type_without_article_date_tags(): void
+    {
+        $html = $this->fetchForumHtml('/t/announcements');
+
+        // A tag listing is og:type "website" (the listing semantics live in the
+        // schema.org CollectionPage); the article:* date tags belong to
+        // article-type pages and must not leak onto it.
+        $this->assertSame('website', $this->findMetaByProperty($html, 'og:type'));
+        $this->assertNull($this->findMetaByProperty($html, 'article:published_time'));
+        $this->assertNull($this->findMetaByProperty($html, 'article:modified_time'));
+        $this->assertNull($this->findMetaByName($html, 'article:published_time'));
+    }
+
+    #[Test]
     public function tag_page_emits_og_title_from_tag_name(): void
     {
         $html = $this->fetchForumHtml('/t/announcements');

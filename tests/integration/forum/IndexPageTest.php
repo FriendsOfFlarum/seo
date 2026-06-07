@@ -69,6 +69,28 @@ class IndexPageTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function index_page_emits_og_locale_from_the_document_language(): void
+    {
+        $html = $this->fetchForumHtml('/');
+
+        // Default test locale is English; og:locale uses the language_TERRITORY form.
+        $this->assertSame('en', $this->findMetaByProperty($html, 'og:locale'));
+    }
+
+    #[Test]
+    public function og_image_carries_alt_text_describing_the_page(): void
+    {
+        // og:image is emitted once an image source (here, the logo) is configured.
+        $this->setting('logo_path', 'logo.png');
+
+        $html = $this->fetchForumHtml('/');
+
+        $this->assertNotNull($this->findMetaByProperty($html, 'og:image'), 'precondition: og:image present');
+        $this->assertSame('Example Forum', $this->findMetaByProperty($html, 'og:image:alt'));
+        $this->assertSame('Example Forum', $this->findMetaByName($html, 'twitter:image:alt'));
+    }
+
+    #[Test]
     public function twitter_card_type_respects_the_seo_twitter_card_size_setting(): void
     {
         $this->setting('seo_twitter_card_size', 'summary');

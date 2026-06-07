@@ -207,18 +207,36 @@ class DiscussionPageTest extends ForumHtmlTestCase
     }
 
     #[Test]
-    public function discussion_page_emits_article_published_time(): void
+    public function discussion_page_emits_article_times_as_open_graph_properties(): void
     {
         $publishedAt = Carbon::parse('2025-06-01 12:34:56');
+        $modifiedAt = Carbon::parse('2025-06-02 08:00:00');
 
-        $this->seedDiscussion(title: 'How to bake bread', slug: 'bake-bread', createdAt: $publishedAt);
+        $this->seedDiscussion(
+            title: 'How to bake bread',
+            slug: 'bake-bread',
+            createdAt: $publishedAt,
+            metaOverrides: ['updated_at' => $modifiedAt],
+        );
 
         $html = $this->fetchForumHtml('/d/1-bake-bread');
 
+        // Open Graph article dates must use `property` (not `name`), or OG
+        // consumers (Facebook, etc.) won't read them — and the modified date is
+        // `article:modified_time`, not the non-standard `article:updated_time`.
         $this->assertSame(
             $publishedAt->format('c'),
-            $this->findMetaByName($html, 'article:published_time')
+            $this->findMetaByProperty($html, 'article:published_time')
         );
+        $this->assertSame(
+            $modifiedAt->format('c'),
+            $this->findMetaByProperty($html, 'article:modified_time')
+        );
+
+        // The previous, incorrect forms must be gone.
+        $this->assertNull($this->findMetaByName($html, 'article:published_time'));
+        $this->assertNull($this->findMetaByName($html, 'article:updated_time'));
+        $this->assertNull($this->findMetaByProperty($html, 'article:updated_time'));
     }
 
     /**
