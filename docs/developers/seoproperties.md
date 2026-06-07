@@ -99,9 +99,13 @@ Sets `og:image`, `twitter:image` and the JSON-LD `image`.
 ## Published / updated timestamps
 
 ```php
-$properties->setPublishedOn('2020-08-22 14:14:00'); // article:published_time + datePublished
-$properties->setUpdatedOn('2020-08-25 18:55:00');   // article:updated_time + dateModified
+$properties->setPublishedOn('2020-08-22 14:14:00'); // schema.org datePublished
+$properties->setUpdatedOn('2020-08-25 18:55:00');   // schema.org dateModified
 ```
+
+These record the dates on the schema.org entity. The matching Open Graph
+`article:published_time` / `article:modified_time` (`property`) tags are emitted
+automatically — but only when the page's `og:type` is `article`.
 
 ## Lower-level helpers
 
