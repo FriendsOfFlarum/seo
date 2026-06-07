@@ -164,6 +164,24 @@ class PageListener
             new PreparingPageMeta(new SeoProperties($this), $this->flarumDocument, $serverRequest)
         );
 
+        // Expose the resolved document language as og:locale (mirrors schema.org
+        // inLanguage), unless a driver/listener already set one explicitly.
+        $documentLanguage = $this->schemaArray['inLanguage'] ?? $locale;
+        if ($documentLanguage !== null && !isset($this->metaProperty['og:locale'])) {
+            $this->setMetaPropertyTag('og:locale', $this->normaliseLocale($documentLanguage));
+        }
+
+        // Describe the social image for preview cards / accessibility, unless set
+        // explicitly. Uses the page's og:title, falling back to the forum name.
+        if (isset($this->metaProperty['og:image']) && !isset($this->metaProperty['og:image:alt'])) {
+            $imageAlt = $this->metaProperty['og:title'] ?? $this->settings->get('forum_title');
+
+            if ($imageAlt !== null && $imageAlt !== '') {
+                $this->setMetaPropertyTag('og:image:alt', $imageAlt);
+                $this->setMetaTag('twitter:image:alt', $imageAlt);
+            }
+        }
+
         // Write meta property tags
         foreach ($this->metaProperty as $name => $content) {
             $this->flarumDocument->head[] = '<meta property="'.e($name).'" content="'.e($content).'">';
@@ -308,6 +326,17 @@ class PageListener
     }
 
     /**
+     * Normalise a Flarum locale (e.g. "en", "pt-br") to the Open Graph
+     * "language_TERRITORY" form (e.g. "en", "pt_BR").
+     */
+    private function normaliseLocale(string $locale): string
+    {
+        $parts = preg_split('/[-_]/', $locale, 2);
+
+        return $parts[0].(isset($parts[1]) ? '_'.strtoupper($parts[1]) : '');
+    }
+
+    /**
      * Set title.
      */
     public function setTitle(string $title, bool $headline = false): self
@@ -405,7 +434,8 @@ class PageListener
             : (new \DateTime($published))->format('c');
 
         $this
-            ->setMetaTag('article:published_time', $date)
+            // Open Graph article dates are `property` tags, not `name` tags.
+            ->setMetaPropertyTag('article:published_time', $date)
             ->setSchemaJson('datePublished', $date);
 
         return $this;
@@ -422,7 +452,8 @@ class PageListener
             : (new \DateTime($updated))->format('c');
 
         $this
-            ->setMetaTag('article:updated_time', $date)
+            // Open Graph uses `article:modified_time` (a `property` tag).
+            ->setMetaPropertyTag('article:modified_time', $date)
             ->setSchemaJson('dateModified', $date);
 
         return $this;
