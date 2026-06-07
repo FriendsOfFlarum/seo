@@ -1,2 +1,1 @@
-export * from './components';
-export * from './Pages';
+export { default as extend } from './extend';

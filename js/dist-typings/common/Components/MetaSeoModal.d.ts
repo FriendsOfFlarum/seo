@@ -1,16 +1,16 @@
-/// <reference types="flarum/@types/translator-icu-rich" />
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Stream from 'flarum/common/utils/Stream';
 import type Mithril from 'mithril';
 import SeoMeta, { SeoImageSource } from '../Models/SeoMeta';
-export interface MetaSeoModalAttrs extends IInternalModalAttrs {
+export interface MetaSeoModalAttrs extends IFormModalAttrs {
     object?: {
         seoMeta?: () => SeoMeta;
     };
     objectType?: string;
     objectId?: string | number;
 }
-export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
+export default class MetaSeoModal extends FormModal<MetaSeoModalAttrs> {
     initialized: boolean;
     initialLoading: boolean;
     loading: boolean;
@@ -21,6 +21,10 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
     enableCustomOpenGraph: boolean;
     wasManaged: boolean;
     seoTagsOpened: boolean;
+    fofUpload: {
+        Uploader: any;
+        FileManagerModal: any;
+    } | null;
     meta?: SeoMeta;
     autoUpdateData: Stream<boolean>;
     metaTitle: Stream<string | null>;
@@ -44,10 +48,18 @@ export default class MetaSeoModal extends Modal<MetaSeoModalAttrs> {
     updatedAt: Stream<Date | null>;
     oninit(vnode: Mithril.Vnode<MetaSeoModalAttrs, this>): void;
     initializeData(): void;
-    title(): import("@askvortsov/rich-icu-message-formatter").NestedStringArray;
+    title(): string | any[];
     className(): string;
     initializeLoad(): void;
     content(): JSX.Element;
+    /**
+     * Lazily load the fof/upload modules when that (optional) extension is enabled.
+     *
+     * Flarum 2.0 exposes other extensions' modules through the `ext:` scheme, which
+     * resolves to async (externalised) imports — so we load them up front and redraw
+     * once they're available rather than `require()`-ing synchronously during render.
+     */
+    loadFoFUpload(): void;
     returnFoFUploadButton(onSelect: (fileUrl: string) => void): Mithril.Children;
     returnTag(isEnabled: boolean, enabledText: Mithril.Children, disabledText: Mithril.Children): JSX.Element;
     closeDialogButton(): JSX.Element;

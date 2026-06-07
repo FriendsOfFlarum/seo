@@ -1,16 +1,16 @@
-/// <reference types="flarum/@types/translator-icu-rich" />
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Stream from 'flarum/common/utils/Stream';
 import type Mithril from 'mithril';
-export default class DoFollowListModal extends Modal<IInternalModalAttrs> {
+export default class DoFollowListModal extends FormModal<IFormModalAttrs> {
     domainDoFollowList: Stream<string[]>;
     startValue: Stream<string[]>;
     newDomain: Stream<string>;
     baseUrl: string;
     hasChanges: boolean;
     loading: boolean;
-    oninit(vnode: Mithril.Vnode<IInternalModalAttrs, this>): void;
-    title(): import("@askvortsov/rich-icu-message-formatter").NestedStringArray;
+    oninit(vnode: Mithril.Vnode<IFormModalAttrs, this>): void;
+    title(): string | any[];
     className(): string;
     getDomainFromBase(): string;
     content(): JSX.Element;
