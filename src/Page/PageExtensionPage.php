@@ -58,9 +58,9 @@ class PageExtensionPage implements PageDriverInterface
             function (SeoMeta $meta) use ($page, $properties, $content) {
                 $meta->title = $page->title;
 
-                $meta->created_at = $page->time ?? Carbon::now();
+                $meta->created_at = $page->created_at ?? Carbon::now();
 
-                $meta->updated_at = $page->edit_time;
+                $meta->updated_at = $page->updated_at;
 
                 // Get Tag description
                 $meta->description = $properties->generateDescriptionFromContent(e(strip_tags($content)));
