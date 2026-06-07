@@ -114,7 +114,6 @@ class IndexPageTest extends ForumHtmlTestCase
      * HTML escaping is applied to the forum_title coming from settings so
      * that crawler-visible meta tag values cannot contain raw HTML. The HTML
      * entities should appear escaped, never as live markup.
-     *
      */
     #[Test]
     public function forum_title_containing_html_is_escaped_in_meta_tags(): void

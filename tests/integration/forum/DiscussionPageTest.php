@@ -12,11 +12,11 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
-use FoF\Seo\Tests\integration\ForumHtmlTestCase;
-use PHPUnit\Framework\Attributes\Test;
-use Flarum\Tags\Tag;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Flarum\Tags\Tag;
+use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * What crawlers see on a discussion page (`GET /d/{id}-{slug}`).
@@ -50,7 +50,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * With "crawl all posts" enabled and tags present but fof/best-answer NOT
      * installed, DiscussionPage defers and the best-answer driver's fallback is
      * what must still emit DiscussionForumPosting.
-     *
      */
     #[Test]
     public function forum_posting_emitted_when_best_answer_absent_but_crawler_enabled(): void
@@ -82,7 +81,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * Optional fof/discussion-language integration: a discussion's own language
      * drives the schema.org inLanguage, overriding the viewer's locale.
-     *
      */
     #[Test]
     public function discussion_in_language_reflects_its_assigned_language_when_enabled(): void
@@ -112,7 +110,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * Optional fof/discussion-views integration: expose the view count as a
      * schema.org ViewAction interaction counter.
-     *
      */
     #[Test]
     public function discussion_forum_posting_includes_view_count_when_discussion_views_enabled(): void
@@ -222,7 +219,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * Critical defence-in-depth check: a discussion title crafted to break
      * out of the meta content attribute must be escaped. The raw `<script>`
      * must not appear anywhere; only the entity-encoded form is acceptable.
-     *
      */
     #[Test]
     public function discussion_title_with_script_tag_is_html_escaped_in_meta(): void
@@ -295,7 +291,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * Even under UGC abuse the JSON-LD block must remain valid JSON — any
      * unescaped double-quote in a title would break the parser and crash
      * structured data consumers.
-     *
      */
     #[Test]
     public function schema_json_ld_remains_valid_json_with_hostile_ugc(): void
@@ -331,7 +326,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * A discussion with `robotsNoindex` on its SeoMeta row must emit a
      * `noindex` robots meta tag so crawlers skip it.
-     *
      */
     #[Test]
     public function discussion_with_noindex_seo_meta_emits_noindex_robots_tag(): void
@@ -351,7 +345,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
     /**
      * A discussion overridden with a custom SeoMeta title should surface that
      * title in the crawler-visible tags, overriding the discussion title.
-     *
      */
     #[Test]
     public function custom_seo_meta_title_overrides_discussion_title_for_crawlers(): void
@@ -375,7 +368,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * og:image / twitter:image, instead of the forum-wide default.
      *
      * Regression lock for GH #30 (social image meta tag per post).
-     *
      */
     #[Test]
     public function discussion_uses_its_own_social_image_for_crawlers(): void
@@ -397,7 +389,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
      * from its first post, not the forum-wide description.
      *
      * Regression lock for GH #114 (meta-description not generated).
-     *
      */
     #[Test]
     public function discussion_description_is_generated_from_its_first_post(): void

@@ -66,11 +66,11 @@ class SeoMetaResource extends Resource\AbstractDatabaseResource
     {
         $context->getActor()->assertCan('fof-seo.canConfigure');
 
-        if (! is_numeric($id) && ($pos = strrpos($id, '-')) !== false) {
+        if (!is_numeric($id) && ($pos = strrpos($id, '-')) !== false) {
             $objectType = substr($id, 0, $pos);
             $objectId = substr($id, $pos + 1);
 
-            if (! is_numeric($objectId)) {
+            if (!is_numeric($objectId)) {
                 throw new ValidationException(['message' => 'Invalid slug/id combination']);
             }
 

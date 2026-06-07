@@ -12,11 +12,11 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
-use FoF\Seo\Tests\integration\ForumHtmlTestCase;
-use PHPUnit\Framework\Attributes\Test;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
+use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Structural tests for the JSON-LD schema.org block that the extension
@@ -38,7 +38,6 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
     /**
      * The WebSite entry must carry the forum name so search engines display it
      * (rather than the bare domain). Regression lock for GH #115.
-     *
      */
     #[Test]
     public function website_entry_includes_the_forum_name(): void

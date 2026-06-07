@@ -12,11 +12,11 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
-use FoF\Seo\Tests\integration\ForumHtmlTestCase;
-use PHPUnit\Framework\Attributes\Test;
-use Flarum\Tags\Tag;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Flarum\Tags\Tag;
+use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Tests the optional fof/best-answer integration.
@@ -113,7 +113,6 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     /**
      * A discussion tagged only with a *child* of a Q&A tag should still be
      * treated as Q&A and emit a QAPage. Regression lock for GH #108.
-     *
      */
     #[Test]
     public function qa_page_emitted_for_discussion_in_child_of_qna_tag(): void
@@ -173,7 +172,6 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     /**
      * The optional flarum/likes integration: when it's enabled, an answer's
      * `upvoteCount` reflects its like count.
-     *
      */
     #[Test]
     public function upvote_count_reflects_likes_when_likes_enabled(): void
@@ -226,8 +224,8 @@ class BestAnswerPageTest extends ForumHtmlTestCase
                 ['id' => $discussionId, 'title' => 'Q '.$slug, 'slug' => $slug, 'user_id' => 1, 'first_post_id' => $base + 1, 'comment_count' => $answers + 1, 'best_answer_post_id' => $base + 2, 'created_at' => $now, 'last_posted_at' => $now],
             ],
             Post::class          => $posts,
-            'discussion_tag' => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
-            'post_likes'     => $likes,
+            'discussion_tag'     => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
+            'post_likes'         => $likes,
         ]);
     }
 
@@ -248,7 +246,6 @@ class BestAnswerPageTest extends ForumHtmlTestCase
      * Regression guard against an N+1 over answer posts (their `user` and
      * `likes` relations). The query count for an 8-answer Q&A page must not be
      * materially higher than for a 2-answer one.
-     *
      */
     #[Test]
     public function qa_page_does_not_issue_per_answer_queries(): void
@@ -274,7 +271,6 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
     /**
      * Optional fof/discussion-views integration on the Q&A path.
-     *
      */
     #[Test]
     public function qa_page_includes_view_count_when_discussion_views_enabled(): void
@@ -299,7 +295,6 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
     /**
      * Optional fof/discussion-language integration on the Q&A path.
-     *
      */
     #[Test]
     public function qa_page_in_language_reflects_discussion_language_when_enabled(): void

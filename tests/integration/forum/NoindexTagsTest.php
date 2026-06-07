@@ -12,11 +12,11 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
-use FoF\Seo\Tests\integration\ForumHtmlTestCase;
-use PHPUnit\Framework\Attributes\Test;
-use Flarum\Tags\Tag;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Flarum\Tags\Tag;
+use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Admins can keep every discussion in chosen tags (and those tags' own listing
@@ -67,7 +67,6 @@ class NoindexTagsTest extends ForumHtmlTestCase
 
     /**
      * A discussion tagged with an excluded tag is de-indexed.
-     *
      */
     #[Test]
     public function discussion_in_an_excluded_tag_is_noindexed(): void
@@ -82,7 +81,6 @@ class NoindexTagsTest extends ForumHtmlTestCase
     /**
      * A discussion in a tag that is *not* excluded stays indexable even when
      * other tags are excluded.
-     *
      */
     #[Test]
     public function discussion_outside_excluded_tags_stays_indexable(): void
@@ -97,7 +95,6 @@ class NoindexTagsTest extends ForumHtmlTestCase
     /**
      * Excluding a parent tag also de-indexes discussions in its child tags
      * (flarum-tags nests one level).
-     *
      */
     #[Test]
     public function discussion_in_a_child_of_an_excluded_tag_is_noindexed(): void
@@ -111,7 +108,6 @@ class NoindexTagsTest extends ForumHtmlTestCase
 
     /**
      * The excluded tag's own listing page is de-indexed too.
-     *
      */
     #[Test]
     public function the_excluded_tag_listing_page_is_noindexed(): void
@@ -125,7 +121,6 @@ class NoindexTagsTest extends ForumHtmlTestCase
 
     /**
      * A child tag whose parent is excluded has its listing page de-indexed.
-     *
      */
     #[Test]
     public function child_tag_listing_page_of_excluded_parent_is_noindexed(): void
@@ -139,7 +134,6 @@ class NoindexTagsTest extends ForumHtmlTestCase
 
     /**
      * A tag that is not excluded keeps its listing page indexable.
-     *
      */
     #[Test]
     public function non_excluded_tag_listing_page_stays_indexable(): void

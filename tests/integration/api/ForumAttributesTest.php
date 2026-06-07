@@ -12,14 +12,14 @@
 namespace FoF\Seo\Tests\integration\api;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
+use Flarum\Group\Group;
+use Flarum\Post\Post;
 use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
+use Flarum\User\User;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Flarum\User\User;
-use Flarum\Group\Group;
-use Flarum\Discussion\Discussion;
-use Flarum\Post\Post;
 
 /**
  * Tests the `canConfigureSeo` attribute that this extension appends to
@@ -120,8 +120,6 @@ class ForumAttributesTest extends TestCase
      * The social media image URL is exposed under the `seo_social_media_imageUrl`
      * attribute (the name core's UploadImageButton expects) and is gated behind
      * the same `fof-seo.canConfigure` permission as the rest of the SEO admin.
-     *
-     *
      */
     #[Test]
     #[DataProvider('socialMediaImageVisibilityProvider')]
@@ -152,7 +150,6 @@ class ForumAttributesTest extends TestCase
     /**
      * When no social media image has been uploaded, SEO managers still receive
      * the attribute (as null) so the admin upload button renders its empty state.
-     *
      */
     #[Test]
     public function social_media_image_url_is_null_when_unset(): void

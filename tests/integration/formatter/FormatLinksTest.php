@@ -12,13 +12,13 @@
 namespace FoF\Seo\Tests\integration\formatter;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
 use Flarum\Extend;
+use Flarum\Post\Post;
 use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
-use PHPUnit\Framework\Attributes\Test;
 use Flarum\User\User;
-use Flarum\Discussion\Discussion;
-use Flarum\Post\Post;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Integration test for the FormatLinks render callback.
@@ -95,7 +95,6 @@ class FormatLinksTest extends TestCase
      * Rendering hostile text via TextFormatter must not allow a URL to break
      * out of its rel/target attribute and inject markup. Even a URL with a
      * closing quote + script tag must come through safely encoded.
-     *
      */
     #[Test]
     public function hostile_url_does_not_break_out_of_attributes(): void

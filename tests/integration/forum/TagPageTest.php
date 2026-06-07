@@ -12,10 +12,10 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
+use Flarum\Tags\Tag;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use Flarum\Tags\Tag;
-use Flarum\Discussion\Discussion;
 
 /**
  * What crawlers see on a tag page (`GET /t/{slug}`).
@@ -141,7 +141,6 @@ class TagPageTest extends ForumHtmlTestCase
     /**
      * Tag names or descriptions containing UGC-style HTML must be escaped
      * in meta tags; the raw `<script>` must never reach the rendered page.
-     *
      */
     #[Test]
     public function tag_with_html_in_name_is_escaped_in_meta_tags(): void

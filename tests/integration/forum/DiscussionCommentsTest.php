@@ -12,11 +12,11 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
-use FoF\Seo\Tests\integration\ForumHtmlTestCase;
-use PHPUnit\Framework\Attributes\Test;
-use Flarum\User\User;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Flarum\User\User;
+use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * When "crawl all posts" is enabled, a discussion's replies are exposed as
@@ -110,7 +110,6 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
     /**
      * With only fof/gamification enabled, the count comes from its votes and
      * only positive votes count (downvotes are excluded).
-     *
      */
     #[Test]
     public function comment_upvote_count_is_exposed_from_gamification_votes(): void
@@ -135,7 +134,6 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
     /**
      * When BOTH flarum/likes and fof/gamification are enabled, the counts are
      * combined (they are independent signals stored in separate tables).
-     *
      */
     #[Test]
     public function comment_count_combines_likes_and_gamification_when_both_enabled(): void

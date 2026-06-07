@@ -12,9 +12,9 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
+use Flarum\User\User;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use Flarum\User\User;
 
 /**
  * What crawlers see on a user profile page (`GET /u/{username}`).
@@ -93,7 +93,6 @@ class ProfilePageTest extends ForumHtmlTestCase
     /**
      * Google's ProfilePage guidance puts the creator's identity and activity
      * stats on the `mainEntity` Person.
-     *
      */
     #[Test]
     public function profile_person_carries_identity_and_interaction_stats(): void
@@ -120,7 +119,6 @@ class ProfilePageTest extends ForumHtmlTestCase
      * meta attribute. Flarum itself doesn't accept such usernames at signup,
      * but a malicious username created via DB manipulation or migration must
      * still not break crawler-visible output.
-     *
      */
     #[Test]
     public function username_with_html_characters_is_escaped_in_meta_tags(): void
@@ -160,7 +158,6 @@ class ProfilePageTest extends ForumHtmlTestCase
     /**
      * Profiles inherit the site-wide `index, follow` robots default unless the
      * admin opts to deindex them (GH #62).
-     *
      */
     #[Test]
     public function profile_pages_are_indexable_by_default(): void
@@ -174,7 +171,6 @@ class ProfilePageTest extends ForumHtmlTestCase
      * When `seo_noindex_profiles` is enabled, profile pages emit
      * `noindex, follow` so thin profile pages drop out of the index while
      * crawlers still follow the links on them (GH #62).
-     *
      */
     #[Test]
     public function profile_pages_are_noindexed_when_the_setting_is_enabled(): void
@@ -188,7 +184,6 @@ class ProfilePageTest extends ForumHtmlTestCase
 
     /**
      * Explicitly disabling the setting keeps profiles indexable.
-     *
      */
     #[Test]
     public function disabling_the_noindex_setting_keeps_profiles_indexable(): void

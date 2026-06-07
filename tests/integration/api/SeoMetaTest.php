@@ -12,16 +12,16 @@
 namespace FoF\Seo\Tests\integration\api;
 
 use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
 use Flarum\Extend;
+use Flarum\Group\Group;
+use Flarum\Post\Post;
 use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
+use Flarum\User\User;
 use FoF\Seo\SeoMeta\SeoMeta;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Flarum\User\User;
-use Flarum\Group\Group;
-use Flarum\Discussion\Discussion;
-use Flarum\Post\Post;
 
 class SeoMetaTest extends TestCase
 {
