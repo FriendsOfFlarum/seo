@@ -29,6 +29,7 @@ use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class DiscussionPage implements PageDriverInterface
 {
@@ -43,8 +44,33 @@ class DiscussionPage implements PageDriverInterface
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly TranslatorInterface $translator,
     ) {
         $this->events = $events;
+    }
+
+    /**
+     * Build a schema.org Person for a post/discussion author. `author` is a
+     * required field on DiscussionForumPosting and on each Comment (GH #140),
+     * so a deleted user falls back to the localized "[deleted]" display name
+     * with no profile url rather than being omitted.
+     *
+     * @return array<string, string>
+     */
+    private function authorSchema(?User $user): array
+    {
+        if ($user === null) {
+            return [
+                '@type' => 'Person',
+                'name'  => $this->translator->trans('core.lib.username.deleted_text'),
+            ];
+        }
+
+        return [
+            '@type' => 'Person',
+            'name'  => $user->getDisplayNameAttribute(),
+            'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
+        ];
     }
 
     public function extensionDependencies(): array
@@ -202,14 +228,9 @@ class DiscussionPage implements PageDriverInterface
                     'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
                 ];
 
-                // Author, when the post still has one (skip for deleted users).
-                if ($post->user !== null) {
-                    $comment['author'] = [
-                        '@type' => 'Person',
-                        'name'  => $post->user->getAttribute('display_name'),
-                        'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($post->user)]),
-                    ];
-                }
+                // `author` is required on a Comment; deleted users fall back to
+                // a "[deleted]" Person rather than being omitted (GH #140).
+                $comment['author'] = $this->authorSchema($post->user);
 
                 if ($enableLikes || $enableGamification) {
                     $count = 0;
@@ -237,22 +258,9 @@ class DiscussionPage implements PageDriverInterface
             }
         }
 
-        try {
-            // Add author to the page meta data
-            $user = $discussion->user;
-
-            // Set author data if found
-            if ($user !== null) {
-                // author: https://schema.org/author typeof: https://schema.org/Person
-                $properties->setSchemaJson('author', [
-                    '@type' => 'Person',
-                    'name'  => $user->getDisplayNameAttribute(),
-                    'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
-                ]);
-            }
-        } catch (\Exception $e) {
-            // User does not exists anymore
-        }
+        // author: https://schema.org/author typeof: https://schema.org/Person.
+        // Required field, so a deleted author falls back to "[deleted]" (#140).
+        $properties->setSchemaJson('author', $this->authorSchema($discussion->user));
 
         // Generate a breadcrum if discussion has tags
         if ($tagsEnabled && $discussionTags->count() >= 1) {
