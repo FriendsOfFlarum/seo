@@ -29,6 +29,19 @@
     line-height: 25px;
   }
 
+  // Keep the page content (and its trailing "I have read this" CTA) from
+  // butting up against the next admin section (GH #154). The CTA floats right,
+  // so clear the float to make the bottom margin apply below it.
+  .FlarumSeoPage-container {
+    margin-bottom: 30px;
+
+    &::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+  }
+
   .seo-check-table {
     width: 100%;
     margin-top: 30px;
@@ -103,7 +116,8 @@
   .FlarumSEO {
     .FlarumSeoPage-container {
       max-width: 600px;
-      margin: 0;
+      // Keep the bottom margin (GH #154); only the top/side margins are reset.
+      margin: 0 0 30px;
     }
   }
 }
