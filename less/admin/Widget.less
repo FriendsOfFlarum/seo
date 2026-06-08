@@ -16,9 +16,14 @@
             margin-right: 15px;
         }
 
-        button {
+        // The CTA is a LinkButton, which renders an `<a class="LinkButton">`
+        // (no `Button` class in Flarum 2.x) — not a `<button>` — so the old
+        // `button` selector never matched and the CTA was invisible on the
+        // widget's blue background (GH #159). Target `.LinkButton` instead.
+        .LinkButton {
             background: #FFFFFF;
             border: 0;
+            text-decoration: none;
             -webkit-border-radius: 3px;
             -moz-border-radius: 3px;
             border-radius: 3px;
@@ -34,7 +39,15 @@
             -o-transition: all 250ms ease-in-out;
             transition: all 250ms ease-in-out;
 
-            &:hover {
+            &,
+            .Button-label {
+                color: #0072ff;
+            }
+
+            &:hover,
+            &:focus {
+                color: #0072ff;
+                text-decoration: none;
                 transform: scale(1.1);
             }
         }
