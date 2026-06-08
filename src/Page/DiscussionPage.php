@@ -130,6 +130,16 @@ class DiscussionPage implements PageDriverInterface
         // Schema.org DiscussionForumPosting enrichment (Google forum guidelines).
         $properties->setSchemaJson('headline', $seoMeta->title ?? $discussion->title);
 
+        // `datePublished` is a required property for DiscussionForumPosting.
+        if ($discussion->created_at !== null) {
+            $properties->setSchemaJson('datePublished', $discussion->created_at->toIso8601String());
+        }
+
+        // Surface the last activity as `dateModified` (recommended).
+        if ($discussion->last_posted_at !== null) {
+            $properties->setSchemaJson('dateModified', $discussion->last_posted_at->toIso8601String());
+        }
+
         $replyCount = max(0, $discussion->comment_count - 1);
         $properties->setSchemaJson('commentCount', $replyCount);
 
@@ -153,8 +163,10 @@ class DiscussionPage implements PageDriverInterface
         $firstPost = $discussion->firstPost;
 
         if ($firstPost instanceof CommentPost) {
-            // Full post text for the `text` property.
-            $text = trim(strip_tags($firstPost->formatContent()));
+            // Full post text for the `text` property. Render to HTML first so
+            // render-time transforms (mentions -> display names, links) resolve,
+            // then decode entities and strip tags for clean plain text.
+            $text = trim(html_entity_decode(strip_tags($firstPost->formatContent()), ENT_QUOTES | ENT_HTML5));
 
             if ($text !== '') {
                 $properties->setSchemaJson('text', $text);
@@ -188,22 +200,37 @@ class DiscussionPage implements PageDriverInterface
                 $countRelations[] = 'upvotes';
             }
 
-            /** @var Collection<int, Post> $replies */
-            $replies = $discussion->posts()
+            // Cap the number of replies rendered into the comment[] block.
+            // Rendering each reply (formatContent) is the dominant page-load
+            // cost, so bound it; a value <= 0 disables the cap entirely.
+            $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
+
+            $query = $discussion->posts()
                 ->where('number', '>', 1)
                 ->where('type', 'comment')
                 ->where('is_private', false)
                 ->with('user')
                 ->withCount($countRelations)
-                ->orderBy('number')
-                ->get();
+                ->orderBy('number');
 
-            $comments = $replies->map(function (Post $post) use ($discussion, $enableLikes, $enableGamification) {
+            if ($limit > 0) {
+                $query->limit($limit);
+            }
+
+            /** @var Collection<int, Post> $replies */
+            $replies = $query->get();
+
+            $comments = $replies->filter(fn (Post $post) => $post instanceof CommentPost)->map(function (CommentPost $post) use ($discussion, $enableLikes, $enableGamification) {
                 $comment = [
-                    '@type'       => 'Comment',
-                    'text'        => trim(strip_tags($post->content)),
-                    'dateCreated' => $post->created_at->toIso8601String(),
-                    'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
+                    '@type'         => 'Comment',
+                    // Render to HTML so mentions/links resolve, then decode
+                    // entities and strip tags for clean plain text.
+                    'text'          => trim(html_entity_decode(strip_tags($post->formatContent()), ENT_QUOTES | ENT_HTML5)),
+                    // Google requires `datePublished` on Comment nodes; keep
+                    // `dateCreated` too for schema.org completeness.
+                    'datePublished' => $post->created_at->toIso8601String(),
+                    'dateCreated'   => $post->created_at->toIso8601String(),
+                    'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
                 ];
 
                 // Author, when the post still has one (skip for deleted users).
@@ -234,7 +261,7 @@ class DiscussionPage implements PageDriverInterface
                 }
 
                 return $comment;
-            })->toArray();
+            })->values()->toArray();
 
             if (count($comments) > 0) {
                 $properties->setSchemaJson('comment', $comments);

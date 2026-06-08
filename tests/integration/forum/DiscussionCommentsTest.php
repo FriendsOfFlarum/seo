@@ -85,6 +85,67 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
         $this->assertSame('bob', $first['author']['name'] ?? null);
         $this->assertStringContainsString('The popular reply.', $first['text'] ?? '');
         $this->assertStringContainsString('/d/1-bake-bread', $first['url'] ?? '');
+        // Google requires `datePublished` on Comment nodes (ISO 8601).
+        $this->assertNotEmpty($first['datePublished'] ?? null);
+        $this->assertSame(Carbon::parse($first['datePublished'])->toIso8601String(), $first['datePublished']);
+    }
+
+    /**
+     * The number of emitted Comment nodes is capped by the
+     * `seo_post_crawler_limit` setting, keeping the lowest-numbered replies
+     * (the order they appear on the page). Rendering every reply is the
+     * dominant page-load cost, so the cap bounds it.
+     */
+    #[Test]
+    public function comment_count_is_capped_by_the_limit_setting(): void
+    {
+        // The seeded thread has two replies; a limit of 1 should emit only the
+        // first (lowest-numbered) reply, in the order it appears on the page.
+        $this->setting('seo_post_crawler_limit', '1');
+        $this->seedThread();
+
+        $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting');
+
+        $comments = $entry['comment'] ?? null;
+        $this->assertIsArray($comments);
+        $this->assertCount(1, $comments);
+        $this->assertStringContainsString('The popular reply.', $comments[0]['text'] ?? '');
+    }
+
+    /**
+     * Comment `text` must be plain text rendered from the stored markup — not
+     * the raw TextFormatter representation. A reply containing bold, a link and
+     * an HTML entity should come through with the formatting stripped, the link
+     * reduced to its visible label, and the entity decoded.
+     */
+    #[Test]
+    public function comment_text_is_rendered_to_plain_text(): void
+    {
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+                ['id' => 3, 'username' => 'bob', 'email' => 'b@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 2, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 3, 'type' => 'comment', 'content' => '<r><p><STRONG>Bold</STRONG> and Tom &amp; Jerry visit <URL url="https://example.com">example.com</URL></p></r>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting');
+
+        $text = $entry['comment'][0]['text'] ?? '';
+
+        // Plain text: markup stripped, link as its label, entity decoded.
+        $this->assertSame('Bold and Tom & Jerry visit example.com', $text);
+        // No raw TextFormatter markup or undecoded entities leaked through.
+        $this->assertStringNotContainsString('STRONG', $text);
+        $this->assertStringNotContainsString('URL', $text);
+        $this->assertStringNotContainsString('https://example.com', $text);
+        $this->assertStringNotContainsString('&amp;', $text);
     }
 
     #[Test]
