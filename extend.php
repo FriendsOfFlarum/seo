@@ -46,6 +46,12 @@ return [
 
     new Extend\Locales(__DIR__.'/locale'),
 
+    // Cap how many replies are emitted as schema.org Comment nodes when the
+    // post crawler is enabled. Rendering each reply is the dominant cost on
+    // page load, so bound it; Google only needs the comments shown on the page.
+    (new Extend\Settings())
+      ->default('seo_post_crawler_limit', 100),
+
     (new Extend\Formatter())
       ->render(FormatLinks::class)
       ->configure(ConfigureLinks::class),
