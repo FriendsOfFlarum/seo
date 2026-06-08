@@ -67,5 +67,43 @@ Twitter image tags; you can override either in the dialog.
 > image is used for Twitter too. Setting *only* a Twitter image (with no Open
 > Graph image) will not emit image tags.
 
+Auto-detection skips **SVG** images: Slack, X and most networks reject SVG for
+preview images, so a post that opens with an SVG badge (e.g. a shields.io
+license badge) would otherwise unfurl with no image. The first **raster** image
+(PNG/JPG/WebP/GIF) in the post is used instead; if there is none, the image
+falls back to the forum-wide social media image (then the logo, then favicon).
+
 If another extension owns an item's image, FoF SEO records its *source* and won't
 overwrite it — see the [developer guide](developers/seometa-objects.md#images).
+
+### Fixing previously-stored SVG images
+
+The detected image is stored on the item when it is saved, so discussions that
+were saved *before* the SVG exclusion existed may still have an SVG stored as
+their Open Graph image. They self-heal the next time the discussion is edited,
+but you can fix them all at once with a console command:
+
+```bash
+php flarum fof:seo:fix-svg-images
+```
+
+For each discussion whose stored image is an SVG (and was set automatically, not
+manually or by another extension), it re-derives the first raster image from the
+post — or clears the stored image so rendering falls back to the forum social
+image. Manually-set and other-extension-managed images are left untouched.
+
+The command processes discussions in batches to keep memory and database load
+flat on large forums:
+
+| Option | Description |
+| --- | --- |
+| `--batch=<n>` | Number of rows to process per chunk. Defaults to `100`. |
+| `--dry-run` | Report what would change without writing anything. |
+
+```bash
+# Preview the changes without saving
+php flarum fof:seo:fix-svg-images --dry-run
+
+# Use smaller chunks on a constrained server
+php flarum fof:seo:fix-svg-images --batch=25
+```
