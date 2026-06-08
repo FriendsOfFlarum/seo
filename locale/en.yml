@@ -55,15 +55,15 @@ fof-seo:
         maintain: Check all your settings when you first setup this extensions. Maintain them to get the best search results.
 
       twitter_card:
-        heading: Twitter card size
-        help: When your forum is shared on Twitter, it will have an image (if a social media image has been set up). This can be a big card with a big image, or a small card (summary) with a smaller image.
+        heading: X (formerly Twitter) card size
+        help: When your forum is shared on X (formerly Twitter), it will have an image (if a social media image has been set up). This can be a big card with a big image, or a small card (summary) with a smaller image.
         option_large: Large card (large image)
         option_summary: Summary card (smaller image)
 
       social_media_image:
         heading: Social media image
         help_size: Expecting a square image. Recommended size is 1200x1200 pixels. Otherwise use a landscape image, recommended size is 1200x630.
-        help_usage: This image will be used by Social Media when a user shares a page on your website (Facebook, Twitter, Reddit).
+        help_usage: This image will be used by Social Media when a user shares a page on your website (Facebook, X (formerly Twitter), Reddit).
 
       crawl:
         heading: Discussion post crawl settings
@@ -282,14 +282,14 @@ fof-seo:
         placeholder: Reading time in seconds
 
       twitter:
-        label: Twitter card
-        auto_switch: Auto generate Twitter card
-        title: Twitter title
-        description: Twitter description
+        label: X (formerly Twitter) card
+        auto_switch: Auto generate X (formerly Twitter) card
+        title: X (formerly Twitter) title
+        description: X (formerly Twitter) description
 
         image:
-          label: Twitter image
-          help: Displays an image on Twitter.
+          label: X (formerly Twitter) image
+          help: Displays an image on X (formerly Twitter).
           reset: Reset image
 
       og:
@@ -299,4 +299,4 @@ fof-seo:
 
         description:
           label: Open Graph description
-          placeholder: Custom Twitter description
+          placeholder: Custom Open Graph description
