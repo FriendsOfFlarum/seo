@@ -87,11 +87,6 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        // Simple discussion tags is set up
-        if ($this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 0) {
-            return;
-        }
-
         // Get discussion ID from params
         // Cast to int to extract the numeric id from the `{id}-{slug}` route
         // param so the lookup works on all databases (SQLite won't coerce it).
@@ -119,6 +114,17 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Not a Q&A discussion — DiscussionPage already emitted DiscussionForumPosting.
         // A child of a Q&A tag counts as Q&A too (flarum-tags nests one level).
         if (!$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna)) {
+            return;
+        }
+
+        $crawlerEnabled = $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1;
+
+        // With the post crawler on we emit the full QAPage (every answer). With
+        // it off we still emit a QAPage — but only when an accepted answer
+        // exists, and only that answer, which is cheap because the best-answer
+        // post is loaded on its own. A Q&A discussion with no accepted answer
+        // falls through to DiscussionPage's DiscussionForumPosting.
+        if (!$crawlerEnabled && $discussion->best_answer_post_id === null) {
             return;
         }
 
@@ -197,7 +203,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Only add suggested answers property if there are posts
         $mainEntity['suggestedAnswer'] = [];
 
-        // Get all public comments for this discussion
+        // Get the answer posts for this discussion.
         // Eager-load the author (and likes, when the extension is enabled)
         // relations referenced in the loop below to avoid an N+1 per answer post.
         $with = ['user'];
@@ -205,11 +211,18 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             $with[] = 'likes';
         }
 
-        /** @var Collection<int, Post> $posts */
-        $posts = $discussion->posts()
+        $postsQuery = $discussion->posts()
             ->where('number', '>', '1')
-            ->with($with)
-            ->get();
+            ->with($with);
+
+        // With the crawler off we only surface the accepted answer, so load
+        // just that post rather than the whole thread.
+        if (!$crawlerEnabled) {
+            $postsQuery->where('id', $bestAnswerId);
+        }
+
+        /** @var Collection<int, Post> $posts */
+        $posts = $postsQuery->get();
 
         foreach ($posts as $post) {
             /** @var Post $post */
