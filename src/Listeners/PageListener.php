@@ -367,9 +367,14 @@ class PageListener
         // Check post content is not empty
         if ($content !== null) {
             // Match http(s) and protocol-relative ("//host/img.png") image URLs.
-            $pattern = '/(?<=src=")((?:https?:)?\/\/.*?\.)(jpe?g|png|[tg]iff?|svg|webp)(\?[a-zA-Z0-9\_\-\=\&]*)?(?=")/';
+            // SVG is deliberately excluded: Slack and X reject SVG for og:image
+            // (only raster formats render), so an SVG badge would produce a
+            // plain unfurl with no preview image (GH #149).
+            // The URL body excludes `"` so a non-matching (e.g. SVG) src can't
+            // let `.*?` run past the closing quote into the next img tag.
+            $pattern = '/(?<=src=")((?:https?:)?\/\/[^"]*?\.)(jpe?g|png|[tg]iff?|webp)(\?[a-zA-Z0-9\_\-\=\&]*)?(?=")/';
 
-            // Use image from post for social media og:image
+            // Use the first raster image from the post for the social og:image.
             if (preg_match_all($pattern, $content, $matches)) {
                 $contentImage = $matches[0][0];
 

@@ -46,6 +46,9 @@ return [
 
     new Extend\Locales(__DIR__.'/locale'),
 
+    (new Extend\Console())
+      ->command(Console\FixSvgSocialImagesCommand::class),
+
     (new Extend\Formatter())
       ->render(FormatLinks::class)
       ->configure(ConfigureLinks::class),
