@@ -28,6 +28,7 @@ use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class DiscussionBestAnswerPage implements PageDriverInterface
 {
@@ -44,8 +45,32 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly TranslatorInterface $translator,
     ) {
         $this->events = $events;
+    }
+
+    /**
+     * Build a schema.org Person for a question/answer author. `author` is a
+     * required field, so a deleted user falls back to the localized "[deleted]"
+     * display name with no profile url rather than `name: null` (GH #140).
+     *
+     * @return array<string, string>
+     */
+    private function authorSchema(?User $user): array
+    {
+        if ($user === null) {
+            return [
+                '@type' => 'Person',
+                'name'  => $this->translator->trans('core.lib.username.deleted_text'),
+            ];
+        }
+
+        return [
+            '@type' => 'Person',
+            'name'  => $user->getDisplayNameAttribute(),
+            'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
+        ];
     }
 
     public function extensionDependencies(): array
@@ -150,11 +175,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             'name'        => $seoMeta->title,
             'text'        => $firstPost !== null ? strip_tags($firstPost->content) : '',
             'dateCreated' => $seoMeta->created_at,
-            'author'      => [
-                '@type' => 'Person',
-                'name'  => $discussion->user?->getDisplayNameAttribute(),
-                'url'   => $discussion->user ? $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($discussion->user)]) : null,
-            ],
+            'author'      => $this->authorSchema($discussion->user),
             'answerCount' => $discussion->comment_count - 1,
         ];
 
@@ -202,11 +223,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
                 'text'        => strip_tags($post->content),
                 'dateCreated' => $post->created_at->toIso8601String(),
                 'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
-                'author'      => [
-                    '@type' => 'Person',
-                    'name'  => $post->user ? $post->user->display_name : null,
-                    'url'   => $post->user ? $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($post->user)]) : null,
-                ],
+                'author'      => $this->authorSchema($post->user),
             ];
 
             // Upvote/like count
