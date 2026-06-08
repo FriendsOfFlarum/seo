@@ -38,6 +38,9 @@ automatic updates.
 
 An image is normally detected from an object's content (for example, the first
 image in a post's body) and used for both the Open Graph and Twitter image tags.
+SVG images are skipped (social networks reject them), so the first **raster**
+image is chosen; see [Per-item SEO](../meta-management.md#images) for the
+`fof:seo:fix-svg-images` command that backfills items stored before this.
 
 If a **different extension** owns the image, it must set the `image_source`
 column so FoF SEO knows not to overwrite it (the value is also shown to the user
