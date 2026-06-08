@@ -389,21 +389,56 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->assertSame(1, $question['upvoteCount'] ?? null);
     }
 
+    /**
+     * Even with the post crawler OFF, a Q&A discussion that has an accepted
+     * best answer should emit a QAPage with that answer as `acceptedAnswer`.
+     * The best-answer post is already loaded, so this is cheap and gives Google
+     * the richest result for Q&A threads without enabling full post crawling.
+     */
     #[Test]
-    public function regular_discussion_schema_is_used_when_post_crawler_disabled(): void
+    public function qa_discussion_with_accepted_answer_emits_qapage_even_with_crawler_off(): void
     {
-        // seo_post_crawler defaults to off — no QAPage even for a Q&A discussion.
-        $this->seedQnaDiscussion();
+        // seo_post_crawler defaults to off.
+        $this->seedQnaDiscussion(); // best_answer_post_id => 2
+
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+
+        $qaPage = $this->findSchemaEntry($html, 'QAPage');
+        $this->assertNotNull($qaPage, 'A Q&A discussion with an accepted answer should emit QAPage even with the crawler off.');
+        $this->assertNull(
+            $this->findSchemaEntry($html, 'DiscussionForumPosting'),
+            'QAPage and DiscussionForumPosting must not both be emitted.'
+        );
+
+        $accepted = $qaPage['mainEntity']['acceptedAnswer'] ?? null;
+        $this->assertSame('Answer', $accepted['@type'] ?? null);
+        $this->assertStringContainsString('Use flour, water and yeast.', $accepted['text'] ?? '');
+
+        // With the crawler off we only surface the accepted answer, not the
+        // full thread of suggested answers (that is the crawler-on behaviour).
+        $this->assertSame([], $qaPage['mainEntity']['suggestedAnswer'] ?? null);
+    }
+
+    /**
+     * A Q&A discussion with NO accepted answer stays a plain
+     * DiscussionForumPosting when the crawler is off (decided behaviour: we do
+     * not emit a QAPage without an answer).
+     */
+    #[Test]
+    public function qa_discussion_without_accepted_answer_falls_back_to_forum_posting_when_crawler_off(): void
+    {
+        // Q&A discussion, crawler off, but no best answer set.
+        $this->seedQnaDiscussion(['best_answer_post_id' => null]);
 
         $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
 
         $this->assertNull(
             $this->findSchemaEntry($html, 'QAPage'),
-            'QAPage must not be emitted unless seo_post_crawler is enabled.'
+            'No QAPage should be emitted for a Q&A discussion without an accepted answer.'
         );
         $this->assertNotNull(
             $this->findSchemaEntry($html, 'DiscussionForumPosting'),
-            'A normal discussion should emit DiscussionForumPosting.'
+            'Without an accepted answer the discussion falls back to DiscussionForumPosting.'
         );
     }
 

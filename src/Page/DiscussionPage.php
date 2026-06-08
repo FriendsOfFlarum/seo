@@ -110,16 +110,20 @@ class DiscussionPage implements PageDriverInterface
         /** @var Collection<int, Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
-        // Defer to DiscussionBestAnswerPage only when it will actually emit a
-        // QAPage for this discussion, i.e. when "crawl all posts" is enabled,
-        // best-answer is installed, and this is a Q&A discussion. In every other
-        // case (no best-answer, non-Q&A, crawler off) we emit the standard
-        // DiscussionForumPosting here.
-        if (
-            $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1 &&
-            $tagsEnabled && $enableBestAnswer && $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna)
-        ) {
-            return;
+        // Defer to DiscussionBestAnswerPage when it will actually emit a QAPage
+        // for this discussion: best-answer installed, this is a Q&A discussion,
+        // and either the post crawler is on (full QAPage) or an accepted answer
+        // exists (lightweight QAPage with just that answer). In every other case
+        // (no best-answer, non-Q&A, crawler off without an accepted answer) we
+        // emit the standard DiscussionForumPosting here.
+        $isQna = $tagsEnabled && $enableBestAnswer && $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna);
+
+        if ($isQna) {
+            $crawlerEnabled = $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1;
+
+            if ($crawlerEnabled || $discussion->best_answer_post_id !== null) {
+                return;
+            }
         }
 
         // Get seo-meta-date
