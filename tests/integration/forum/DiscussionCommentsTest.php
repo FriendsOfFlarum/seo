@@ -96,6 +96,40 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
      * (the order they appear on the page). Rendering every reply is the
      * dominant page-load cost, so the cap bounds it.
      */
+    /**
+     * `author` is a required nested field on a schema.org Comment (GH #140).
+     * A reply whose author has been deleted must still emit an `author` Person
+     * with the localized "[deleted]" display name (and no profile url), rather
+     * than omitting the field entirely.
+     */
+    #[Test]
+    public function comment_by_deleted_user_still_has_an_author(): void
+    {
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 2, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+                // Reply by a user that no longer exists (user_id 99 has no row).
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 99, 'type' => 'comment', 'content' => '<t><p>Orphaned reply.</p></t>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting');
+
+        $comment = $entry['comment'][0] ?? null;
+        $this->assertIsArray($comment);
+        // The author field must be present and a Person with a name.
+        $this->assertSame('Person', $comment['author']['@type'] ?? null);
+        $this->assertSame('[deleted]', $comment['author']['name'] ?? null);
+        // A deleted user has no profile, so no url should be emitted.
+        $this->assertArrayNotHasKey('url', $comment['author']);
+    }
+
     #[Test]
     public function comment_count_is_capped_by_the_limit_setting(): void
     {

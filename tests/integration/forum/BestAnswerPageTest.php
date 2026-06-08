@@ -171,6 +171,46 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * `author` is required on a schema.org Answer/Question (GH #140). When an
+     * answer's author has been deleted, the QAPage must still emit an `author`
+     * Person with the localized "[deleted]" name and no null fields, rather
+     * than `name: null`.
+     */
+    #[Test]
+    public function answer_by_deleted_user_still_has_a_named_author(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread?', 'slug' => 'how-do-i-bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>How do I bake bread?</p></t>', 'created_at' => $now],
+                // Accepted answer by a user that no longer exists (no row id 99).
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 99, 'type' => 'comment', 'content' => '<t><p>Use flour and water.</p></t>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => self::QNA_TAG_ID],
+            ],
+        ]);
+
+        $accepted = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity']['acceptedAnswer'] ?? [];
+
+        $author = $accepted['author'] ?? null;
+        $this->assertIsArray($author);
+        $this->assertSame('Person', $author['@type'] ?? null);
+        $this->assertSame('[deleted]', $author['name'] ?? null);
+        // No profile exists for a deleted user, so no url should be emitted.
+        $this->assertArrayNotHasKey('url', $author);
+    }
+
+    /**
      * The optional flarum/likes integration: when it's enabled, an answer's
      * `upvoteCount` reflects its like count.
      */
