@@ -79,4 +79,40 @@ class PageListenerTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    /**
+     * GH #149 — SVG images (e.g. shields.io badges) are rejected by Slack/X as
+     * og:image, so they must not be auto-selected.
+     */
+    public function test_getImageFromContent_skips_svg_images(): void
+    {
+        $result = $this->makeListener()->getImageFromContent(
+            '<p><img src="https://img.shields.io/badge/license-MIT-blue.svg"></p>'
+        );
+
+        $this->assertNull($result);
+    }
+
+    /**
+     * When a post leads with an SVG badge but also contains a raster image,
+     * the first raster image should be chosen (not the SVG, not null).
+     */
+    public function test_getImageFromContent_prefers_first_raster_image_over_svg(): void
+    {
+        $result = $this->makeListener()->getImageFromContent(
+            '<p><img src="https://img.shields.io/badge/license-MIT-blue.svg">'
+            .'<img src="https://i.imgur.com/screenshot.png"></p>'
+        );
+
+        $this->assertSame('https://i.imgur.com/screenshot.png', $result);
+    }
+
+    public function test_getImageFromContent_skips_svg_and_normalises_protocol_relative_raster(): void
+    {
+        $result = $this->makeListener()->getImageFromContent(
+            '<p><img src="//cdn.example.com/badge.svg"><img src="//i.imgur.com/photo.jpg"></p>'
+        );
+
+        $this->assertSame('https://i.imgur.com/photo.jpg', $result);
+    }
 }

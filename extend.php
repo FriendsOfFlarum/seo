@@ -46,6 +46,9 @@ return [
 
     new Extend\Locales(__DIR__.'/locale'),
 
+    (new Extend\Console())
+      ->command(Console\FixSvgSocialImagesCommand::class),
+
     // Cap how many replies are emitted as schema.org Comment nodes when the
     // post crawler is enabled. Rendering each reply is the dominant cost on
     // page load, so bound it; Google only needs the comments shown on the page.
