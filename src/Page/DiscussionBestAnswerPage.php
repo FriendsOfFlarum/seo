@@ -17,6 +17,7 @@ use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
+use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
@@ -71,6 +72,16 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             'name'  => $user->getDisplayNameAttribute(),
             'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
         ];
+    }
+
+    /**
+     * Render a post's stored content to plain text for a schema `text` field:
+     * render to HTML so mentions/links resolve, then decode entities and strip
+     * tags. Mirrors the DiscussionForumPosting comment handling (PR #141).
+     */
+    private function plainText(CommentPost $post): string
+    {
+        return trim(html_entity_decode(strip_tags($post->formatContent()), ENT_QUOTES | ENT_HTML5));
     }
 
     public function extensionDependencies(): array
@@ -179,7 +190,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $mainEntity = [
             '@type'       => 'Question',
             'name'        => $seoMeta->title,
-            'text'        => $firstPost !== null ? strip_tags($firstPost->content) : '',
+            'text'        => $firstPost instanceof CommentPost ? $this->plainText($firstPost) : '',
             'dateCreated' => $seoMeta->created_at,
             'author'      => $this->authorSchema($discussion->user),
             'answerCount' => $discussion->comment_count - 1,
@@ -226,14 +237,14 @@ class DiscussionBestAnswerPage implements PageDriverInterface
 
         foreach ($posts as $post) {
             /** @var Post $post */
-            if ($post->is_private || $post->type !== 'comment') {
+            if ($post->is_private || !$post instanceof CommentPost) {
                 continue;
             }
 
             // Temp post
             $generatedPost = [
                 '@type'       => 'Answer',
-                'text'        => strip_tags($post->content),
+                'text'        => $this->plainText($post),
                 'dateCreated' => $post->created_at->toIso8601String(),
                 'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
                 'author'      => $this->authorSchema($post->user),

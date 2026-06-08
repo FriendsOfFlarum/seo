@@ -211,6 +211,52 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * The Question and Answer `text` must be plain text rendered from the
+     * stored markup — not the raw source. Markup is stripped, links reduce to
+     * their visible label, and HTML entities are decoded (matching the
+     * DiscussionForumPosting comment behaviour).
+     */
+    #[Test]
+    public function question_and_answer_text_is_rendered_to_plain_text(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        // The accepted answer contains a labelled markdown link. The raw stored
+        // source keeps the `[label](url)` syntax, so the old strip_tags(content)
+        // path would leak it; rendering to HTML reduces it to the label.
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread?', 'slug' => 'how-do-i-bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<r><p>Flour <STRONG>and</STRONG> water?</p></r>', 'created_at' => $now],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<r><p>Yes &amp; yeast, read <URL url="https://example.com"><s>[</s>the docs<e>](https://example.com)</e></URL></p></r>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => self::QNA_TAG_ID],
+            ],
+        ]);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity'] ?? [];
+
+        // Question text: markup stripped, plain text only.
+        $this->assertSame('Flour and water?', $question['text'] ?? null);
+
+        // Answer text: link reduced to its label, entity decoded, no markdown
+        // link syntax leaked.
+        $answer = $question['acceptedAnswer']['text'] ?? '';
+        $this->assertSame('Yes & yeast, read the docs', $answer);
+        $this->assertStringNotContainsString('](', $answer);
+        $this->assertStringNotContainsString('https://example.com', $answer);
+        $this->assertStringNotContainsString('&amp;', $answer);
+    }
+
+    /**
      * The optional flarum/likes integration: when it's enabled, an answer's
      * `upvoteCount` reflects its like count.
      */
