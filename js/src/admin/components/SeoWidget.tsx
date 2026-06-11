@@ -27,7 +27,7 @@ export default class SeoWidget extends DashboardWidget {
     return (
       <div>
         {icon('fas fa-check seo-check-icon')} {app.translator.trans('fof-seo.admin.dashboard.widget.review_prompt')}
-        <LinkButton className="" icon="far fa-thumbs-up" href={app.route('extension', { id: 'fof-seo' })}>
+        <LinkButton className="Button SeoWidget-cta" icon="far fa-thumbs-up" href={app.route('extension', { id: 'fof-seo' })}>
           {app.translator.trans('fof-seo.admin.dashboard.widget.cta')}
         </LinkButton>
       </div>
