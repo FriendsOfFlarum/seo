@@ -16,11 +16,12 @@
             margin-right: 15px;
         }
 
-        // The CTA is a LinkButton, which renders an `<a class="LinkButton">`
-        // (no `Button` class in Flarum) — not a `<button>` — so the old
-        // `button` selector never matched and the CTA was invisible on the
-        // widget's blue background (GH #159). Target `.LinkButton` instead.
-        .LinkButton {
+        // The CTA's `className` prop *replaces* the element class, so an empty
+        // string left the anchor with no `Button`/`LinkButton` hook and the
+        // styling never matched — the CTA stayed invisible on the widget's blue
+        // background (GH #159). The component now sets `Button SeoWidget-cta`;
+        // target that explicit class so the white pill always applies.
+        .SeoWidget-cta {
             background: #FFFFFF;
             border: 0;
             text-decoration: none;
