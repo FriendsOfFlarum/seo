@@ -21,8 +21,8 @@ class Crumb
 {
     /**
      * @param array<string, mixed> $extra extra properties merged into the
-     *                                     schema.org `item` object (e.g. an
-     *                                     explicit `@id` or `image`)
+     *                                    schema.org `item` object (e.g. an
+     *                                    explicit `@id` or `image`)
      */
     public function __construct(
         public string $name,
