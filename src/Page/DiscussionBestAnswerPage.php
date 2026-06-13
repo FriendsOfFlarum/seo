@@ -29,7 +29,6 @@ use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 class DiscussionBestAnswerPage implements PageDriverInterface
 {
@@ -46,25 +45,25 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
-        protected readonly TranslatorInterface $translator,
     ) {
         $this->events = $events;
     }
 
     /**
-     * Build a schema.org Person for a question/answer author. `author` is a
-     * required field, so a deleted user falls back to the localized "[deleted]"
-     * display name with no profile url rather than `name: null` (GH #140).
+     * Build a schema.org Person for a question/answer author, or null when the
+     * user has been deleted. Google's QAPage guidance expects `author.url` to
+     * be "a link to a web page that uniquely identifies the author" — a profile
+     * page. A deleted user has no such page, and emitting an `author` Person
+     * without a `url` trips Search Console's "Missing field 'url' (in
+     * 'mainEntity.author')". Since `author` is recommended rather than required,
+     * callers omit it entirely when this returns null (GH #140).
      *
-     * @return array<string, string>
+     * @return array<string, string>|null
      */
-    private function authorSchema(?User $user): array
+    private function authorSchema(?User $user): ?array
     {
         if ($user === null) {
-            return [
-                '@type' => 'Person',
-                'name'  => $this->translator->trans('core.lib.username.deleted_text'),
-            ];
+            return null;
         }
 
         return [
@@ -192,9 +191,13 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             'name'        => $seoMeta->title,
             'text'        => $firstPost instanceof CommentPost ? $this->plainText($firstPost) : '',
             'dateCreated' => $seoMeta->created_at,
-            'author'      => $this->authorSchema($discussion->user),
             'answerCount' => $discussion->comment_count - 1,
         ];
+
+        // Omit `author` when the starter is deleted — see authorSchema().
+        if (($questionAuthor = $this->authorSchema($discussion->user)) !== null) {
+            $mainEntity['author'] = $questionAuthor;
+        }
 
         // Upvotes on the question itself (the first post), when likes are available.
         if ($enableLikes && $firstPost !== null) {
@@ -247,8 +250,12 @@ class DiscussionBestAnswerPage implements PageDriverInterface
                 'text'        => $this->plainText($post),
                 'dateCreated' => $post->created_at->toIso8601String(),
                 'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
-                'author'      => $this->authorSchema($post->user),
             ];
+
+            // Omit `author` when this post's user is deleted — see authorSchema().
+            if (($answerAuthor = $this->authorSchema($post->user)) !== null) {
+                $generatedPost['author'] = $answerAuthor;
+            }
 
             // Upvote/like count
             $generatedPost['upvoteCount'] = $enableLikes ? $post->likes->count() : 0;
