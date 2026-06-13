@@ -308,7 +308,37 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertNotNull($entry, 'Expected a DiscussionForumPosting JSON-LD entry.');
         $this->assertSame('http://localhost/d/1-bake-bread', $entry['url'] ?? null);
         $this->assertSame('Person', $entry['author']['@type'] ?? null);
+        // A live author must carry a profile `url` — the field Google recommends
+        // and that satisfies Search Console.
+        $this->assertArrayHasKey('url', $entry['author']);
+        $this->assertNotEmpty($entry['author']['url']);
         $this->assertNotEmpty($entry['datePublished'] ?? null);
+    }
+
+    /**
+     * When the discussion starter has been deleted there is no profile page to
+     * link, so the `DiscussionForumPosting` `author` is omitted rather than
+     * emitted without a `url`. This is the exact field Search Console flagged:
+     * "Missing field 'url' (in 'author')". `author` is recommended, not
+     * required, so omission is valid (GH #140).
+     */
+    #[Test]
+    public function discussion_by_deleted_user_omits_the_author(): void
+    {
+        $this->prepareDatabase([
+            Discussion::class => [
+                // Started by a user that no longer exists (no row id 99).
+                ['id' => 1, 'title' => 'Orphaned discussion', 'slug' => 'orphaned', 'user_id' => 99, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 99, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-orphaned'), 'DiscussionForumPosting');
+
+        $this->assertNotNull($entry, 'Expected a DiscussionForumPosting JSON-LD entry.');
+        $this->assertArrayNotHasKey('author', $entry);
     }
 
     /**
