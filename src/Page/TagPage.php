@@ -11,8 +11,13 @@
 
 namespace FoF\Seo\Page;
 
+use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Foundation\DispatchEventsTrait;
+use Flarum\Http\SlugManager;
+use Flarum\Http\UrlGenerator;
 use Flarum\Tags\TagRepository;
+use FoF\Seo\Breadcrumb\Crumb;
+use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\TagIndexingPolicy;
@@ -31,6 +36,8 @@ class TagPage implements PageDriverInterface
         protected readonly TranslatorInterface $translator,
         Dispatcher $events,
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly UrlGenerator $urlGenerator,
+        protected readonly SlugManager $slugManager,
     ) {
         $this->events = $events;
     }
@@ -81,6 +88,12 @@ class TagPage implements PageDriverInterface
             // Canonical url
             ->setCanonicalUrl('/t/'.$tag->slug);
 
+        // Breadcrumb: Home › Tags › {ancestors} › {this tag}. The tag itself is
+        // the current page, so it has no url.
+        $tagBreadcrumb = new TagBreadcrumb($this->urlGenerator);
+        $tagBreadcrumb->pushAncestorsOf($properties->breadcrumb(), $tag);
+        $properties->breadcrumb()->push(new Crumb($tag->name));
+
         // List the tag's most recent public discussions as a schema.org ItemList.
         $discussions = $tag->discussions()
             ->where('is_private', false)
@@ -89,10 +102,12 @@ class TagPage implements PageDriverInterface
             ->limit(20)
             ->get();
 
+        $discussionSlugger = $this->slugManager->forResource(FlarumDiscussion::class);
+
         $itemListElement = $discussions->values()->map(fn ($discussion, int $index) => [
             '@type'    => 'ListItem',
             'position' => $index + 1,
-            'url'      => $properties->withApplicationPath('/d/'.$discussion->id.'-'.$discussion->slug),
+            'url'      => $properties->withApplicationPath('/d/'.$discussionSlugger->toSlug($discussion)),
             'name'     => $discussion->title,
         ])->toArray();
 

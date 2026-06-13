@@ -11,6 +11,7 @@
 
 namespace FoF\Seo;
 
+use FoF\Seo\Breadcrumb\BreadcrumbTrail;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\SeoMeta\SeoMeta;
 
@@ -217,9 +218,48 @@ class SeoProperties
     }
 
     /**
-     * Generates a schema.org breadcrumb list.
+     * The breadcrumb trail for the current request, pre-seeded with a "Home"
+     * crumb. Page drivers push their crumbs onto it; third parties reshape it
+     * via the {@see \FoF\Seo\Event\BuildingBreadcrumb} event.
+     *
+     * ```php
+     * $properties->breadcrumb()
+     *     ->push(new Crumb($tag->name, $tagUrl))
+     *     ->push(new Crumb($discussion->title)); // current page: no url
+     * ```
+     */
+    public function breadcrumb(): BreadcrumbTrail
+    {
+        return $this->container->breadcrumb();
+    }
+
+    /**
+     * A fresh breadcrumb trail seeded with the "Home" root, for building an
+     * additional trail (e.g. a second primary-tag lineage). Register it with
+     * {@see addBreadcrumb()}.
+     */
+    public function newBreadcrumb(): BreadcrumbTrail
+    {
+        return $this->container->newSeededTrail();
+    }
+
+    /**
+     * Register an additional breadcrumb trail; each renders as its own
+     * schema.org BreadcrumbList.
+     */
+    public function addBreadcrumb(BreadcrumbTrail $trail): self
+    {
+        $this->container->addBreadcrumb($trail);
+
+        return $this;
+    }
+
+    /**
+     * Generates a schema.org breadcrumb list from a flat tag array.
      *
      * @param array<int, array<string, mixed>> $tags
+     *
+     * @deprecated Use {@see breadcrumb()} and push Crumb objects instead.
      */
     public function generateSchemaBreadcrumb(array $tags): self
     {
