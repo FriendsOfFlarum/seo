@@ -318,6 +318,84 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * Google's "Either 'text', 'image' or 'video' should be specified" applies
+     * to QAPage Question/Answer nodes too. An image-only accepted answer must
+     * carry `image` rather than an empty `text`.
+     */
+    #[Test]
+    public function image_only_answer_emits_image_and_no_empty_text(): void
+    {
+        $this->extension('flarum-markdown');
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread?', 'slug' => 'how-do-i-bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>How?</p></t>', 'created_at' => $now],
+                // Accepted answer that is only an image, no caption.
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<r><p><IMG alt="" src="https://example.com/loaf.png"><s>![</s><e>](https://example.com/loaf.png)</e></IMG></p></r>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => self::QNA_TAG_ID],
+            ],
+        ]);
+
+        $accepted = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity']['acceptedAnswer'] ?? [];
+
+        $this->assertSame('Answer', $accepted['@type'] ?? null);
+        // No empty `text`; the image is emitted instead.
+        $this->assertArrayNotHasKey('text', $accepted);
+        $this->assertSame('https://example.com/loaf.png', $accepted['image'] ?? null);
+    }
+
+    /**
+     * The same rule applies to the Question node: an image-only first post
+     * emits `image` (alongside the always-present `name`/title) rather than an
+     * empty `text`.
+     */
+    #[Test]
+    public function image_only_question_emits_image_and_no_empty_text(): void
+    {
+        $this->extension('flarum-markdown');
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'Spot the difference', 'slug' => 'spot-the-difference', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            Post::class => [
+                // First post (the question) is only an image.
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<r><p><IMG alt="" src="https://example.com/q.png"><s>![</s><e>](https://example.com/q.png)</e></IMG></p></r>', 'created_at' => $now],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>It is the left one.</p></t>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => self::QNA_TAG_ID],
+            ],
+        ]);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-spot-the-difference'), 'QAPage')['mainEntity'] ?? [];
+
+        $this->assertSame('Question', $question['@type'] ?? null);
+        // The title is always present as `name`...
+        $this->assertSame('Spot the difference', $question['name'] ?? null);
+        // ...and the image stands in for the absent text.
+        $this->assertArrayNotHasKey('text', $question);
+        $this->assertSame('https://example.com/q.png', $question['image'] ?? null);
+    }
+
+    /**
      * The optional flarum/likes integration: when it's enabled, an answer's
      * `upvoteCount` reflects its like count.
      */

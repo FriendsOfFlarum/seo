@@ -25,6 +25,7 @@ use Flarum\User\User;
 use Flarum\User\UserRepository;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\Support\PostMedia;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
@@ -71,16 +72,6 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             'name'  => $user->getDisplayNameAttribute(),
             'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
         ];
-    }
-
-    /**
-     * Render a post's stored content to plain text for a schema `text` field:
-     * render to HTML so mentions/links resolve, then decode entities and strip
-     * tags. Mirrors the DiscussionForumPosting comment handling (PR #141).
-     */
-    private function plainText(CommentPost $post): string
-    {
-        return trim(html_entity_decode(strip_tags($post->formatContent()), ENT_QUOTES | ENT_HTML5));
     }
 
     public function extensionDependencies(): array
@@ -189,10 +180,16 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $mainEntity = [
             '@type'       => 'Question',
             'name'        => $seoMeta->title,
-            'text'        => $firstPost instanceof CommentPost ? $this->plainText($firstPost) : '',
             'dateCreated' => $seoMeta->created_at,
             'answerCount' => $discussion->comment_count - 1,
         ];
+
+        // text/image/video for the question (its first post). Google's "Either
+        // 'text', 'image' or 'video' should be specified" applies here too, so
+        // emit whichever the post actually has rather than an empty `text`.
+        if ($firstPost instanceof CommentPost) {
+            $mainEntity += PostMedia::schemaFields($firstPost->formatContent());
+        }
 
         // Omit `author` when the starter is deleted — see authorSchema().
         if (($questionAuthor = $this->authorSchema($discussion->user)) !== null) {
@@ -244,13 +241,14 @@ class DiscussionBestAnswerPage implements PageDriverInterface
                 continue;
             }
 
-            // Temp post
+            // Temp post. text/image/video from the rendered HTML so an
+            // image-only answer carries `image` instead of an empty `text`
+            // (Google's "Either 'text', 'image' or 'video'" rule).
             $generatedPost = [
                 '@type'       => 'Answer',
-                'text'        => $this->plainText($post),
                 'dateCreated' => $post->created_at->toIso8601String(),
                 'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
-            ];
+            ] + PostMedia::schemaFields($post->formatContent());
 
             // Omit `author` when this post's user is deleted — see authorSchema().
             if (($answerAuthor = $this->authorSchema($post->user)) !== null) {

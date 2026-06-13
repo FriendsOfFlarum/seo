@@ -37,6 +37,19 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
         $this->setting('seo_post_crawler', '1');
     }
 
+    /**
+     * The stored TextFormatter XML fof/upload produces for an uploaded image,
+     * which its image-preview formatter renders to an `<img src={thumbnail}>`.
+     */
+    private function imagePreviewMarkup(string $url, string $thumbnailUrl, string $alt): string
+    {
+        $uuid = '00000000-0000-0000-0000-000000000000';
+
+        return '<p><UPL-IMAGE-PREVIEW alt="'.$alt.'" thumbnail_url="'.$thumbnailUrl.'" url="'.$url.'" uuid="'.$uuid.'">'
+            .'[upl-image-preview uuid='.$uuid.' url='.$url.' alt='.$alt.' thumbnail_url='.$thumbnailUrl.']'
+            .'</UPL-IMAGE-PREVIEW></p>';
+    }
+
     private function seedThread(): void
     {
         $this->prepareDatabase([
@@ -181,6 +194,137 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
         $this->assertStringNotContainsString('URL', $text);
         $this->assertStringNotContainsString('https://example.com', $text);
         $this->assertStringNotContainsString('&amp;', $text);
+    }
+
+    /**
+     * Google's forum guidance requires a `comment` to specify at least one of
+     * `text`, `image` or `video`. A reply that is only an image has no plain
+     * text, so instead of emitting an empty `text` (which trips Search
+     * Console's "Either 'text', 'image' or 'video' should be specified") we
+     * emit the rendered image URL as `image` and omit `text`.
+     *
+     * Rendered end-to-end through fof/upload's image-preview formatter, which
+     * (like every image source) produces a standard `<img src>` we extract —
+     * exercising the real render → extract → schema path.
+     */
+    #[Test]
+    public function image_only_comment_emits_image_and_no_empty_text(): void
+    {
+        $this->extension('fof-upload');
+
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 2, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+                // Reply that is only an uploaded image, no caption.
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 2, 'type' => 'comment', 'content' => '<r>'.$this->imagePreviewMarkup('https://example.com/bread.png', 'https://example.com/bread-thumb.webp', 'bread.png').'</r>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $comment = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting')['comment'][0] ?? null;
+
+        $this->assertIsArray($comment);
+        $this->assertSame('Comment', $comment['@type'] ?? null);
+        // No empty `text` field.
+        $this->assertArrayNotHasKey('text', $comment);
+        // The rendered image (the thumbnail src fof/upload emits) is present.
+        $this->assertSame('https://example.com/bread-thumb.webp', $comment['image'] ?? null);
+    }
+
+    /**
+     * A reply that contains both text and an image keeps its `text` and also
+     * exposes the `image`.
+     */
+    #[Test]
+    public function comment_with_text_and_image_emits_both(): void
+    {
+        $this->extension('fof-upload');
+
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 2, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 2, 'type' => 'comment', 'content' => '<r><p>Here is my loaf</p>'.$this->imagePreviewMarkup('https://example.com/loaf.png', 'https://example.com/loaf-thumb.webp', 'loaf.png').'</r>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $comment = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting')['comment'][0] ?? null;
+
+        $this->assertIsArray($comment);
+        $this->assertStringContainsString('Here is my loaf', $comment['text'] ?? '');
+        $this->assertSame('https://example.com/loaf-thumb.webp', $comment['image'] ?? null);
+    }
+
+    /**
+     * Image extraction is not fof/upload-specific: a plain markdown image
+     * (rendered by flarum/markdown to a standard `<img>`) is picked up the same
+     * way. Locks in that the source is the rendered HTML, not any one plugin.
+     */
+    #[Test]
+    public function markdown_image_only_comment_emits_image(): void
+    {
+        $this->extension('flarum-markdown');
+
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 2, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+                // Stored markdown-image XML, as flarum/markdown parses `![](url)`.
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 2, 'type' => 'comment', 'content' => '<r><p><IMG alt="" src="https://example.com/md.png"><s>![</s><e>](https://example.com/md.png)</e></IMG></p></r>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $comment = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting')['comment'][0] ?? null;
+
+        $this->assertIsArray($comment);
+        $this->assertArrayNotHasKey('text', $comment);
+        $this->assertSame('https://example.com/md.png', $comment['image'] ?? null);
+    }
+
+    /**
+     * A reply with neither plain text nor any image cannot form a valid
+     * `comment` node, so it is omitted entirely rather than emitted with an
+     * empty `text`.
+     */
+    #[Test]
+    public function comment_with_neither_text_nor_image_is_omitted(): void
+    {
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 3, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+                // Reply that renders to nothing (whitespace only).
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p> </p></t>', 'created_at' => Carbon::now()],
+                // A normal reply, so the comment[] block is still emitted.
+                ['id' => 3, 'discussion_id' => 1, 'number' => 3, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>A real reply.</p></t>', 'created_at' => Carbon::now()],
+            ],
+        ]);
+
+        $comments = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting')['comment'] ?? [];
+
+        // The empty reply (post 2) is dropped; only the real reply remains.
+        $this->assertCount(1, $comments);
+        $this->assertStringContainsString('A real reply.', $comments[0]['text'] ?? '');
     }
 
     #[Test]

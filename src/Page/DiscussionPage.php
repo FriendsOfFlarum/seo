@@ -12,6 +12,7 @@
 namespace FoF\Seo\Page;
 
 use Flarum\Database\Eloquent\Collection;
+use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Discussion\DiscussionRepository;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
@@ -25,6 +26,7 @@ use Flarum\User\User;
 use Flarum\User\UserRepository;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\Support\PostMedia;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
@@ -71,6 +73,64 @@ class DiscussionPage implements PageDriverInterface
             'name'  => $user->getDisplayNameAttribute(),
             'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
         ];
+    }
+
+    /**
+     * Build a schema.org Comment node for a reply, or null when the reply has
+     * none of the content a Comment requires. Google's forum guidance says a
+     * `comment` must specify at least one of `text`, `image` or `video`; a
+     * reply that is e.g. an image with no caption otherwise produced an empty
+     * `text`, tripping Search Console's "Either 'text', 'image' or 'video'
+     * should be specified (in 'comment')". We emit `text` when there is any,
+     * plus any images/videos found in the rendered HTML, and omit the comment
+     * entirely when it has none of the three.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function commentSchema(CommentPost $post, FlarumDiscussion $discussion, bool $enableLikes, bool $enableGamification): ?array
+    {
+        // Render once and pull text/image/video from the same HTML so any
+        // extension's final URLs (e.g. fof/upload's image preview) are
+        // reflected. Google requires a Comment to specify at least one of them.
+        $media = PostMedia::schemaFields($post->formatContent());
+
+        if ($media === []) {
+            return null;
+        }
+
+        $comment = [
+            '@type'         => 'Comment',
+            // Google requires `datePublished` on Comment nodes; keep
+            // `dateCreated` too for schema.org completeness.
+            'datePublished' => $post->created_at->toIso8601String(),
+            'dateCreated'   => $post->created_at->toIso8601String(),
+            'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
+        ] + $media;
+
+        // Omit `author` when the commenter is deleted — see authorSchema().
+        if (($commentAuthor = $this->authorSchema($post->user)) !== null) {
+            $comment['author'] = $commentAuthor;
+        }
+
+        if ($enableLikes || $enableGamification) {
+            $count = 0;
+
+            if ($enableLikes) {
+                $count += (int) $post->getAttribute('likes_count');
+            }
+
+            if ($enableGamification) {
+                $count += (int) $post->getAttribute('upvotes_count');
+            }
+
+            $comment['interactionStatistic'] = [
+                '@type'                => 'InteractionCounter',
+                'interactionType'      => 'https://schema.org/LikeAction',
+                'userInteractionCount' => $count,
+            ];
+        }
+
+        return $comment;
     }
 
     public function extensionDependencies(): array
@@ -248,44 +308,14 @@ class DiscussionPage implements PageDriverInterface
             /** @var Collection<int, Post> $replies */
             $replies = $query->get();
 
-            $comments = $replies->filter(fn (Post $post) => $post instanceof CommentPost)->map(function (CommentPost $post) use ($discussion, $enableLikes, $enableGamification) {
-                $comment = [
-                    '@type'         => 'Comment',
-                    // Render to HTML so mentions/links resolve, then decode
-                    // entities and strip tags for clean plain text.
-                    'text'          => trim(html_entity_decode(strip_tags($post->formatContent()), ENT_QUOTES | ENT_HTML5)),
-                    // Google requires `datePublished` on Comment nodes; keep
-                    // `dateCreated` too for schema.org completeness.
-                    'datePublished' => $post->created_at->toIso8601String(),
-                    'dateCreated'   => $post->created_at->toIso8601String(),
-                    'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
-                ];
-
-                // Omit `author` when the commenter is deleted — see authorSchema().
-                if (($commentAuthor = $this->authorSchema($post->user)) !== null) {
-                    $comment['author'] = $commentAuthor;
-                }
-
-                if ($enableLikes || $enableGamification) {
-                    $count = 0;
-
-                    if ($enableLikes) {
-                        $count += (int) $post->getAttribute('likes_count');
-                    }
-
-                    if ($enableGamification) {
-                        $count += (int) $post->getAttribute('upvotes_count');
-                    }
-
-                    $comment['interactionStatistic'] = [
-                        '@type'                => 'InteractionCounter',
-                        'interactionType'      => 'https://schema.org/LikeAction',
-                        'userInteractionCount' => $count,
-                    ];
-                }
-
-                return $comment;
-            })->values()->toArray();
+            $comments = $replies
+                ->filter(fn (Post $post) => $post instanceof CommentPost)
+                // commentSchema() returns null for a reply with no text/image —
+                // such a comment node would be invalid, so drop it entirely.
+                ->map(fn (CommentPost $post) => $this->commentSchema($post, $discussion, $enableLikes, $enableGamification))
+                ->filter()
+                ->values()
+                ->toArray();
 
             if (count($comments) > 0) {
                 $properties->setSchemaJson('comment', $comments);

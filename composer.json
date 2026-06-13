@@ -33,6 +33,7 @@
     },
     "require-dev": {
         "flarum/likes": "*",
+        "flarum/markdown": "*",
         "fof/pages": "^2.0.0",
         "fof/best-answer": "^2.0.0",
         "fof/gamification": "*",
@@ -58,8 +59,10 @@
             "title": "FoF SEO",
             "category": "feature",
             "optional-dependencies": [
+                "flarum/markdown",
                 "fof/pages",
                 "fof/sitemap",
+                "fof/upload",
                 "fof/best-answer",
                 "fof/discussion-views",
                 "fof/discussion-language"
