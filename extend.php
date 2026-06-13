@@ -101,7 +101,8 @@ return [
             ->subscribe(Subscribers\TagSubscriber::class),
 
           (new SEO())
-            ->addExtender('tag', SeoPage\TagPage::class),
+            ->addExtender('tag', SeoPage\TagPage::class)
+            ->addExtender('tags', SeoPage\TagsPage::class),
       ])
       ->whenExtensionEnabled('fof-best-answer', fn () => [
           (new SEO())
@@ -110,5 +111,9 @@ return [
       ->whenExtensionEnabled('fof-pages', fn () => [
           (new SEO())
             ->addExtender('page_extension', SeoPage\PageExtensionPage::class),
+      ])
+      ->whenExtensionEnabled('fof-user-directory', fn () => [
+          (new SEO())
+            ->addExtender('fof_user_directory', SeoPage\UserDirectoryPage::class),
       ]),
 ];

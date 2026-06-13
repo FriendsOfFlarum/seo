@@ -116,18 +116,27 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
             ],
         ]);
 
+        $this->setting('forum_title', 'My Forum');
+
         $html = $this->fetchForumHtml('/d/1-help-bread');
 
         $breadcrumb = $this->findSchemaEntry($html, 'BreadcrumbList');
 
         $this->assertNotNull($breadcrumb, 'Expected a BreadcrumbList entry when tags are present.');
-        $this->assertNotEmpty($breadcrumb['itemListElement'] ?? []);
 
-        $first = $breadcrumb['itemListElement'][0];
-        $this->assertSame('ListItem', $first['@type']);
-        $this->assertSame(1, $first['position']);
-        $this->assertSame('Baking', $first['item']['name'] ?? null);
-        $this->assertSame('http://localhost/t/baking', $first['item']['url'] ?? null);
+        $items = $breadcrumb['itemListElement'] ?? [];
+        // Home › Tags › Baking › {discussion title}.
+        $names = array_column($items, 'name');
+        $this->assertSame(['My Forum', 'Tags', 'Baking', 'Help with bread'], $names);
+
+        // Positions are sequential from 1.
+        $this->assertSame([1, 2, 3, 4], array_column($items, 'position'));
+
+        // The tag crumb links to the tag page...
+        $this->assertSame('http://localhost/t/baking', $items[2]['item']['url'] ?? null);
+        // ...and the last crumb (the discussion) omits `item` so Google uses
+        // the page URL.
+        $this->assertArrayNotHasKey('item', $items[3]);
     }
 
     #[Test]

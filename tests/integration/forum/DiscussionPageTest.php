@@ -316,6 +316,29 @@ class DiscussionPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * The discussion is resolved through Flarum's SlugManager, so a non-default
+     * discussion slug driver (here the UTF-8 driver) still resolves the model
+     * and the schema `url` is built from the driver's slug. Guards against the
+     * old `(int)` route-param parsing that assumed an id-prefixed slug.
+     */
+    #[Test]
+    public function discussion_resolves_under_a_non_default_slug_driver(): void
+    {
+        $this->setting('slug_driver_Flarum\\Discussion\\Discussion', 'utf8');
+
+        $this->seedDiscussion(title: 'How to bake bread', slug: 'how-to-bake-bread');
+
+        // The UTF-8 driver still id-prefixes, so the URL resolves by id.
+        $html = $this->fetchForumHtml('/d/1-how-to-bake-bread');
+
+        $entry = $this->findSchemaEntry($html, 'DiscussionForumPosting');
+        $this->assertNotNull($entry, 'Expected a DiscussionForumPosting entry under the utf8 slug driver.');
+
+        // The URL is built from the driver's slug (id + transliterated title).
+        $this->assertSame('http://localhost/d/1-how-to-bake-bread', $entry['url'] ?? null);
+    }
+
+    /**
      * When the discussion starter has been deleted there is no profile page to
      * link, so the `DiscussionForumPosting` `author` is omitted rather than
      * emitted without a `url`. This is the exact field Search Console flagged:

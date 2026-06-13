@@ -203,4 +203,42 @@ class ProfilePageTest extends ForumHtmlTestCase
         // Flarum renders 404 for missing users; we just need to be sure no 500.
         $this->assertContains($response->getStatusCode(), [200, 404]);
     }
+
+    /**
+     * With the id-with-display-name user slug driver the profile URL is
+     * `/u/{id}-{name}`. The driver must resolve the user through Flarum's
+     * SlugManager — not assume the route param is a username — otherwise the
+     * page emits no SEO at all (the bug this guards).
+     */
+    #[Test]
+    public function profile_resolves_under_the_id_with_display_name_slug_driver(): void
+    {
+        $this->setting('slug_driver_Flarum\\User\\User', 'id_with_display_name');
+
+        $html = $this->fetchForumHtml('/u/2-victorinox');
+
+        $entry = $this->findSchemaEntry($html, 'ProfilePage');
+        $this->assertNotNull($entry, 'Expected a ProfilePage entry under the id-with-name slug driver.');
+        $this->assertSame('victorinox', $entry['mainEntity']['name'] ?? null);
+
+        // URLs use the driver's slug, not the bare username.
+        $this->assertSame('http://localhost/u/2-victorinox', $this->findMetaByProperty($html, 'og:url'));
+        $this->assertSame('http://localhost/u/2-victorinox', $entry['mainEntity']['url'] ?? null);
+    }
+
+    /**
+     * The id slug driver uses a bare numeric `/u/{id}`.
+     */
+    #[Test]
+    public function profile_resolves_under_the_id_slug_driver(): void
+    {
+        $this->setting('slug_driver_Flarum\\User\\User', 'id');
+
+        $html = $this->fetchForumHtml('/u/2');
+
+        $entry = $this->findSchemaEntry($html, 'ProfilePage');
+        $this->assertNotNull($entry, 'Expected a ProfilePage entry under the id slug driver.');
+        $this->assertSame('victorinox', $entry['mainEntity']['name'] ?? null);
+        $this->assertSame('http://localhost/u/2', $this->findMetaByProperty($html, 'og:url'));
+    }
 }

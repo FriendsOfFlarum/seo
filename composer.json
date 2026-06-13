@@ -40,7 +40,8 @@
         "flarum/phpstan": "^2.0.0",
         "flarum/testing": "^2.0.0",
         "fof/discussion-views": "*",
-        "fof/upload": "*"
+        "fof/upload": "*",
+        "fof/user-directory": "*"
     },
     "conflict": {
         "zerosonesfun/elint": "*",
@@ -65,7 +66,8 @@
                 "fof/upload",
                 "fof/best-answer",
                 "fof/discussion-views",
-                "fof/discussion-language"
+                "fof/discussion-language",
+                "fof/user-directory"
             ],
             "icon": {
                 "name": "fas fa-check",

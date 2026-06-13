@@ -12,9 +12,11 @@
 namespace FoF\Seo\Page;
 
 use Flarum\Database\Eloquent\Collection;
+use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Discussion\DiscussionRepository;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
+use Flarum\Http\RequestUtil;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
@@ -23,6 +25,7 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
 use Flarum\User\UserRepository;
+use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\PostMedia;
@@ -88,18 +91,26 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        // Get discussion ID from params
-        // Cast to int to extract the numeric id from the `{id}-{slug}` route
-        // param so the lookup works on all databases (SQLite won't coerce it).
-        $discussionId = (int) Arr::get($request->getQueryParams(), 'id');
+        $slug = Arr::get($request->getQueryParams(), 'id');
+
+        if ($slug === null) {
+            return;
+        }
 
         try {
-            // Find discussion
-            $discussion = $this->discussionRepository->findOrFail($discussionId);
+            // Resolve through the configured discussion slug driver.
+            /** @var FlarumDiscussion $discussion */
+            $discussion = $this->slugManager->forResource(FlarumDiscussion::class)->fromSlug(
+                $slug,
+                RequestUtil::getActor($request)
+            );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // Do nothing, no model found
             return;
         }
+
+        // The canonical discussion slug under the configured driver, for URLs.
+        $discussionSlug = $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion);
 
         // When best-answer isn't installed, DiscussionPage emits the standard
         // DiscussionForumPosting, so there's nothing for us to do.
@@ -174,7 +185,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $bestAnswerId = $discussion->best_answer_post_id;
 
         // Update topic url
-        $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug]), false);
+        $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug]), false);
 
         // Schema
         $mainEntity = [
@@ -201,15 +212,9 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             $mainEntity['upvoteCount'] = $firstPost->likes()->count();
         }
 
-        // Generate a breadcrumb if discussion has tags
-        if ($discussionTags->count() >= 1) {
-            $properties->generateSchemaBreadcrumb(
-                $discussionTags->map(fn (Tag $tag) => [
-                    'name' => $tag->name,
-                    'url'  => $this->urlGenerator->to('forum')->route('tag', ['slug' => $tag->slug]),
-                ])->toArray()
-            );
-        }
+        // Breadcrumb: Home › Tags › {primary lineage} › {discussion title}, one
+        // trail per primary lineage (secondary tags excluded).
+        (new TagBreadcrumb($this->urlGenerator))->emitDiscussionTrails($properties, $discussionTags, $discussion->title);
 
         // Only add suggested answers property if there are posts
         $mainEntity['suggestedAnswer'] = [];
@@ -247,7 +252,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             $generatedPost = [
                 '@type'       => 'Answer',
                 'dateCreated' => $post->created_at->toIso8601String(),
-                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
+                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]),
             ] + PostMedia::schemaFields($post->formatContent());
 
             // Omit `author` when this post's user is deleted — see authorSchema().

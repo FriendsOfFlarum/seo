@@ -11,8 +11,11 @@
 
 namespace FoF\Seo\Page;
 
+use Flarum\Http\RequestUtil;
+use Flarum\Http\SlugManager;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Flarum\User\UserRepository;
+use Flarum\User\User;
+use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -21,9 +24,9 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class ProfilePage implements PageDriverInterface
 {
     public function __construct(
-        protected readonly UserRepository $userRepository,
         protected readonly TranslatorInterface $translator,
         protected readonly SettingsRepositoryInterface $settings,
+        protected readonly SlugManager $slugManager,
     ) {
     }
 
@@ -41,19 +44,29 @@ class ProfilePage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        $username = Arr::get($request->getQueryParams(), 'username');
+        $slug = Arr::get($request->getQueryParams(), 'username');
 
-        try {
-            $user = is_numeric($username) ? $this->userRepository->findOrFail($username) : $this->userRepository->findByIdentification($username);
-
-            // Make sure there's a user
-            if ($user === null) {
-                return;
-            }
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Do nothing. It just did not work
+        if ($slug === null) {
             return;
         }
+
+        try {
+            // Resolve through the configured user slug driver (username, id,
+            // id-with-name, or a third-party driver) — the `/u/{username}` route
+            // param is whatever that driver produced, not necessarily a username.
+            /** @var User $user */
+            $user = $this->slugManager->forResource(User::class)->fromSlug(
+                $slug,
+                RequestUtil::getActor($request)
+            );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // No user matched the slug.
+            return;
+        }
+
+        // The canonical profile slug under the configured driver (e.g. the
+        // username, or `{id}-{name}`), used to build all profile URLs.
+        $userSlug = $this->slugManager->forResource(User::class)->toSlug($user);
 
         // Profile title
         $profileTitle = $this->translator->trans('fof-seo.forum.profile_title', [
@@ -74,7 +87,7 @@ class ProfilePage implements PageDriverInterface
             'name'                      => $user->getAttribute('display_name'),
             'alternateName'             => $user->getAttribute('username'),
             'identifier'                => $user->id,
-            'url'                       => $properties->withApplicationPath('/u/'.$user->getAttribute('username')),
+            'url'                       => $properties->withApplicationPath('/u/'.$userSlug),
             'agentInteractionStatistic' => [
                 [
                     '@type'                => 'InteractionCounter',
@@ -129,10 +142,13 @@ class ProfilePage implements PageDriverInterface
             ->setDescription($profileDescription)
 
             // Profile URL
-            ->setUrl('/u/'.$user->getAttribute('username'))
+            ->setUrl('/u/'.$userSlug)
 
             // Canonical url
-            ->setCanonicalUrl('/u/'.$user->getAttribute('username'));
+            ->setCanonicalUrl('/u/'.$userSlug);
+
+        // Breadcrumb: Home › {display name}. The profile is the current page.
+        $properties->breadcrumb()->push(new Crumb($user->getAttribute('display_name')));
 
         // Optionally keep thin profile pages out of the search index (GH #62).
         // Links are still followed so crawlers can reach the content they link to.

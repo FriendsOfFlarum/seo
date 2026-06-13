@@ -13,6 +13,7 @@ namespace FoF\Seo\Page;
 
 use Carbon\Carbon;
 use FoF\Pages\PageRepository;
+use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
@@ -84,5 +85,8 @@ class PageExtensionPage implements PageDriverInterface
             ->setCanonicalUrl('/p/'.$page->getAttribute('id'))
 
             ->generateTagsFromMetaData($seoMeta);
+
+        // Breadcrumb: Home › {page title}. The page is the current page.
+        $properties->breadcrumb()->push(new Crumb($page->title));
     }
 }

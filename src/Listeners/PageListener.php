@@ -14,6 +14,9 @@ namespace FoF\Seo\Listeners;
 use Flarum\Frontend\Document;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
+use FoF\Seo\Breadcrumb\BreadcrumbTrail;
+use FoF\Seo\Breadcrumb\Crumb;
+use FoF\Seo\Event\BuildingBreadcrumb;
 use FoF\Seo\Event\PreparingPageMeta;
 use FoF\Seo\Page\PageManager;
 use FoF\Seo\SeoMeta\SeoMeta;
@@ -43,9 +46,13 @@ class PageListener
     ];
 
     /**
-     * @var array<string, mixed>
+     * One or more breadcrumb trails for the page. Most pages have a single
+     * trail; a discussion in multiple primary tags emits one trail per primary
+     * lineage (Google allows multiple BreadcrumbLists on a page).
+     *
+     * @var list<BreadcrumbTrail>
      */
-    protected array $schemaBreadcrumb = [];
+    protected array $breadcrumbs = [];
 
     /**
      * Meta data with property tags.
@@ -87,6 +94,11 @@ class PageListener
         // Request type
         $routeName = $serverRequest->getAttribute('routeName');
 
+        // Seed a single breadcrumb trail with a "Home" root. Drivers append
+        // their own crumbs (tag lineage, the page itself, …) on top of this,
+        // and may add further trails via addBreadcrumb().
+        $this->breadcrumbs = [$this->newSeededTrail()];
+
         // Initialize SEO Properties container
         $seoPropertiesExtender = new SeoProperties($this);
 
@@ -94,6 +106,77 @@ class PageListener
         foreach ($this->pageManager->getExtenders($routeName) as $extender) {
             $extender->handle($serverRequest, $seoPropertiesExtender);
         }
+    }
+
+    /**
+     * The primary breadcrumb trail being built for this request, pre-seeded
+     * with a "Home" crumb. Page drivers push crumbs onto it; it is rendered
+     * (and given to the BuildingBreadcrumb event) during finish().
+     */
+    public function breadcrumb(): BreadcrumbTrail
+    {
+        if ($this->breadcrumbs === []) {
+            $this->breadcrumbs = [$this->newSeededTrail()];
+        }
+
+        return $this->breadcrumbs[0];
+    }
+
+    /**
+     * Register an additional breadcrumb trail — e.g. a second primary-tag
+     * lineage for a multi-category discussion. Each trail renders as its own
+     * BreadcrumbList.
+     */
+    public function addBreadcrumb(BreadcrumbTrail $trail): void
+    {
+        $this->breadcrumbs[] = $trail;
+    }
+
+    /**
+     * A fresh trail seeded with the "Home" root crumb.
+     */
+    public function newSeededTrail(): BreadcrumbTrail
+    {
+        return (new BreadcrumbTrail())->push(new Crumb(
+            $this->settings->get('forum_title') ?? 'Home',
+            $this->applicationUrl.'/',
+        ));
+    }
+
+    /**
+     * @return list<BreadcrumbTrail>
+     */
+    public function breadcrumbs(): array
+    {
+        return $this->breadcrumbs;
+    }
+
+    /**
+     * Whether the current page is the one configured as the forum's home
+     * (core's `default_route`). Such a page is the root of the site and should
+     * not carry a breadcrumb of its own. Compares the page's path — taken from
+     * the canonical URL a driver set, falling back to the schema `url` — to the
+     * configured default route.
+     */
+    private function isConfiguredHome(): bool
+    {
+        $defaultRoute = $this->settings->get('default_route');
+
+        if ($defaultRoute === null || $defaultRoute === '') {
+            return false;
+        }
+
+        $pageUrl = $this->canonicalUrl ?? ($this->schemaArray['url'] ?? null);
+
+        if (!is_string($pageUrl)) {
+            return false;
+        }
+
+        // Reduce both to a normalised path for comparison.
+        $pagePath = '/'.trim((string) parse_url($pageUrl, PHP_URL_PATH), '/');
+        $homePath = '/'.trim($defaultRoute, '/');
+
+        return $pagePath === $homePath;
     }
 
     /**
@@ -159,6 +242,19 @@ class PageListener
             $this->setSchemaJson('inLanguage', $locale);
         }
 
+        // A page that is itself the configured forum home is the root — it
+        // gets no breadcrumb of its own (avoids "Home › Home").
+        if ($this->isConfiguredHome()) {
+            $this->breadcrumbs = [];
+        }
+
+        // Let extensions add/remove/modify breadcrumb crumbs before they are
+        // rendered. Fired before PreparingPageMeta so general meta listeners
+        // observe the final trails.
+        foreach ($this->breadcrumbs as $trail) {
+            $this->events->dispatch(new BuildingBreadcrumb($trail, $serverRequest));
+        }
+
         // Let extensions read and modify the prepared metadata before it is written.
         $this->events->dispatch(
             new PreparingPageMeta(new SeoProperties($this), $this->flarumDocument, $serverRequest)
@@ -208,8 +304,14 @@ class PageListener
         $show = [];
         $show[] = $this->schemaArray;
 
-        if (count($this->schemaBreadcrumb) > 0) {
-            $show[] = $this->schemaBreadcrumb;
+        // Each trail renders as its own BreadcrumbList (null when it has fewer
+        // than two crumbs, e.g. on the forum home).
+        foreach ($this->breadcrumbs as $trail) {
+            $breadcrumb = $trail->toSchema();
+
+            if ($breadcrumb !== null) {
+                $show[] = $breadcrumb;
+            }
         }
 
         $show[] = $this->addSearchBar();
@@ -260,38 +362,20 @@ class PageListener
 
     /**
      * @param array<int, array<string, mixed>> $tagList
-     * @param string                           $listOrderType https://schema.org/ItemListOrderType
+     * @param string                           $listOrderType (unused; kept for BC)
+     *
+     * @deprecated Push crumbs onto breadcrumb() instead. This converts the
+     *             legacy tag array into Crumbs appended to the trail.
      */
     public function setSchemaBreadcrumb(array $tagList = [], string $listOrderType = 'ItemListUnordered'): void
     {
-        // Don't add the list, there were no tags
-        if (count($tagList) === 0) {
-            return;
+        foreach ($tagList as $tag) {
+            $this->breadcrumb()->push(new Crumb(
+                Arr::get($tag, 'name', 'Unknown'),
+                Arr::get($tag, 'url'),
+                Arr::get($tag, 'type', 'WebPage'),
+            ));
         }
-
-        $list = [];
-
-        // Loop through all tags
-        foreach ($tagList as $index => $tag) {
-            $list[] = [
-                '@type'    => 'ListItem',
-                'position' => ($index + 1),
-                'item'     => [
-                    '@type' => Arr::get($tag, 'type', 'Thing'),
-                    '@id'   => Arr::get($tag, 'url', $this->applicationUrl),
-                    'name'  => Arr::get($tag, 'name', 'Unknown'),
-                    'url'   => Arr::get($tag, 'url', $this->applicationUrl),
-                ],
-            ];
-        }
-
-        $this->schemaBreadcrumb = [
-            '@context'        => 'http://schema.org',
-            '@type'           => 'BreadcrumbList',
-            'itemListElement' => $list,
-            'itemListOrder'   => $listOrderType,
-            'numberOfItems'   => count($list),
-        ];
     }
 
     /**

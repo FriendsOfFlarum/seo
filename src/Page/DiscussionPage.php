@@ -16,6 +16,7 @@ use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Discussion\DiscussionRepository;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
+use Flarum\Http\RequestUtil;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
@@ -24,6 +25,7 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
 use Flarum\User\UserRepository;
+use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\PostMedia;
@@ -104,7 +106,7 @@ class DiscussionPage implements PageDriverInterface
             // `dateCreated` too for schema.org completeness.
             'datePublished' => $post->created_at->toIso8601String(),
             'dateCreated'   => $post->created_at->toIso8601String(),
-            'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug, 'near' => $post->number]),
+            'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion), 'near' => $post->number]),
         ] + $media;
 
         // Omit `author` when the commenter is deleted — see authorSchema().
@@ -147,18 +149,27 @@ class DiscussionPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        // Get discussion ID from params. The route param is the `{id}-{slug}`
-        // form (e.g. "1-bake-bread"); cast to int to extract the numeric id so
-        // the lookup works regardless of database (SQLite won't coerce it).
-        $discussionId = (int) Arr::get($request->getQueryParams(), 'id');
+        $slug = Arr::get($request->getQueryParams(), 'id');
+
+        if ($slug === null) {
+            return;
+        }
 
         try {
-            // Find discussion
-            $discussion = $this->discussionRepository->findOrFail($discussionId);
+            // Resolve through the configured discussion slug driver, so the
+            // lookup works whatever form the `/d/{id}` route param takes.
+            /** @var FlarumDiscussion $discussion */
+            $discussion = $this->slugManager->forResource(FlarumDiscussion::class)->fromSlug(
+                $slug,
+                RequestUtil::getActor($request)
+            );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             // Do nothing, no model found
             return;
         }
+
+        // The canonical discussion slug under the configured driver, for URLs.
+        $discussionSlug = $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion);
 
         $tagsEnabled = $this->extensionManager->isEnabled('flarum-tags');
         $enableBestAnswer = $this->extensionManager->isEnabled('fof-best-answer');
@@ -203,7 +214,7 @@ class DiscussionPage implements PageDriverInterface
         $properties->generateTagsFromMetaData($seoMeta);
 
         // Update topic url
-        $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussion->id.'-'.$discussion->slug]), false);
+        $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug]), false);
 
         // Optional fof/discussion-language integration: a discussion's own
         // language drives inLanguage, overriding the viewer's locale.
@@ -328,15 +339,12 @@ class DiscussionPage implements PageDriverInterface
             $properties->setSchemaJson('author', $discussionAuthor);
         }
 
-        // Generate a breadcrum if discussion has tags
-        if ($tagsEnabled && $discussionTags->count() >= 1) {
-            $properties->generateSchemaBreadcrumb(
-                $discussionTags->map(fn (Tag $tag) => [
-                    'name' => $tag->name,
-                    'url'  => $this->urlGenerator->to('forum')->route('tag', ['slug' => $tag->slug]),
-                ])->toArray()
-            );
-        }
+        // Breadcrumb: Home › Tags › {primary lineage} › {discussion title}. Each
+        // distinct primary-tag lineage produces its own trail; secondary tags
+        // are not part of any breadcrumb path. With no primary tags (untagged,
+        // or secondary-only) the trail is simply Home › title.
+        $tags = $tagsEnabled ? $discussionTags : new Collection();
+        (new TagBreadcrumb($this->urlGenerator))->emitDiscussionTrails($properties, $tags, $discussion->title);
 
         // Keep discussions in admin-excluded tags out of the index (GH #117).
         // Overrides the robots directive set by generateTagsFromMetaData above.
