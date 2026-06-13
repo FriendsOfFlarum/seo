@@ -13,8 +13,6 @@ import ItemList from 'flarum/common/utils/ItemList';
 import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
 
-import CrawlPostModal from '../Modals/CrawlPostModal';
-import DoFollowListModal from '../Modals/DoFollowListModal';
 import NoindexTagsSetting from './NoindexTagsSetting';
 import countKeywords from '../../utils/countKeywords';
 
@@ -154,7 +152,7 @@ export default class SeoSettings extends Component {
         className={this.showField !== 'all' && this.showField !== 'discussion-post' ? 'hidden' : ''}
       >
         <div className="helpText">{app.translator.trans('fof-seo.admin.settings.crawl.help')}</div>
-        <Button className="Button" onclick={() => app.modal.show(CrawlPostModal)}>
+        <Button className="Button" onclick={() => app.modal.show(() => import('../Modals/CrawlPostModal'))}>
           {app.translator.trans('fof-seo.admin.settings.crawl.button')}
         </Button>
       </FieldSet>,
@@ -196,7 +194,7 @@ export default class SeoSettings extends Component {
         </div>
         <div style="height: 5px;"></div>
         <div>
-          <Button className="Button" loading={this.saving} onclick={() => app.modal.show(DoFollowListModal)}>
+          <Button className="Button" loading={this.saving} onclick={() => app.modal.show(() => import('../Modals/DoFollowListModal'))}>
             {app.translator.trans('fof-seo.admin.settings.nofollow.button')}
           </Button>
         </div>

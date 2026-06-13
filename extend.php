@@ -33,7 +33,8 @@ return [
 
     (new Extend\Frontend('admin'))
       ->js(__DIR__.'/js/dist/admin.js')
-      ->css(__DIR__.'/less/Admin.less'),
+      ->css(__DIR__.'/less/Admin.less')
+      ->jsDirectory(__DIR__.'/js/dist/admin'),
 
     (new Extend\Frontend('common'))
       ->jsDirectory(__DIR__.'/js/dist/common'),
