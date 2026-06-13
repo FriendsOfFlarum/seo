@@ -35,6 +35,9 @@ return [
       ->js(__DIR__.'/js/dist/admin.js')
       ->css(__DIR__.'/less/Admin.less'),
 
+    (new Extend\Frontend('common'))
+      ->jsDirectory(__DIR__.'/js/dist/common'),
+
     (new Extend\Routes('api'))
       ->post('/seo_social_media_image', 'seo.socialmedia.upload', Api\Controllers\UploadSocialMediaImageController::class)
       ->delete('/seo_social_media_image', 'seo.socialmedia.delete', Api\Controllers\DeleteSocialMediaImageController::class)

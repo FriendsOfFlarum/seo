@@ -2,7 +2,6 @@ import app from 'flarum/forum/app';
 import DiscussionControls from 'flarum/forum/utils/DiscussionControls';
 import Button from 'flarum/common/components/Button';
 import { extend } from 'flarum/common/extend';
-import MetaSeoModal from '../common/Components/MetaSeoModal';
 
 export { default as extend } from './extend';
 
@@ -15,7 +14,7 @@ app.initializers.add('fof-seo', () => {
       <Button
         icon="fas fa-search"
         onclick={() =>
-          app.modal.show(MetaSeoModal, {
+          app.modal.show(() => import('../common/Components/MetaSeoModal'), {
             objectType: 'discussions',
             objectId: discussion.id(),
           })
