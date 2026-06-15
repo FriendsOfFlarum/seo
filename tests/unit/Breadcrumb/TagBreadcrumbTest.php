@@ -22,19 +22,35 @@ use PHPUnit\Framework\TestCase;
 
 class TagBreadcrumbTest extends TestCase
 {
-    private function tagBreadcrumb(): TagBreadcrumb
+    /**
+     * @param list<Tag> $allTags the full tag set the ancestor walk resolves
+     *                           against (mirrors Tag::all() in production)
+     */
+    private function tagBreadcrumb(array $allTags = []): TagBreadcrumb
     {
         // A UrlGenerator whose route() just echoes a predictable path; the
         // lineage logic under test cares about which tags/order, not the URLs.
         $routes = $this->createStub(RouteCollectionUrlGenerator::class);
         $routes->method('route')->willReturnCallback(
-            fn (string $name, array $params = []) => 'https://f.tld/'.$name.(isset($params['slug']) ? '/'.$params['slug'] : '')
+            fn (string $routeName, array $params = []) => 'https://f.tld/'.$routeName.(isset($params['slug']) ? '/'.$params['slug'] : '')
         );
 
         $url = $this->createStub(UrlGenerator::class);
         $url->method('to')->willReturn($routes);
 
-        return new TagBreadcrumb($url);
+        // Override the DB-backed Tag::all() so the lineage walk resolves
+        // ancestors from the supplied set, no database needed.
+        return new class($url, new Collection($allTags)) extends TagBreadcrumb {
+            public function __construct(UrlGenerator $url, private readonly Collection $allTags)
+            {
+                parent::__construct($url);
+            }
+
+            protected function loadAllTags(): Collection
+            {
+                return $this->allTags;
+            }
+        };
     }
 
     /**
@@ -67,20 +83,20 @@ class TagBreadcrumbTest extends TestCase
     #[Test]
     public function no_primary_tags_yields_no_lineages(): void
     {
-        $tags = new Collection([
+        $tags = [
             $this->tag(1, 'Announcements', false),
             $this->tag(2, 'Off-topic', false),
-        ]);
+        ];
 
-        $this->assertSame([], $this->tagBreadcrumb()->primaryLineages($tags));
+        $this->assertSame([], $this->tagBreadcrumb($tags)->primaryLineages(new Collection($tags)));
     }
 
     #[Test]
     public function a_single_primary_tag_yields_one_lineage(): void
     {
-        $tags = new Collection([$this->tag(1, 'Support', true)]);
+        $tags = [$this->tag(1, 'Support', true)];
 
-        $lineages = $this->tagBreadcrumb()->primaryLineages($tags);
+        $lineages = $this->tagBreadcrumb($tags)->primaryLineages(new Collection($tags));
 
         $this->assertCount(1, $lineages);
         $this->assertSame(['Tags', 'Support'], $this->names($lineages[0]));
@@ -91,9 +107,10 @@ class TagBreadcrumbTest extends TestCase
     {
         $support = $this->tag(1, 'Support', true);
         $install = $this->tag(2, 'Installation', true, $support);
+        $tags = [$support, $install];
 
         // Both attached; order shouldn't matter.
-        $lineages = $this->tagBreadcrumb()->primaryLineages(new Collection([$support, $install]));
+        $lineages = $this->tagBreadcrumb($tags)->primaryLineages(new Collection($tags));
 
         $this->assertCount(1, $lineages);
         $this->assertSame(['Tags', 'Support', 'Installation'], $this->names($lineages[0]));
@@ -105,8 +122,9 @@ class TagBreadcrumbTest extends TestCase
         $support = $this->tag(1, 'Support', true);
         $install = $this->tag(2, 'Installation', true, $support);
 
-        // Only the child is attached; its ancestor must still appear.
-        $lineages = $this->tagBreadcrumb()->primaryLineages(new Collection([$install]));
+        // Only the child is attached; its ancestor (present in the full tag
+        // set) must still appear.
+        $lineages = $this->tagBreadcrumb([$support, $install])->primaryLineages(new Collection([$install]));
 
         $this->assertCount(1, $lineages);
         $this->assertSame(['Tags', 'Support', 'Installation'], $this->names($lineages[0]));
@@ -115,10 +133,12 @@ class TagBreadcrumbTest extends TestCase
     #[Test]
     public function two_unrelated_primary_tags_yield_two_lineages(): void
     {
-        $lineages = $this->tagBreadcrumb()->primaryLineages(new Collection([
+        $tags = [
             $this->tag(1, 'Support', true),
             $this->tag(2, 'Bugs', true),
-        ]));
+        ];
+
+        $lineages = $this->tagBreadcrumb($tags)->primaryLineages(new Collection($tags));
 
         $this->assertCount(2, $lineages);
         $this->assertSame(['Tags', 'Support'], $this->names($lineages[0]));
@@ -128,10 +148,12 @@ class TagBreadcrumbTest extends TestCase
     #[Test]
     public function secondary_tags_are_excluded_when_mixed_with_a_primary(): void
     {
-        $lineages = $this->tagBreadcrumb()->primaryLineages(new Collection([
+        $tags = [
             $this->tag(1, 'Chatter', false),
             $this->tag(2, 'Support', true),
-        ]));
+        ];
+
+        $lineages = $this->tagBreadcrumb($tags)->primaryLineages(new Collection($tags));
 
         $this->assertCount(1, $lineages);
         $this->assertSame(['Tags', 'Support'], $this->names($lineages[0]));
