@@ -34,6 +34,32 @@ class PostMediaTest extends TestCase
     }
 
     #[Test]
+    public function non_absolute_image_urls_are_rejected(): void
+    {
+        // Google rejects relative, protocol-relative, data: and blob: URLs as
+        // "Invalid URL" in schema.org image fields.
+        $this->assertSame([], PostMedia::images('<img src="/assets/a.png">'));
+        $this->assertSame([], PostMedia::images('<img src="//cdn.tld/a.png">'));
+        $this->assertSame([], PostMedia::images('<img src="data:image/png;base64,iVBOR">'));
+        $this->assertSame([], PostMedia::images('<img src="a.png">'));
+    }
+
+    #[Test]
+    public function http_and_https_absolute_urls_are_kept(): void
+    {
+        $this->assertSame(['http://x.tld/a.png'], PostMedia::images('<img src="http://x.tld/a.png">'));
+        $this->assertSame(['https://x.tld/b.png'], PostMedia::images('<img src="https://x.tld/b.png">'));
+    }
+
+    #[Test]
+    public function mixed_absolute_and_relative_keeps_only_absolute(): void
+    {
+        $html = '<img src="/rel.png"><img src="https://x.tld/abs.png">';
+
+        $this->assertSame(['https://x.tld/abs.png'], PostMedia::images($html));
+    }
+
+    #[Test]
     public function extracts_a_fof_upload_image_preview(): void
     {
         // The shape fof/upload's image-preview template renders to (the <img>

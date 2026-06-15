@@ -23,11 +23,11 @@ use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
-use Flarum\User\User;
 use Flarum\User\UserRepository;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -49,32 +49,9 @@ class DiscussionPage implements PageDriverInterface
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly AuthorSchema $authorSchema,
     ) {
         $this->events = $events;
-    }
-
-    /**
-     * Build a schema.org Person for a post/discussion author, or null when the
-     * user has been deleted. Google's forum guidance expects `author.url` to
-     * link to a page identifying the author (a profile page). A deleted user
-     * has no such page, and emitting an `author` Person without a `url` trips
-     * Search Console's "Missing field 'url' (in 'author')". Since `author` is
-     * recommended rather than required, callers omit it entirely when this
-     * returns null (GH #140).
-     *
-     * @return array<string, string>|null
-     */
-    private function authorSchema(?User $user): ?array
-    {
-        if ($user === null) {
-            return null;
-        }
-
-        return [
-            '@type' => 'Person',
-            'name'  => $user->getDisplayNameAttribute(),
-            'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
-        ];
     }
 
     /**
@@ -109,10 +86,9 @@ class DiscussionPage implements PageDriverInterface
             'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion), 'near' => $post->number]),
         ] + $media;
 
-        // Omit `author` when the commenter is deleted — see authorSchema().
-        if (($commentAuthor = $this->authorSchema($post->user)) !== null) {
-            $comment['author'] = $commentAuthor;
-        }
+        // `author` is required on a Comment; AuthorSchema yields a "[deleted]"
+        // Person for a removed user rather than omitting it.
+        $comment['author'] = $this->authorSchema->forUser($post->user);
 
         if ($enableLikes || $enableGamification) {
             $count = 0;
@@ -334,10 +310,9 @@ class DiscussionPage implements PageDriverInterface
         }
 
         // author: https://schema.org/author typeof: https://schema.org/Person.
-        // Omit `author` when the starter is deleted — see authorSchema() (#140).
-        if (($discussionAuthor = $this->authorSchema($discussion->user)) !== null) {
-            $properties->setSchemaJson('author', $discussionAuthor);
-        }
+        // REQUIRED on DiscussionForumPosting — a deleted starter still yields a
+        // "[deleted]" Person (no url) rather than omitting the field.
+        $properties->setSchemaJson('author', $this->authorSchema->forUser($discussion->user));
 
         // Breadcrumb: Home › Tags › {primary lineage} › {discussion title}. Each
         // distinct primary-tag lineage produces its own trail; secondary tags

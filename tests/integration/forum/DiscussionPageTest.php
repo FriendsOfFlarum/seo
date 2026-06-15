@@ -339,14 +339,14 @@ class DiscussionPageTest extends ForumHtmlTestCase
     }
 
     /**
-     * When the discussion starter has been deleted there is no profile page to
-     * link, so the `DiscussionForumPosting` `author` is omitted rather than
-     * emitted without a `url`. This is the exact field Search Console flagged:
-     * "Missing field 'url' (in 'author')". `author` is recommended, not
-     * required, so omission is valid (GH #140).
+     * `author` (and `author.name`) are REQUIRED on DiscussionForumPosting —
+     * omitting them is a critical error that blocks rich results. When the
+     * starter has been deleted we still emit a "[deleted]" Person, just without
+     * a profile `url` (which a removed account no longer has). Locks the fix for
+     * the critical "Missing field 'author'" Search Console error.
      */
     #[Test]
-    public function discussion_by_deleted_user_omits_the_author(): void
+    public function discussion_by_deleted_user_still_has_a_named_author(): void
     {
         $this->prepareDatabase([
             Discussion::class => [
@@ -361,7 +361,10 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-orphaned'), 'DiscussionForumPosting');
 
         $this->assertNotNull($entry, 'Expected a DiscussionForumPosting JSON-LD entry.');
-        $this->assertArrayNotHasKey('author', $entry);
+        // author is present, a Person, with a non-empty name and no url.
+        $this->assertSame('Person', $entry['author']['@type'] ?? null);
+        $this->assertNotEmpty($entry['author']['name'] ?? null);
+        $this->assertArrayNotHasKey('url', $entry['author']);
     }
 
     /**

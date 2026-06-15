@@ -171,15 +171,12 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
-     * Google's QAPage guidance says `author.url` should be "a link to a web
-     * page that uniquely identifies the author" — a profile page. A deleted
-     * user has no such page, so emitting an `author` Person without a `url`
-     * trips Search Console's "Missing field 'url' (in 'mainEntity.author')".
-     * `author` is recommended, not required, so we omit it entirely when the
-     * user is gone rather than emit an incomplete Person (GH #140).
+     * A deleted answer author still yields a "[deleted]" Person (with a name,
+     * no url) rather than omitting `author` — `author.name` is required, and an
+     * omitted author trips "Missing field 'author' (in suggestedAnswer)".
      */
     #[Test]
-    public function answer_by_deleted_user_omits_the_author(): void
+    public function answer_by_deleted_user_still_has_a_named_author(): void
     {
         $this->setting('seo_post_crawler', '1');
 
@@ -204,21 +201,19 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         $accepted = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity']['acceptedAnswer'] ?? [];
 
-        // The answer itself is still emitted...
         $this->assertSame('Answer', $accepted['@type'] ?? null);
-        // ...but with no `author`, since there is no profile to link to.
-        $this->assertArrayNotHasKey('author', $accepted);
+        // author present: Person with a name, no url.
+        $this->assertSame('Person', $accepted['author']['@type'] ?? null);
+        $this->assertNotEmpty($accepted['author']['name'] ?? null);
+        $this->assertArrayNotHasKey('url', $accepted['author']);
     }
 
     /**
-     * The question author (`mainEntity.author`) follows the same rule: when the
-     * discussion starter has been deleted there is no profile page to link, so
-     * the `author` object is omitted rather than emitted without a `url`. This
-     * is the exact field Search Console flagged: "Missing field 'url' (in
-     * 'mainEntity.author')".
+     * The question author (`mainEntity.author`) follows the same rule: a
+     * deleted starter still yields a "[deleted]" Person (name, no url).
      */
     #[Test]
-    public function question_by_deleted_user_omits_the_author(): void
+    public function question_by_deleted_user_still_has_a_named_author(): void
     {
         $this->setting('seo_post_crawler', '1');
 
@@ -244,7 +239,10 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity'] ?? [];
 
         $this->assertSame('Question', $question['@type'] ?? null);
-        $this->assertArrayNotHasKey('author', $question);
+        // author present: Person with a name, no url.
+        $this->assertSame('Person', $question['author']['@type'] ?? null);
+        $this->assertNotEmpty($question['author']['name'] ?? null);
+        $this->assertArrayNotHasKey('url', $question['author']);
     }
 
     /**
@@ -393,6 +391,79 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         // ...and the image stands in for the absent text.
         $this->assertArrayNotHasKey('text', $question);
         $this->assertSame('https://example.com/q.png', $question['image'] ?? null);
+    }
+
+    /**
+     * When the question body renders to the same string as the title, the
+     * `text` is dropped so it doesn't duplicate `name` — Google rejects
+     * identical sibling values ("unique values are required (in mainEntity)").
+     */
+    #[Test]
+    public function question_text_equal_to_name_is_dropped(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+            ],
+            Discussion::class => [
+                // Title equals the first post body once rendered to plain text.
+                ['id' => 1, 'title' => 'Is it broken?', 'slug' => 'is-it-broken', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Is it broken?</p></t>', 'created_at' => $now],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Yes.</p></t>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => self::QNA_TAG_ID],
+            ],
+        ]);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-is-it-broken'), 'QAPage')['mainEntity'] ?? [];
+
+        $this->assertSame('Is it broken?', $question['name'] ?? null);
+        // text is omitted because it would equal name.
+        $this->assertArrayNotHasKey('text', $question);
+    }
+
+    /**
+     * A suggested answer that renders to no text/image/video can't form a valid
+     * Answer node, so it's dropped rather than emitted without `text` ("Missing
+     * field 'text' (in suggestedAnswer)"). The accepted answer is unaffected.
+     */
+    #[Test]
+    public function contentless_suggested_answer_is_dropped(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread?', 'slug' => 'how-do-i-bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 3, 'best_answer_post_id' => 2, 'created_at' => $now, 'last_posted_at' => $now],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>How?</p></t>', 'created_at' => $now],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Use flour.</p></t>', 'created_at' => $now],
+                // Suggested answer that renders to nothing.
+                ['id' => 3, 'discussion_id' => 1, 'number' => 3, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p> </p></t>', 'created_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => self::QNA_TAG_ID],
+            ],
+        ]);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity'] ?? [];
+
+        // Accepted answer present; the empty suggested answer is dropped.
+        $this->assertArrayHasKey('text', $question['acceptedAnswer'] ?? []);
+        $this->assertSame([], $question['suggestedAnswer'] ?? ['x']);
     }
 
     /**
