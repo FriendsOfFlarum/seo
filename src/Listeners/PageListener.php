@@ -41,7 +41,7 @@ class PageListener
      * @var array<string, mixed>
      */
     protected array $schemaArray = [
-        '@context' => 'http://schema.org',
+        '@context' => 'https://schema.org',
         '@type'    => 'WebPage',
     ];
 
@@ -301,8 +301,8 @@ class PageListener
      */
     private function writeSchemesOrgJson(): string
     {
-        $show = [];
-        $show[] = $this->schemaArray;
+        $graph = [];
+        $graph[] = $this->schemaArray;
 
         // Each trail renders as its own BreadcrumbList (null when it has fewer
         // than two crumbs, e.g. on the forum home).
@@ -310,13 +310,26 @@ class PageListener
             $breadcrumb = $trail->toSchema();
 
             if ($breadcrumb !== null) {
-                $show[] = $breadcrumb;
+                $graph[] = $breadcrumb;
             }
         }
 
-        $show[] = $this->addSearchBar();
+        $graph[] = $this->addSearchBar();
 
-        return '<script type="application/ld+json">'.json_encode($show).'</script>';
+        // Emit a single root object with an `@graph` list rather than a bare
+        // top-level array. A bare array has no `@context` key, which crashes
+        // Safari's structured-data parser (GH #177). The `@context` is declared
+        // once on the root and stripped from each node to avoid redundancy.
+        $document = [
+            '@context' => 'https://schema.org',
+            '@graph'   => array_map(static function (array $node): array {
+                unset($node['@context']);
+
+                return $node;
+            }, $graph),
+        ];
+
+        return '<script type="application/ld+json">'.json_encode($document).'</script>';
     }
 
     /**
@@ -327,7 +340,7 @@ class PageListener
     private function addSearchBar(): array
     {
         return [
-            '@context'        => 'http://schema.org',
+            '@context'        => 'https://schema.org',
             '@type'           => 'WebSite',
             'name'            => $this->settings->get('forum_title'),
             'url'             => $this->applicationUrl.'/',
