@@ -183,16 +183,34 @@ class PageListener
      */
     private function writeSchemesOrgJson(): string
     {
-        $show = [];
-        $show[] = $this->schemaArray;
+        $nodes = [];
+        $nodes[] = $this->schemaArray;
 
         if (count($this->schemaBreadcrumb) > 0) {
-            $show[] = $this->schemaBreadcrumb;
+            $nodes[] = $this->schemaBreadcrumb;
         }
 
-        $show[] = $this->addSearchBar();
+        $nodes[] = $this->addSearchBar();
 
-        return '<script type="application/ld+json">'.json_encode($show).'</script>';
+        // Emit a single root object using `@graph` rather than a bare array of
+        // entities. Some consumers (e.g. Safari's structured-data parser) read
+        // the parsed root and call `root["@context"].toLowerCase()`; when the
+        // root is an array that property is undefined and they throw. A single
+        // `@context` + `@graph` root keeps them happy and is the spec-preferred
+        // way to bundle multiple nodes in one block. The shared root context
+        // makes the per-node `@context` redundant, so drop it from each node.
+        $graph = array_map(static function (array $node): array {
+            unset($node['@context']);
+
+            return $node;
+        }, $nodes);
+
+        $document = [
+            '@context' => 'http://schema.org',
+            '@graph'   => $graph,
+        ];
+
+        return '<script type="application/ld+json">'.json_encode($document).'</script>';
     }
 
     /**

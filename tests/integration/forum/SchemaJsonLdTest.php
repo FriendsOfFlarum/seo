@@ -136,6 +136,30 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
     }
 
     /**
+     * The block's root must be a single object carrying a string `@context`
+     * and an `@graph` list — never a bare array. A bare-array root makes
+     * `root["@context"]` undefined, crashing consumers that call
+     * `root["@context"].toLowerCase()` (e.g. Safari's parser). Regression lock.
+     *
+     * @test
+     */
+    public function json_ld_root_is_a_graph_object_not_a_bare_array(): void
+    {
+        $html = $this->fetchForumHtml('/');
+
+        $this->assertSame(1, preg_match('/<script\s+type="application\/ld\+json"[^>]*>(.*?)<\/script>/is', $html, $matches));
+
+        $root = json_decode($matches[1], true);
+
+        $this->assertIsArray($root);
+        $this->assertArrayHasKey('@context', $root, 'Root must carry a top-level @context.');
+        $this->assertIsString($root['@context']);
+        $this->assertArrayHasKey('@graph', $root, 'Root must bundle nodes under @graph.');
+        $this->assertIsArray($root['@graph']);
+        $this->assertArrayNotHasKey(0, $root, 'Root must not be a bare list of nodes.');
+    }
+
+    /**
      * @test
      */
     public function json_ld_block_is_always_valid_json(): void
