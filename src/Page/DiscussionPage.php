@@ -83,7 +83,10 @@ class DiscussionPage implements PageDriverInterface
             // `dateCreated` too for schema.org completeness.
             'datePublished' => $post->created_at->toIso8601String(),
             'dateCreated'   => $post->created_at->toIso8601String(),
-            'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion), 'near' => $post->number]),
+            // A `#post-{id}` fragment keeps each comment URL unique even when
+            // post `number` collides on old discussions (Google requires
+            // unique URLs across comment items).
+            'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion), 'near' => $post->number]).'#post-'.$post->id,
         ] + $media;
 
         // `author` is required on a Comment; AuthorSchema yields a "[deleted]"

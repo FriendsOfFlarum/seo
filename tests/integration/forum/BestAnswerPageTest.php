@@ -467,6 +467,33 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * Answer URLs carry a per-post `#post-{id}` fragment so they are unique by
+     * construction. On legacy discussions post `number` can collide (two
+     * answers → same `near=` URL), which made Google report "Identical property
+     * values ... unique values are required (in mainEntity)"; anchoring on the
+     * always-unique post id removes that risk regardless of numbering.
+     */
+    #[Test]
+    public function answer_urls_are_anchored_on_the_unique_post_id(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion();
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity'] ?? [];
+
+        $accepted = $question['acceptedAnswer'] ?? [];
+        $suggested = $question['suggestedAnswer'] ?? [];
+
+        // The accepted answer is post 2, the suggested answer post 3.
+        $this->assertStringEndsWith('#post-2', $accepted['url'] ?? '');
+        $this->assertStringEndsWith('#post-3', $suggested[0]['url'] ?? '');
+
+        // Every answer URL is unique.
+        $urls = array_merge([$accepted['url'] ?? null], array_column($suggested, 'url'));
+        $this->assertSame($urls, array_values(array_unique($urls)));
+    }
+
+    /**
      * The optional flarum/likes integration: when it's enabled, an answer's
      * `upvoteCount` reflects its like count.
      */

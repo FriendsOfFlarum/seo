@@ -234,7 +234,10 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             $generatedPost = [
                 '@type'       => 'Answer',
                 'dateCreated' => $post->created_at->toIso8601String(),
-                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]),
+                // A `#post-{id}` fragment keeps each answer URL unique even when
+                // post `number` collides on old discussions — Google requires
+                // unique URLs across suggestedAnswer items.
+                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]).'#post-'.$post->id,
             ] + PostMedia::schemaFields($post->formatContent());
 
             // `author` is recommended on an Answer; AuthorSchema yields a
