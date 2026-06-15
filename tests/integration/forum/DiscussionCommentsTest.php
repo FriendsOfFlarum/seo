@@ -110,15 +110,12 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
      * dominant page-load cost, so the cap bounds it.
      */
     /**
-     * Google's forum guidance says `author.url` should link to a page that
-     * identifies the author (a profile page). A deleted user has no such page,
-     * so emitting an `author` Person without a `url` trips Search Console's
-     * "Missing field 'url' (in 'author')". `author` is recommended, not
-     * required, so we omit it entirely for a deleted user rather than emit an
-     * incomplete Person (GH #140).
+     * `author` is REQUIRED on a schema.org Comment. A reply by a deleted user
+     * must still emit a "[deleted]" Person (with a name, no url) rather than
+     * omitting `author` — omission is a critical error.
      */
     #[Test]
-    public function comment_by_deleted_user_omits_the_author(): void
+    public function comment_by_deleted_user_still_has_a_named_author(): void
     {
         $this->prepareDatabase([
             User::class => [
@@ -138,10 +135,11 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
 
         $comment = $entry['comment'][0] ?? null;
         $this->assertIsArray($comment);
-        // The comment itself is still emitted...
         $this->assertSame('Comment', $comment['@type'] ?? null);
-        // ...but with no `author`, since a deleted user has no profile to link.
-        $this->assertArrayNotHasKey('author', $comment);
+        // author present: a Person with a name, no url.
+        $this->assertSame('Person', $comment['author']['@type'] ?? null);
+        $this->assertNotEmpty($comment['author']['name'] ?? null);
+        $this->assertArrayNotHasKey('url', $comment['author']);
     }
 
     #[Test]

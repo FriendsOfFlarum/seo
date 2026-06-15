@@ -115,11 +115,19 @@ class PostMedia
         foreach ($matches[2] as $url) {
             $url = html_entity_decode($url, ENT_QUOTES | ENT_HTML5);
 
-            if ($url !== '' && !in_array($url, $urls, true)) {
+            // Only emit absolute http(s) URLs. Google rejects relative,
+            // protocol-relative (`//host`), `data:` and `blob:` sources as an
+            // "Invalid URL" in schema.org image/video fields.
+            if (self::isAbsoluteHttpUrl($url) && !in_array($url, $urls, true)) {
                 $urls[] = $url;
             }
         }
 
         return $urls;
+    }
+
+    private static function isAbsoluteHttpUrl(string $url): bool
+    {
+        return (bool) preg_match('#^https?://#i', $url);
     }
 }

@@ -23,11 +23,11 @@ use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
-use Flarum\User\User;
 use Flarum\User\UserRepository;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -49,32 +49,9 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly AuthorSchema $authorSchema,
     ) {
         $this->events = $events;
-    }
-
-    /**
-     * Build a schema.org Person for a question/answer author, or null when the
-     * user has been deleted. Google's QAPage guidance expects `author.url` to
-     * be "a link to a web page that uniquely identifies the author" — a profile
-     * page. A deleted user has no such page, and emitting an `author` Person
-     * without a `url` trips Search Console's "Missing field 'url' (in
-     * 'mainEntity.author')". Since `author` is recommended rather than required,
-     * callers omit it entirely when this returns null (GH #140).
-     *
-     * @return array<string, string>|null
-     */
-    private function authorSchema(?User $user): ?array
-    {
-        if ($user === null) {
-            return null;
-        }
-
-        return [
-            '@type' => 'Person',
-            'name'  => $user->getDisplayNameAttribute(),
-            'url'   => $this->urlGenerator->to('forum')->route('user', ['username' => $this->slugManager->forResource(User::class)->toSlug($user)]),
-        ];
     }
 
     public function extensionDependencies(): array
@@ -195,17 +172,22 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             'answerCount' => $discussion->comment_count - 1,
         ];
 
-        // text/image/video for the question (its first post). Google's "Either
-        // 'text', 'image' or 'video' should be specified" applies here too, so
-        // emit whichever the post actually has rather than an empty `text`.
-        if ($firstPost instanceof CommentPost) {
-            $mainEntity += PostMedia::schemaFields($firstPost->formatContent());
+        // text/image/video for the question (its first post).
+        $questionMedia = $firstPost instanceof CommentPost
+            ? PostMedia::schemaFields($firstPost->formatContent())
+            : [];
+
+        // Drop `text` when it merely repeats the question `name` — Google
+        // rejects identical sibling values ("unique values are required").
+        if (($questionMedia['text'] ?? null) === $mainEntity['name']) {
+            unset($questionMedia['text']);
         }
 
-        // Omit `author` when the starter is deleted — see authorSchema().
-        if (($questionAuthor = $this->authorSchema($discussion->user)) !== null) {
-            $mainEntity['author'] = $questionAuthor;
-        }
+        $mainEntity += $questionMedia;
+
+        // `author` is required on the Question; AuthorSchema yields a
+        // "[deleted]" Person for a removed starter rather than omitting it.
+        $mainEntity['author'] = $this->authorSchema->forUser($discussion->user);
 
         // Upvotes on the question itself (the first post), when likes are available.
         if ($enableLikes && $firstPost !== null) {
@@ -255,10 +237,10 @@ class DiscussionBestAnswerPage implements PageDriverInterface
                 'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]),
             ] + PostMedia::schemaFields($post->formatContent());
 
-            // Omit `author` when this post's user is deleted — see authorSchema().
-            if (($answerAuthor = $this->authorSchema($post->user)) !== null) {
-                $generatedPost['author'] = $answerAuthor;
-            }
+            // `author` is recommended on an Answer; AuthorSchema yields a
+            // "[deleted]" Person for a removed user (with a name, so the
+            // `author.name` requirement is met) rather than omitting it.
+            $generatedPost['author'] = $this->authorSchema->forUser($post->user);
 
             // Upvote/like count
             $generatedPost['upvoteCount'] = $enableLikes ? $post->likes->count() : 0;
@@ -267,8 +249,10 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             if ($bestAnswerId === $post->id) {
                 $mainEntity['acceptedAnswer'] = $generatedPost;
             }
-            // Add to answers
-            else {
+            // Add to answers — but only when the answer has the content an
+            // Answer requires (text/image/video). A contentless suggested
+            // answer would trip "Missing field 'text' (in suggestedAnswer)".
+            elseif (isset($generatedPost['text']) || isset($generatedPost['image']) || isset($generatedPost['video'])) {
                 $mainEntity['suggestedAnswer'][] = $generatedPost;
             }
         }
