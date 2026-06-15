@@ -26,6 +26,14 @@ use Illuminate\Support\Collection;
  */
 class TagBreadcrumb
 {
+    /**
+     * All tags keyed by id, loaded once so the ancestor walk never lazy-loads
+     * a parent per level. Tags are a small, bounded set.
+     *
+     * @var Collection<int, Tag>|null
+     */
+    private ?Collection $tagsById = null;
+
     public function __construct(
         private readonly UrlGenerator $url,
     ) {
@@ -141,12 +149,17 @@ class TagBreadcrumb
     }
 
     /**
-     * The tag's ancestor chain, ordered root → … → tag. Guards against cycles.
+     * The tag's ancestor chain, ordered root → … → tag. Walks `parent_id`
+     * against an in-memory map of all tags so a deep chain costs no extra
+     * queries (core only eager-loads one level of `parent`). Guards against
+     * cycles.
      *
      * @return list<Tag>
      */
     private function lineage(Tag $tag): array
     {
+        $byId = $this->allTagsById();
+
         $chain = [];
         $seen = [];
         $current = $tag;
@@ -154,9 +167,28 @@ class TagBreadcrumb
         while ($current !== null && !isset($seen[$current->id])) {
             $seen[$current->id] = true;
             array_unshift($chain, $current);
-            $current = $current->parent;
+            $current = $current->parent_id !== null ? $byId->get($current->parent_id) : null;
         }
 
         return $chain;
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    private function allTagsById(): Collection
+    {
+        return $this->tagsById ??= $this->loadAllTags()->keyBy('id');
+    }
+
+    /**
+     * Load every tag once for the in-memory ancestor walk. Overridable so the
+     * lineage logic can be unit-tested without a database.
+     *
+     * @return Collection<int, Tag>
+     */
+    protected function loadAllTags(): Collection
+    {
+        return Tag::all();
     }
 }
