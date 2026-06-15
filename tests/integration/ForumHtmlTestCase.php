@@ -91,8 +91,10 @@ abstract class ForumHtmlTestCase extends TestCase
 
     /**
      * Parse the `<script type="application/ld+json">...</script>` block and
-     * return its decoded JSON content. The extension emits a single merged
-     * array, so the returned value is a list of top-level JSON-LD objects.
+     * return the list of schema.org nodes it contains. The extension emits a
+     * single root object with an `@graph` list of nodes (a bare array root
+     * crashes some consumers, e.g. Safari's structured-data parser), so unwrap
+     * `@graph` to the node list. A bare array is still accepted for resilience.
      *
      * @return array<int, array<string, mixed>>|null
      */
@@ -104,8 +106,16 @@ abstract class ForumHtmlTestCase extends TestCase
 
         $decoded = json_decode($matches[1], true);
 
-        // The extension always wraps multiple schema entries in a top-level array.
-        return is_array($decoded) ? $decoded : null;
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        // Single root object with `@graph` => the nodes live under `@graph`.
+        if (isset($decoded['@graph']) && is_array($decoded['@graph'])) {
+            return $decoded['@graph'];
+        }
+
+        return $decoded;
     }
 
     /**
