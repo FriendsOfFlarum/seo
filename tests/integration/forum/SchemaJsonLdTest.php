@@ -139,6 +139,36 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertArrayNotHasKey('item', $items[3]);
     }
 
+    /**
+     * The block's root must be a single object carrying a string `@context`
+     * and an `@graph` list — never a bare array. A bare-array root makes
+     * `root["@context"]` undefined, crashing consumers that call
+     * `root["@context"].toLowerCase()` (e.g. Safari's parser). Regression lock
+     * for GH #177.
+     */
+    #[Test]
+    public function json_ld_root_is_a_graph_object_not_a_bare_array(): void
+    {
+        $html = $this->fetchForumHtml('/');
+
+        $this->assertSame(1, preg_match('/<script\s+type="application\/ld\+json"[^>]*>(.*?)<\/script>/is', $html, $matches));
+
+        $root = json_decode($matches[1], true);
+
+        $this->assertIsArray($root);
+        $this->assertArrayHasKey('@context', $root, 'Root must carry a top-level @context.');
+        // Canonical, current best-practice context: https, not http.
+        $this->assertSame('https://schema.org', $root['@context']);
+        $this->assertArrayHasKey('@graph', $root, 'Root must bundle nodes under @graph.');
+        $this->assertIsArray($root['@graph']);
+        $this->assertArrayNotHasKey(0, $root, 'Root must not be a bare list of nodes.');
+
+        // Nodes don't repeat `@context` (declared once on the root).
+        foreach ($root['@graph'] as $node) {
+            $this->assertArrayNotHasKey('@context', $node);
+        }
+    }
+
     #[Test]
     public function json_ld_block_is_always_valid_json(): void
     {
