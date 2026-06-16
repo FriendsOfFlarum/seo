@@ -53,7 +53,7 @@ class TagBreadcrumb
      */
     public function primaryLineages(Collection $tags): array
     {
-        $primary = $tags->filter(fn (Tag $tag) => (bool) $tag->is_primary);
+        $primary = $tags->filter(fn (Tag $tag) => $this->isHierarchical($tag));
 
         if ($primary->isEmpty()) {
             return [];
@@ -61,9 +61,9 @@ class TagBreadcrumb
 
         $attachedIds = $primary->map(fn (Tag $tag) => $tag->id)->all();
 
-        // A "leaf" is a primary tag that is not an ancestor of another attached
-        // primary tag — i.e. the most specific tag on each branch. This folds a
-        // primary parent + its attached primary child into a single lineage.
+        // A "leaf" is a hierarchical tag that is not an ancestor of another
+        // attached hierarchical tag — i.e. the most specific tag on each branch.
+        // This folds a parent + its attached child into a single lineage.
         $parentIds = $primary
             ->map(fn (Tag $tag) => $tag->parent_id)
             ->filter(fn (?int $id) => $id !== null && in_array($id, $attachedIds, true))
@@ -74,7 +74,10 @@ class TagBreadcrumb
         $lineages = [];
 
         foreach ($leaves as $leaf) {
-            $crumbs = [new Crumb('Tags', $this->url->to('forum')->route('tags'), 'CollectionPage')];
+            // The lineage is the pure tag chain (root → leaf). The "Tags" root
+            // crumb is only used on tag pages (see pushAncestorsOf), not on
+            // discussion trails, which read Forum › {tag lineage} › {title}.
+            $crumbs = [];
 
             foreach ($this->lineage($leaf) as $tag) {
                 $crumbs[] = $this->crumbFor($tag);
@@ -84,6 +87,20 @@ class TagBreadcrumb
         }
 
         return $lineages;
+    }
+
+    /**
+     * Whether a tag is part of the navigable tag hierarchy (and so belongs in a
+     * breadcrumb path). Mirrors core's own definition — a primary tag has a
+     * `position` and no parent; a child tag has a parent — rather than the
+     * legacy `is_primary` column, which can drift out of sync on older forums
+     * (e.g. discuss.flarum.org, where every top-level tag has `is_primary = 0`
+     * but a non-null `position`). Secondary tags (no position, no parent) are
+     * flat labels and excluded.
+     */
+    private function isHierarchical(Tag $tag): bool
+    {
+        return $tag->parent_id !== null || $tag->position !== null;
     }
 
     /**

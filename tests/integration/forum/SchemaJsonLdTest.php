@@ -125,18 +125,19 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertNotNull($breadcrumb, 'Expected a BreadcrumbList entry when tags are present.');
 
         $items = $breadcrumb['itemListElement'] ?? [];
-        // Home › Tags › Baking › {discussion title}.
+        // Home › Baking › {discussion title} — the "Tags" listing crumb is only
+        // used on tag pages, not discussion trails.
         $names = array_column($items, 'name');
-        $this->assertSame(['My Forum', 'Tags', 'Baking', 'Help with bread'], $names);
+        $this->assertSame(['My Forum', 'Baking', 'Help with bread'], $names);
 
         // Positions are sequential from 1.
-        $this->assertSame([1, 2, 3, 4], array_column($items, 'position'));
+        $this->assertSame([1, 2, 3], array_column($items, 'position'));
 
         // The tag crumb links to the tag page...
-        $this->assertSame('http://localhost/t/baking', $items[2]['item']['url'] ?? null);
+        $this->assertSame('http://localhost/t/baking', $items[1]['item']['url'] ?? null);
         // ...and the last crumb (the discussion) omits `item` so Google uses
         // the page URL.
-        $this->assertArrayNotHasKey('item', $items[3]);
+        $this->assertArrayNotHasKey('item', $items[2]);
     }
 
     /**

@@ -144,7 +144,7 @@ class BreadcrumbTest extends ForumHtmlTestCase
         ]);
 
         $this->assertSame(
-            ['My Forum', 'Tags', 'Support', 'Installation', 'How do I install?'],
+            ['My Forum', 'Support', 'Installation', 'How do I install?'],
             $this->crumbNames($this->fetchForumHtml('/d/1-how-install'))
         );
     }
@@ -156,7 +156,8 @@ class BreadcrumbTest extends ForumHtmlTestCase
 
         $this->prepareDatabase([
             Tag::class => [
-                ['id' => 1, 'name' => 'Chatter', 'slug' => 'chatter', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => false],
+                // Chatter is secondary (no position); Support is primary.
+                ['id' => 1, 'name' => 'Chatter', 'slug' => 'chatter', 'description' => null, 'color' => '#000', 'position' => null, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => false],
                 ['id' => 2, 'name' => 'Support', 'slug' => 'support', 'description' => null, 'color' => '#000', 'position' => 1, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => true],
             ],
             Discussion::class => [
@@ -173,7 +174,7 @@ class BreadcrumbTest extends ForumHtmlTestCase
 
         // The primary tag (Support) forms the lineage, not the secondary one.
         $this->assertSame(
-            ['My Forum', 'Tags', 'Support', 'Mixed'],
+            ['My Forum', 'Support', 'Mixed'],
             $this->crumbNames($this->fetchForumHtml('/d/1-mixed'))
         );
     }
@@ -197,7 +198,7 @@ class BreadcrumbTest extends ForumHtmlTestCase
         ]);
 
         $this->assertSame(
-            ['My Forum', 'Tags', 'Support', 'Q'],
+            ['My Forum', 'Support', 'Q'],
             $this->crumbNames($this->fetchForumHtml('/d/1-q'))
         );
     }
@@ -232,7 +233,7 @@ class BreadcrumbTest extends ForumHtmlTestCase
         $lists = array_filter($this->findSchemaJsonLd($html) ?? [], fn ($e) => ($e['@type'] ?? null) === 'BreadcrumbList');
         $this->assertCount(1, $lists);
         $this->assertSame(
-            ['My Forum', 'Tags', 'Support', 'Installation', 'Q'],
+            ['My Forum', 'Support', 'Installation', 'Q'],
             $this->crumbNames($html)
         );
     }
@@ -271,8 +272,8 @@ class BreadcrumbTest extends ForumHtmlTestCase
 
         $trails = array_map(fn ($l) => array_column($l['itemListElement'], 'name'), $lists);
 
-        $this->assertContains(['My Forum', 'Tags', 'Support', 'Q'], $trails);
-        $this->assertContains(['My Forum', 'Tags', 'Bugs', 'Q'], $trails);
+        $this->assertContains(['My Forum', 'Support', 'Q'], $trails);
+        $this->assertContains(['My Forum', 'Bugs', 'Q'], $trails);
     }
 
     #[Test]
@@ -284,7 +285,8 @@ class BreadcrumbTest extends ForumHtmlTestCase
         // Home › title, and there is a single BreadcrumbList.
         $this->prepareDatabase([
             Tag::class => [
-                ['id' => 1, 'name' => 'Announcements', 'slug' => 'announcements', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => false],
+                // A genuine secondary tag has no position (and no parent).
+                ['id' => 1, 'name' => 'Announcements', 'slug' => 'announcements', 'description' => null, 'color' => '#000', 'position' => null, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => false],
             ],
             Discussion::class => [
                 ['id' => 1, 'title' => 'Q', 'slug' => 'q', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => Carbon::now()],
@@ -302,6 +304,40 @@ class BreadcrumbTest extends ForumHtmlTestCase
 
         $lists = array_filter($this->findSchemaJsonLd($html) ?? [], fn ($e) => ($e['@type'] ?? null) === 'BreadcrumbList');
         $this->assertCount(1, $lists);
+    }
+
+    #[Test]
+    public function a_top_level_tag_with_a_drifted_is_primary_flag_still_forms_the_lineage(): void
+    {
+        $this->extension('flarum-tags');
+
+        // Regression for discuss.flarum.org: top-level tags there have a
+        // `position` but a legacy `is_primary = 0`. The category must still
+        // appear in the breadcrumb — we key off `position`, not `is_primary`.
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => 1, 'name' => 'Extensions', 'slug' => 'extensions', 'description' => null, 'color' => '#000', 'position' => 2, 'parent_id' => null, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => false],
+                // Genuinely-secondary version tags (no position).
+                ['id' => 2, 'name' => '2.x', 'slug' => 'version-2x', 'description' => null, 'color' => '#000', 'position' => null, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => false],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'FoF Anti-Spam', 'slug' => 'antispam', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 1, 'created_at' => Carbon::now()],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => Carbon::now()],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => 1],
+                ['discussion_id' => 1, 'tag_id' => 2],
+            ],
+        ]);
+
+        // Forum › Extensions › title — Extensions (positioned) anchors it; the
+        // secondary "2.x" tag is excluded.
+        $this->assertSame(
+            ['My Forum', 'Extensions', 'FoF Anti-Spam'],
+            $this->crumbNames($this->fetchForumHtml('/d/1-antispam'))
+        );
     }
 
     #[Test]
