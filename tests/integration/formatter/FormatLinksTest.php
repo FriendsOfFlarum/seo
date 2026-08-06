@@ -19,6 +19,7 @@ use Flarum\Testing\integration\RetrievesAuthorizedUsers;
 use Flarum\Testing\integration\TestCase;
 use Flarum\User\User;
 use PHPUnit\Framework\Attributes\Test;
+use s9e\TextFormatter\Configurator;
 
 /**
  * Integration test for the FormatLinks render callback.
@@ -89,6 +90,35 @@ class FormatLinksTest extends TestCase
         $this->assertStringNotContainsString('nofollow', $html);
         $this->assertStringNotContainsString('ugc', $html);
         $this->assertStringContainsString('target="_blank"', $html);
+    }
+
+    /**
+     * GH — this extension used to append a template normalizer that rewrote
+     * every <a> in every template to rel="{@rel}" target="{@target}". Those
+     * attributes are only ever populated for core's URL tag, so any other
+     * extension's link template rendered rel="" target="" and its links opened
+     * in the same tab. Core's Formatter::configureExternalLinks() covers the
+     * URL tag properly, so the normalizer is gone; other templates must be
+     * left exactly as their extension wrote them.
+     */
+    #[Test]
+    public function another_extensions_link_template_keeps_its_own_rel_and_target(): void
+    {
+        $this->extend(
+            (new Extend\Formatter())->configure(function (Configurator $config) {
+                $config->BBCodes->addCustom(
+                    '[newtab]{TEXT}[/newtab]',
+                    '<a href="https://third-party.test" target="_blank" rel="ugc noopener noreferrer">{TEXT}</a>'
+                );
+            })
+        );
+
+        $html = $this->postReplyAndGetContentHtml('[newtab]Third party link[/newtab]');
+
+        $this->assertStringContainsString('target="_blank"', $html);
+        $this->assertStringContainsString('rel="ugc noopener noreferrer"', $html);
+        $this->assertStringNotContainsString('target=""', $html);
+        $this->assertStringNotContainsString('rel=""', $html);
     }
 
     /**
