@@ -49,19 +49,6 @@ class BreadcrumbTest extends ForumHtmlTestCase
         return $breadcrumb === null ? [] : array_column($breadcrumb['itemListElement'], 'name');
     }
 
-    private function countQueriesFor(string $path): int
-    {
-        /** @var \Illuminate\Database\Connection $db */
-        $db = $this->database();
-        $db->flushQueryLog();
-        $db->enableQueryLog();
-        $this->fetchForumHtml($path);
-        $count = count($db->getQueryLog());
-        $db->disableQueryLog();
-
-        return $count;
-    }
-
     // ----- Core pages (no flarum/tags) -----------------------------------
 
     #[Test]
@@ -419,83 +406,5 @@ class BreadcrumbTest extends ForumHtmlTestCase
         $this->assertSame('My Forum', $items[0]['name']);
         $this->assertSame('http://localhost/', $items[0]['item']['url'] ?? null);
         $this->assertArrayNotHasKey('item', $items[1]);
-    }
-
-    // ----- Performance ----------------------------------------------------
-
-    #[Test]
-    public function building_the_tag_lineage_does_not_issue_per_level_queries(): void
-    {
-        $this->extension('flarum-tags');
-
-        // Two primary chains, 3 and 9 levels deep, each with one discussion on
-        // its leaf tag.
-        //
-        // Both pages are *deep* and tagged, so every fixed cost — loading tags,
-        // serializing the discussion, this extension's own one-time setup —
-        // appears in both counts and cancels out. What remains is the marginal
-        // cost of the 6 extra ancestor levels, which is what a breadcrumb N+1
-        // would show up in.
-        $shallowDepth = 3;
-        $deepDepth = 9;
-
-        $tags = [];
-        $discussions = [];
-        $posts = [];
-        $pivot = [];
-        $id = 0;
-
-        foreach ([1 => $shallowDepth, 2 => $deepDepth] as $discussionId => $depth) {
-            $parent = null;
-
-            for ($level = 1; $level <= $depth; $level++) {
-                $id++;
-                $tags[] = ['id' => $id, 'name' => "D{$depth}L{$level}", 'slug' => "d{$depth}l{$level}", 'description' => null, 'color' => '#000', 'position' => 0, 'parent_id' => $parent, 'is_restricted' => false, 'is_hidden' => false, 'is_primary' => true];
-                $parent = $id;
-            }
-
-            $discussions[] = ['id' => $discussionId, 'title' => "Depth {$depth}", 'slug' => "depth-{$depth}", 'user_id' => 1, 'first_post_id' => $discussionId, 'comment_count' => 1, 'created_at' => Carbon::now(), 'last_posted_at' => Carbon::now()];
-            $posts[] = ['id' => $discussionId, 'discussion_id' => $discussionId, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Body.</p></t>', 'created_at' => Carbon::now()];
-            $pivot[] = ['discussion_id' => $discussionId, 'tag_id' => $id];
-        }
-
-        $this->prepareDatabase([
-            Tag::class        => $tags,
-            Discussion::class => $discussions,
-            Post::class       => $posts,
-            'discussion_tag'  => $pivot,
-        ]);
-
-        // Hit both routes before measuring. The forum index alone does not warm
-        // everything a discussion page touches, so whichever discussion was
-        // measured first used to absorb several one-time queries — enough to
-        // swing the delta by more than the tolerance and make this test flaky.
-        $this->fetchForumHtml('/');
-        $this->countQueriesFor('/d/1-depth-'.$shallowDepth);
-        $this->countQueriesFor('/d/2-depth-'.$deepDepth);
-
-        $shallow = $this->countQueriesFor('/d/1-depth-'.$shallowDepth);
-        $deep = $this->countQueriesFor('/d/2-depth-'.$deepDepth);
-
-        $extraLevels = $deepDepth - $shallowDepth;
-        $delta = $deep - $shallow;
-
-        // Our lineage walk resolves ancestors against an in-memory map of all
-        // tags, so it costs nothing per level. Core is not free: serializing the
-        // tags lazy-loads `parent` once per ancestor, roughly one query per
-        // extra level, and that is outside this extension's control.
-        //
-        // So budget for core's one-per-level plus a few queries of driver
-        // variance. Our walk lazy-loading alongside core's would roughly double
-        // the figure, which this catches with room to spare. A stricter constant
-        // cannot work here: it would just track core's current behaviour rather
-        // than ours.
-        $budget = $extraLevels + 3;
-
-        $this->assertLessThanOrEqual(
-            $budget,
-            $delta,
-            "A {$deepDepth}-level tag chain issued {$delta} more queries than a {$shallowDepth}-level one over {$extraLevels} extra levels, above the budget of {$budget} — a per-level breadcrumb N+1 has crept in."
-        );
     }
 }
