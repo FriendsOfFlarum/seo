@@ -593,12 +593,23 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->seedQnaWithAnswers(1, 'small', 2);
         $this->seedQnaWithAnswers(2, 'large', 8);
 
-        // Warm one-time caches (settings, permissions, etc.) before measuring.
+        // Warm both discussion routes, not just the index. A discussion page
+        // touches caches the index does not, so the first *discussion* measured
+        // absorbs a handful of one-time queries — locally 57 on the first pass
+        // and 53 on every pass after. That swing is larger than the tolerance
+        // below, so whichever page happened to go first decided whether this
+        // test passed, which made it flaky.
         $this->fetchForumHtml('/');
+        $this->countQueriesFor('/d/1-small');
+        $this->countQueriesFor('/d/2-large');
 
         $small = $this->countQueriesFor('/d/1-small');
         $large = $this->countQueriesFor('/d/2-large');
 
+        // Measured warm, the count is flat in the number of answers: 2, 4, 8 and
+        // 16 answers all render in the same number of queries, so the expected
+        // delta is 0. The tolerance is slack for incidental variance, well under
+        // the 6 extra queries an N+1 over the 6 extra answers would cost.
         $this->assertLessThanOrEqual(
             3,
             $large - $small,
