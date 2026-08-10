@@ -13,9 +13,9 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use Flarum\Discussion\Discussion;
-use Flarum\Foundation\Application;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
+use Flarum\User\User;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -520,8 +520,10 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
-     * Seed a Q&A discussion with a configurable number of answer posts, so we
-     * can prove the rendered query count does not scale with answers (no N+1).
+     * Seed a Q&A discussion with `$answers` answer posts, each by a different
+     * author and each with a like, so that anything resolved per answer — the
+     * author, their groups, the likes relation — repeats often enough for the
+     * harness's N+1 detection to see it.
      */
     private function seedQnaWithAnswers(int $discussionId, string $slug, int $answers): void
     {
@@ -531,89 +533,78 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $posts = [
             ['id' => $base + 1, 'discussion_id' => $discussionId, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Question?</p></t>', 'created_at' => $now],
         ];
+        $users = [];
         $likes = [];
 
         for ($i = 1; $i <= $answers; $i++) {
             $postId = $base + 1 + $i;
-            $posts[] = ['id' => $postId, 'discussion_id' => $discussionId, 'number' => $i + 1, 'user_id' => 1, 'type' => 'comment', 'content' => "<t><p>Answer {$i}.</p></t>", 'created_at' => $now];
+            $userId = $base + 100 + $i;
+
+            // A distinct author per answer: a relation loaded per author then
+            // repeats with a different binding each time, which is what
+            // distinguishes an N+1 from the same value fetched twice.
+            //
+            // `best_answer_count` is seeded because fof/best-answer backfills a
+            // null count per serialized user (a count + an update, once each).
+            // That is a real per-user query, but it is one-time bookkeeping that
+            // a live forum has already done — leaving it null here would
+            // manufacture an N+1 in a dependency and mask ours.
+            $users[] = ['id' => $userId, 'username' => 'answerer'.$userId, 'email' => 'answerer'.$userId.'@machine.local', 'is_email_confirmed' => true, 'password' => 'secret', 'best_answer_count' => 0];
+            $posts[] = ['id' => $postId, 'discussion_id' => $discussionId, 'number' => $i + 1, 'user_id' => $userId, 'type' => 'comment', 'content' => "<t><p>Answer {$i}.</p></t>", 'created_at' => $now];
             // A like on every answer — exercises the per-post likes relation.
             $likes[] = ['post_id' => $postId, 'user_id' => 1];
         }
 
         $this->prepareDatabase([
-            Tag::class => [
+            User::class => $users,
+            Tag::class  => [
                 ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
             ],
             Discussion::class => [
                 ['id' => $discussionId, 'title' => 'Q '.$slug, 'slug' => $slug, 'user_id' => 1, 'first_post_id' => $base + 1, 'comment_count' => $answers + 1, 'best_answer_post_id' => $base + 2, 'created_at' => $now, 'last_posted_at' => $now],
             ],
-            Post::class          => $posts,
-            'discussion_tag'     => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
-            'post_likes'         => $likes,
+            Post::class      => $posts,
+            'discussion_tag' => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
+            'post_likes'     => $likes,
         ]);
-    }
-
-    private function countQueriesFor(string $path): int
-    {
-        /** @var \Illuminate\Database\Connection $db */
-        $db = $this->database();
-        $db->flushQueryLog();
-        $db->enableQueryLog();
-        $this->fetchForumHtml($path);
-        $count = count($db->getQueryLog());
-        $db->disableQueryLog();
-
-        return $count;
     }
 
     /**
      * Regression guard against an N+1 over answer posts (their `user` and
-     * `likes` relations). The query count for an 8-answer Q&A page must not be
-     * materially higher than for a 2-answer one.
+     * `likes` relations).
+     *
+     * The check itself is the harness's: every request sent through
+     * {@see \Flarum\Testing\integration\TestCase} is inspected for one query
+     * shape repeated across many different values, and fails the test when it
+     * finds one. So this test only has to render a Q&A page over enough answers
+     * that a per-answer query would stand out — the assertion is implicit, and
+     * the failure names the offending SQL rather than a query-count delta.
+     *
+     * That replaced a hand-rolled version which compared the count for a
+     * 2-answer page against an 8-answer one. Counting totals meant the
+     * tolerance had to absorb per-request variance that has nothing to do with
+     * answers, and on PHP 8.5 the real delta sat right on that tolerance —
+     * green on one run, red on the next. Detecting the *shape* of the repeat
+     * has no threshold to drift across.
      */
     #[Test]
     public function qa_page_does_not_issue_per_answer_queries(): void
     {
-        // The per-answer N+1 this guards against lives in core: UserResource's
-        // `editCredentials`/`isAdmin` checks read `$user->groups` per serialized
-        // author. flarum/framework#4696 (in 2.0.0-rc.3) fixed this for the direct
-        // JSON:API posts endpoint by eager-loading `user.groups` — but it does
-        // NOT cover the forum HTML render path. There the same authors are
-        // serialized again through extra documents (the discussion's own `user`,
-        // `firstPost.user`, …) as `User` instances that lack the eager-loaded
-        // `groups` relation, so the lazy per-author query fires again. Tracked in
-        // flarum/framework#4724; expected to land in 2.0.0-rc.4. Skip until then.
-        if (version_compare(Application::VERSION, '2.0.0-rc.4', '<')) {
-            $this->markTestSkipped('Core N+1 in UserResource editCredentials/isAdmin on the forum render path — #4696 (rc.3) does not cover it; tracked in flarum/framework#4724, expected in 2.0.0-rc.4');
-        }
-
         $this->extension('flarum-likes');
         $this->setting('seo_post_crawler', '1');
 
-        $this->seedQnaWithAnswers(1, 'small', 2);
-        $this->seedQnaWithAnswers(2, 'large', 8);
+        $this->seedQnaWithAnswers(1, 'answers', 8);
 
-        // Warm both discussion routes, not just the index. A discussion page
-        // touches caches the index does not, so the first *discussion* measured
-        // absorbs a handful of one-time queries — locally 57 on the first pass
-        // and 53 on every pass after. That swing is larger than the tolerance
-        // below, so whichever page happened to go first decided whether this
-        // test passed, which made it flaky.
-        $this->fetchForumHtml('/');
-        $this->countQueriesFor('/d/1-small');
-        $this->countQueriesFor('/d/2-large');
+        $html = $this->fetchForumHtml('/d/1-answers');
 
-        $small = $this->countQueriesFor('/d/1-small');
-        $large = $this->countQueriesFor('/d/2-large');
-
-        // Measured warm, the count is flat in the number of answers: 2, 4, 8 and
-        // 16 answers all render in the same number of queries, so the expected
-        // delta is 0. The tolerance is slack for incidental variance, well under
-        // the 6 extra queries an N+1 over the 6 extra answers would cost.
-        $this->assertLessThanOrEqual(
-            3,
-            $large - $small,
-            'Query count grew by '.($large - $small).' between a 2-answer and an 8-answer Q&A page — looks like an N+1 over answer posts.'
+        // The render has to have actually produced the QAPage over every answer,
+        // or there would be no per-answer serialization to find an N+1 in. Post
+        // 2 is the accepted answer, so it lands in `acceptedAnswer` and the
+        // remaining 7 in `suggestedAnswer`.
+        $this->assertCount(
+            7,
+            $this->findSchemaEntry($html, 'QAPage')['mainEntity']['suggestedAnswer'] ?? [],
+            'Expected the 7 non-accepted answers in the QAPage schema.'
         );
     }
 
