@@ -59,9 +59,11 @@ return [
     (new Extend\Settings())
       ->default('seo_post_crawler_limit', 100),
 
+    // FormatLinks sets rel/target on URL tags at render time. Core's
+    // Formatter::configureExternalLinks() is what copies them onto the
+    // rendered anchor, so no template configuration is needed here.
     (new Extend\Formatter())
-      ->render(FormatLinks::class)
-      ->configure(ConfigureLinks::class),
+      ->render(FormatLinks::class),
 
     // Add SEO Meta model relation
     (new Extend\Model(FlarumDiscussion::class))
