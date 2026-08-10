@@ -17,7 +17,9 @@ use Flarum\Tags\Tag;
 use FoF\Seo\Breadcrumb\BreadcrumbTrail;
 use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -182,6 +184,51 @@ class TagBreadcrumbTest extends TestCase
 
         $this->assertCount(1, $lineages);
         $this->assertSame(['Support', 'Installation'], $this->names($lineages[0]));
+    }
+
+    /**
+     * The ancestor walk must resolve parents from the in-memory tag map, never
+     * by touching `$tag->parent`. A per-level lazy load there is an N+1 that
+     * grows with chain depth.
+     *
+     * This is asserted here rather than by counting queries on a rendered page:
+     * core lazy-loads `parent` per ancestor level itself, and by an amount that
+     * varies by database driver, so a page-level query count cannot separate our
+     * cost from core's. Withholding the relation makes the invariant exact.
+     */
+    #[Test]
+    public function the_ancestor_walk_never_lazy_loads_a_parent(): void
+    {
+        $chain = [];
+        $parentId = null;
+
+        // A 9-level chain whose `parent` relation is deliberately NOT loaded, on
+        // models that fail loudly if the relation is touched at all.
+        for ($level = 1; $level <= 9; $level++) {
+            $tag = new class() extends Tag {
+                public function parent(): BelongsTo
+                {
+                    throw new LogicException('lineage() lazy-loaded a parent; it must resolve ancestors against the in-memory tag map.');
+                }
+            };
+
+            $tag->id = $level;
+            $tag->name = "L{$level}";
+            $tag->slug = "l{$level}";
+            $tag->position = 0;
+            $tag->parent_id = $parentId;
+            $tag->is_primary = false;
+
+            $chain[] = $tag;
+            $parentId = $level;
+        }
+
+        $leaf = $chain[count($chain) - 1];
+
+        $lineages = $this->tagBreadcrumb($chain)->primaryLineages(new Collection([$leaf]));
+
+        $this->assertCount(1, $lineages);
+        $this->assertSame(['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9'], $this->names($lineages[0]));
     }
 
     #[Test]
