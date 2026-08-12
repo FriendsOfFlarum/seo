@@ -131,6 +131,74 @@ class FormatLinksTest extends TestCase
     }
 
     /**
+     * A link written as a path is a link to this forum.
+     *
+     * `[text](/d/123)` is how people link between discussions most of the
+     * time. It has no host, so matching on the domain alone read it as a
+     * foreign site and gave it `nofollow` — the forum telling search engines
+     * not to follow its own links — and sent it to a new tab.
+     */
+    public function test_relative_link_is_internal(): void
+    {
+        $formatter = $this->makeFormatter(forumUrl: 'https://forum.example.com', doFollow: []);
+
+        $xml = '<t><URL url="/d/25182">FriendsOfFlarum OAuth</URL></t>';
+
+        $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
+
+        $this->assertStringContainsString('rel="noopener"', $result);
+        $this->assertStringNotContainsString('ugc', $result);
+        $this->assertStringNotContainsString('nofollow', $result);
+    }
+
+    /**
+     * A relative link stays in the tab the reader is already in.
+     */
+    public function test_relative_link_stays_in_same_tab(): void
+    {
+        $formatter = $this->makeFormatter(forumUrl: 'https://forum.example.com', doFollow: []);
+
+        $xml = '<t><URL url="/d/25182">link</URL></t>';
+
+        $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
+
+        $this->assertStringContainsString('target="_self"', $result);
+        $this->assertStringNotContainsString('target="_blank"', $result);
+    }
+
+    /**
+     * A protocol-relative link is absolute, and is not ours.
+     *
+     * `//evil.test/d/1` has no scheme, but it is not a path on this forum —
+     * read as one it would look like it, which is how a link off the forum
+     * could be dressed up as a do-follow link on it.
+     */
+    public function test_protocol_relative_link_is_external(): void
+    {
+        $formatter = $this->makeFormatter(forumUrl: 'https://forum.example.com', doFollow: []);
+
+        $xml = '<t><URL url="//evil.test/d/1">link</URL></t>';
+
+        $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
+
+        $this->assertStringContainsString('nofollow', $result);
+    }
+
+    /**
+     * A `mailto:` link is not a page on the forum, and not a page anywhere.
+     */
+    public function test_mailto_link_is_not_treated_as_internal(): void
+    {
+        $formatter = $this->makeFormatter(forumUrl: 'https://forum.example.com', doFollow: []);
+
+        $xml = '<t><URL url="mailto:someone@example.com">mail</URL></t>';
+
+        $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
+
+        $this->assertStringContainsString('nofollow', $result);
+    }
+
+    /**
      * Explicit target attributes on the source XML should be preserved, not overwritten.
      */
     public function test_existing_target_attribute_is_preserved(): void

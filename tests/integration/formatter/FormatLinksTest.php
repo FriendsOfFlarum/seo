@@ -78,6 +78,40 @@ class FormatLinksTest extends TestCase
         $this->assertStringContainsString('target="_self"', $html);
     }
 
+    /**
+     * A link written as a path is a link to this forum.
+     *
+     * `[text](/d/123)` is the commonest way to link between discussions, and
+     * it was reaching readers as `rel="ugc noopener nofollow" target="_blank"`
+     * — the forum refusing to follow its own links, and sending them off to a
+     * new tab.
+     */
+    #[Test]
+    public function relative_link_in_post_content_is_treated_as_internal(): void
+    {
+        $this->extension('fof-seo', 'flarum-markdown');
+
+        $html = $this->postReplyAndGetContentHtml('See [FriendsOfFlarum OAuth](/d/25182) for details.');
+
+        $this->assertStringNotContainsString('nofollow', $html);
+        $this->assertStringNotContainsString('ugc', $html);
+        $this->assertStringContainsString('target="_self"', $html);
+    }
+
+    /**
+     * A protocol-relative link is absolute, and is not ours. Read as a path it
+     * would look like one of the forum's own.
+     */
+    #[Test]
+    public function protocol_relative_link_in_post_content_stays_external(): void
+    {
+        $this->extension('fof-seo', 'flarum-markdown');
+
+        $html = $this->postReplyAndGetContentHtml('See [evil](//evil.test/d/1) for details.');
+
+        $this->assertStringContainsString('nofollow', $html);
+    }
+
     #[Test]
     public function domain_on_dofollow_list_does_not_get_nofollow(): void
     {
