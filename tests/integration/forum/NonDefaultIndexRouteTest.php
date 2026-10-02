@@ -42,6 +42,14 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function all_discussions_page_keeps_its_own_title(): void
+    {
+        $html = $this->fetchForumHtml('/all');
+
+        $this->assertSame('All Discussions - Example Forum', $this->findTitle($html));
+    }
+
+    #[Test]
     public function forum_home_is_not_canonicalised_to_the_discussion_list(): void
     {
         $html = $this->fetchForumHtml('/');

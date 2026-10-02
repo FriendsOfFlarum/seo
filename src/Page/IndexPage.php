@@ -40,13 +40,18 @@ class IndexPage implements PageDriverInterface
 
         $properties->setDescription($this->settings->get('forum_description'));
         $properties->setKeywords($this->settings->get('forum_keywords') ?? []);
-        $properties->setTitle($this->settings->get('forum_title'));
-        $properties->setUrl('');
-        $properties->setCanonicalUrl('');
 
         // The discussion list only lives at the root when it is the forum home;
         // otherwise it is at /all, and the root belongs to whichever page is home.
-        if ($routeName === 'index' && $this->settings->get('default_route') !== '/all') {
+        $isSecondaryIndex = $routeName === 'index' && $this->settings->get('default_route') !== '/all';
+
+        // Off the home page, keep core's "All Discussions" page title rather
+        // than replacing it with the forum name (which then appears twice).
+        $properties->setTitle($this->settings->get('forum_title'), !$isSecondaryIndex);
+        $properties->setUrl('');
+        $properties->setCanonicalUrl('');
+
+        if ($isSecondaryIndex) {
             $properties->setUrl('/all');
             $properties->setCanonicalUrl('/all');
         }
