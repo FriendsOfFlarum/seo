@@ -214,7 +214,9 @@ class PageListener
         $pagePath = '/'.trim((string) parse_url($pageUrl, PHP_URL_PATH), '/');
         $homePath = '/'.trim($defaultRoute, '/');
 
-        return $pagePath === $homePath;
+        // A page canonical to the root is the home, whichever route served it
+        // (`/`, or an alias like `/tags` when that is the configured home).
+        return $pagePath === '/' || $pagePath === $homePath;
     }
 
     /**

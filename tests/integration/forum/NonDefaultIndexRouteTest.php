@@ -83,6 +83,14 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function forum_home_has_no_breadcrumb_of_its_own(): void
+    {
+        $html = $this->fetchForumHtml('/');
+
+        $this->assertNull($this->findSchemaEntry($html, 'BreadcrumbList'));
+    }
+
+    #[Test]
     public function forum_home_is_not_canonicalised_to_the_discussion_list(): void
     {
         $html = $this->fetchForumHtml('/');
