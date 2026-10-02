@@ -61,6 +61,15 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function tags_page_is_canonical_to_the_forum_home_when_it_is_the_home(): void
+    {
+        $html = $this->fetchForumHtml('/tags');
+
+        $this->assertSame('http://localhost', $this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost', $this->findMetaByProperty($html, 'og:url'));
+    }
+
+    #[Test]
     public function forum_home_is_not_canonicalised_to_the_discussion_list(): void
     {
         $html = $this->fetchForumHtml('/');
