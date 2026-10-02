@@ -29,7 +29,8 @@ class IndexPage implements PageDriverInterface
 
     public function handleRoutes(): array
     {
-        return ['default', 'index'];
+        // The forum root (`default`) reaches this driver through the route it serves.
+        return ['index'];
     }
 
     public function handle(
@@ -40,12 +41,18 @@ class IndexPage implements PageDriverInterface
 
         $properties->setDescription($this->settings->get('forum_description'));
         $properties->setKeywords($this->settings->get('forum_keywords') ?? []);
-        $properties->setTitle($this->settings->get('forum_title'));
+
+        // The discussion list only lives at the root when it is the forum home;
+        // otherwise it is at /all, and the root belongs to whichever page is home.
+        $isSecondaryIndex = $routeName === 'index' && $this->settings->get('default_route') !== '/all';
+
+        // Off the home page, keep core's "All Discussions" page title rather
+        // than replacing it with the forum name (which then appears twice).
+        $properties->setTitle($this->settings->get('forum_title'), !$isSecondaryIndex);
         $properties->setUrl('');
         $properties->setCanonicalUrl('');
 
-        // Update meta tag URL when it's the discussion overview page
-        if ($routeName === 'default' && $this->settings->get('default_route') !== '/all') {
+        if ($isSecondaryIndex) {
             $properties->setUrl('/all');
             $properties->setCanonicalUrl('/all');
         }

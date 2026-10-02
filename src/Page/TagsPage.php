@@ -44,12 +44,15 @@ class TagsPage implements PageDriverInterface
     ): void {
         $title = $this->translator->trans('flarum-tags.forum.all_tags.meta_title_text');
 
+        // As the forum home, the tags page is the root; /tags is just an alias.
+        $path = $this->settings->get('default_route') === '/tags' ? '' : '/tags';
+
         $properties
             ->setSchemaJson('@type', 'CollectionPage')
             ->setSchemaJson('name', $title)
             ->setTitle($title)
-            ->setUrl('/tags')
-            ->setCanonicalUrl('/tags');
+            ->setUrl($path)
+            ->setCanonicalUrl($path);
 
         // Breadcrumb: Home › Tags. "Tags" is the current page (no url).
         $properties->breadcrumb()->push(new Crumb($title));
