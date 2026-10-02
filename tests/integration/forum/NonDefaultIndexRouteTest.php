@@ -42,6 +42,17 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function paginated_all_discussions_page_is_canonical_to_its_own_page(): void
+    {
+        // Core's Index reads the page from parsed query params, which a bare
+        // path string doesn't populate on a test request.
+        $response = $this->send($this->request('GET', '/all')->withQueryParams(['page' => '2']));
+        $html = (string) $response->getBody();
+
+        $this->assertSame('http://localhost/all?page=2', $this->findCanonicalUrl($html));
+    }
+
+    #[Test]
     public function all_discussions_page_keeps_its_own_title(): void
     {
         $html = $this->fetchForumHtml('/all');
