@@ -44,8 +44,9 @@ class IndexPage implements PageDriverInterface
         $properties->setUrl('');
         $properties->setCanonicalUrl('');
 
-        // Update meta tag URL when it's the discussion overview page
-        if ($routeName === 'default' && $this->settings->get('default_route') !== '/all') {
+        // The discussion list only lives at the root when it is the forum home;
+        // otherwise it is at /all, and the root belongs to whichever page is home.
+        if ($routeName === 'index' && $this->settings->get('default_route') !== '/all') {
             $properties->setUrl('/all');
             $properties->setCanonicalUrl('/all');
         }
