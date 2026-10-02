@@ -29,7 +29,8 @@ class IndexPage implements PageDriverInterface
 
     public function handleRoutes(): array
     {
-        return ['default', 'index'];
+        // The forum root (`default`) reaches this driver through the route it serves.
+        return ['index'];
     }
 
     public function handle(

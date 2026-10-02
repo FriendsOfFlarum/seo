@@ -68,7 +68,7 @@ class PageListener
         UrlGenerator $url,
         protected readonly PageManager $pageManager,
         protected readonly Dispatcher $events,
-        Container $container,
+        protected readonly Container $container,
     ) {
         $this->applicationUrl = $url->to('forum')->base();
         $this->assets = $container->make('filesystem')->disk('flarum-assets');
@@ -103,9 +103,47 @@ class PageListener
         $seoPropertiesExtender = new SeoProperties($this);
 
         // Handle through drivers
-        foreach ($this->pageManager->getExtenders($routeName) as $extender) {
+        foreach ($this->extendersFor($routeName) as $extender) {
             $extender->handle($serverRequest, $seoPropertiesExtender);
         }
+    }
+
+    /**
+     * Drivers for a route. `default` (the forum root) serves whichever page
+     * `default_route` names, so it is described by that page's drivers —
+     * plus any registered for `default` itself. When nothing claims the
+     * configured home, the index driver gives the root its forum-level meta.
+     *
+     * @return array<string, \FoF\Seo\Page\PageDriverInterface>
+     */
+    private function extendersFor(?string $routeName): array
+    {
+        if ($routeName !== 'default') {
+            return $this->pageManager->getExtenders($routeName);
+        }
+
+        $homeRouteName = $this->homeRouteName();
+
+        $extenders = ($homeRouteName !== null ? $this->pageManager->getExtenders($homeRouteName) : [])
+            + $this->pageManager->getExtenders('default');
+
+        return $extenders !== [] ? $extenders : $this->pageManager->getExtenders('index');
+    }
+
+    /**
+     * The name of the forum route whose path is the configured `default_route`.
+     */
+    private function homeRouteName(): ?string
+    {
+        $defaultRoute = $this->settings->get('default_route');
+
+        foreach ($this->container->make('flarum.forum.routes')->getRoutes() as $name => $route) {
+            if ($name !== 'default' && $route['method'] === 'GET' && $route['path'] === $defaultRoute) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     /**

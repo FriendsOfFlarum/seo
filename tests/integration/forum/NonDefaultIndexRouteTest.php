@@ -70,6 +70,19 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function forum_home_is_described_by_the_page_it_serves(): void
+    {
+        $home = $this->fetchForumHtml('/');
+        $tags = $this->fetchForumHtml('/tags');
+
+        // Compared against /tags rather than a literal: the test app loads no
+        // locale, so the tags page title renders as its translation key.
+        $this->assertNotNull($this->findMetaByProperty($tags, 'og:title'), 'precondition: /tags has an og:title');
+        $this->assertSame($this->findMetaByProperty($tags, 'og:title'), $this->findMetaByProperty($home, 'og:title'));
+        $this->assertNotNull($this->findSchemaEntry($home, 'CollectionPage'), 'Expected the tags page CollectionPage schema on the home.');
+    }
+
+    #[Test]
     public function forum_home_is_not_canonicalised_to_the_discussion_list(): void
     {
         $html = $this->fetchForumHtml('/');
