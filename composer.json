@@ -41,7 +41,8 @@
         "flarum/testing": "^2.0.0",
         "fof/discussion-views": "*",
         "fof/upload": "*",
-        "fof/user-directory": "*"
+        "fof/user-directory": "*",
+        "fof/merge-discussions": "*"
     },
     "conflict": {
         "zerosonesfun/elint": "*",
@@ -67,7 +68,8 @@
                 "fof/best-answer",
                 "fof/discussion-views",
                 "fof/discussion-language",
-                "fof/user-directory"
+                "fof/user-directory",
+                "fof/merge-discussions"
             ],
             "icon": {
                 "name": "fas fa-check",
