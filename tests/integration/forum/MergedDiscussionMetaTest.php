@@ -39,21 +39,46 @@ class MergedDiscussionMetaTest extends ForumHtmlTestCase
                 ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>The target discussion opens here.</p></t>', 'created_at' => $this->at(1)],
                 ['id' => 2, 'discussion_id' => 2, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>The older source discussion opens here.</p></t>', 'created_at' => $this->at(0)],
             ],
-            // The target's meta as stored before the merge.
-            'seo_meta' => [
-                ['id' => 1, 'object_type' => 'discussions', 'object_id' => 1, 'auto_update_data' => true, 'title' => 'Target', 'description' => 'The target discussion opens here.', 'created_at' => $this->at(1), 'updated_at' => $this->at(1)],
-            ],
         ]);
     }
 
     #[Test]
     public function merged_discussion_is_described_by_its_new_first_post()
     {
+        $this->storedMeta(true, 'The target discussion opens here.');
+
         $this->merge(1, [2]);
 
         $html = $this->fetchForumHtml('/d/1-target');
 
         $this->assertSame('The older source discussion opens here.', $this->findMetaByName($html, 'description'));
+    }
+
+    /**
+     * With auto-update off, an admin has written the meta by hand.
+     */
+    #[Test]
+    public function hand_written_meta_survives_a_merge()
+    {
+        $this->storedMeta(false, 'Written by hand for search results.');
+
+        $this->merge(1, [2]);
+
+        $html = $this->fetchForumHtml('/d/1-target');
+
+        $this->assertSame('Written by hand for search results.', $this->findMetaByName($html, 'description'));
+    }
+
+    /**
+     * The target's meta as stored before the merge.
+     */
+    private function storedMeta(bool $autoUpdate, string $description): void
+    {
+        $this->prepareDatabase([
+            'seo_meta' => [
+                ['id' => 1, 'object_type' => 'discussions', 'object_id' => 1, 'auto_update_data' => $autoUpdate, 'title' => 'Target', 'description' => $description, 'created_at' => $this->at(1), 'updated_at' => $this->at(1)],
+            ],
+        ]);
     }
 
     private function at(int $days): Carbon
