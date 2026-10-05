@@ -117,5 +117,9 @@ return [
       ->whenExtensionEnabled('fof-user-directory', fn () => [
           (new SEO())
             ->addExtender('fof_user_directory', SeoPage\UserDirectoryPage::class),
+      ])
+      ->whenExtensionEnabled('fof-merge-discussions', fn () => [
+          (new Extend\Event())
+            ->subscribe(Subscribers\MergeDiscussionsSubscriber::class),
       ]),
 ];
