@@ -424,7 +424,7 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
 
             $posts[] = ['id' => $mentioned, 'discussion_id' => 2, 'number' => $i, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>Elsewhere.</p></t>', 'created_at' => Carbon::now()];
             $posts[] = [
-                'id' => $i, 'discussion_id' => 1, 'number' => $i, 'user_id' => 3, 'type' => 'comment', 'created_at' => Carbon::now(),
+                'id'      => $i, 'discussion_id' => 1, 'number' => $i, 'user_id' => 3, 'type' => 'comment', 'created_at' => Carbon::now(),
                 'content' => '<r><p><POSTMENTION displayname="alice" id="'.$mentioned.'" number="'.$i.'" discussionid="2">@"alice"#p'.$mentioned.'</POSTMENTION> '
                     .'<USERMENTION displayname="alice" id="2">@"alice"#2</USERMENTION> '
                     .($tags ? '<TAGMENTION id="1" slug="bread" tagname="Bread">#bread</TAGMENTION> ' : '')
@@ -447,11 +447,11 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
                 ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 7, 'created_at' => Carbon::now()],
                 ['id' => 2, 'title' => 'Sourdough starters', 'slug' => 'sourdough', 'user_id' => 2, 'first_post_id' => 102, 'comment_count' => 6, 'created_at' => Carbon::now()],
             ],
-            Post::class => $posts,
+            Post::class          => $posts,
             'post_mentions_post' => $postMentions,
             'post_mentions_user' => $userMentions,
         ] + ($tags ? [
-            Tag::class => [['id' => 1, 'name' => 'Bread', 'slug' => 'bread', 'position' => 0]],
+            Tag::class          => [['id' => 1, 'name' => 'Bread', 'slug' => 'bread', 'position' => 0]],
             'post_mentions_tag' => $tagMentions,
         ] : []));
 
@@ -504,6 +504,7 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
 
     /**
      * @param string[] $queries
+     *
      * @return array<string, int> the queries run at least $times times, with their counts
      */
     private function repeatedQueries(array $queries, int $times): array

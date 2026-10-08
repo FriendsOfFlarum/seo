@@ -62,7 +62,7 @@ class DiscussionPage implements PageDriverInterface
      */
     protected function mentionRelations(bool $tagsEnabled): array
     {
-        if (! $this->extensionManager->isEnabled('flarum-mentions')) {
+        if (!$this->extensionManager->isEnabled('flarum-mentions')) {
             return [];
         }
 
