@@ -45,7 +45,9 @@ class FormatLinks
     public function __invoke(Renderer $renderer, mixed $context, string $xml, ?Request $request = null): string
     {
         return Utils::replaceAttributes($xml, 'URL', function (array $attributes): array {
-            $domain = $this->urlToDomain($attributes['url']);
+            $domain = $this->isRelativeToForum($attributes['url'])
+                ? $this->internalDomain
+                : $this->urlToDomain($attributes['url']);
 
             // Do-follow domains (the forum itself + the configured allow-list)
             // should pass ranking signals, so they get neither `nofollow` nor
@@ -86,6 +88,34 @@ class FormatLinks
     public function getDoFollowList(): array
     {
         return json_decode($this->settings->get('seo_dofollow_domains', ''), true) ?? [];
+    }
+
+    /**
+     * Is this URL a path on the forum itself?
+     *
+     * `[text](/d/123)` is how people link between discussions most of the
+     * time. There is no host to match against the do-follow list, so without
+     * this it read as a foreign site: the forum told search engines not to
+     * follow its own links, and opened them in a new tab.
+     */
+    private function isRelativeToForum(string $url): bool
+    {
+        // A scheme with no host — `mailto:`, `tel:` — does not address a page
+        // on this or any other site.
+        if (preg_match('~^[a-z][a-z0-9+.-]*:~i', $url)) {
+            return false;
+        }
+
+        // `//evil.test/x` has no scheme but is absolute. Read as a path it
+        // would look like one of ours, which is how a link off the forum could
+        // be dressed up as a do-follow link on it.
+        if (str_starts_with($url, '//')) {
+            return false;
+        }
+
+        // A path-relative link like `d/1` resolves against whichever page it
+        // is read on, which is not knowable here.
+        return str_starts_with($url, '/');
     }
 
     /**
