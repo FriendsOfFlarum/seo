@@ -55,6 +55,28 @@ class DiscussionPage implements PageDriverInterface
     }
 
     /**
+     * What flarum/mentions' formatter reads when a reply is rendered. Without
+     * these loaded it looks each reply's mentions up separately.
+     *
+     * @return string[]
+     */
+    protected function mentionRelations(bool $tagsEnabled): array
+    {
+        if (! $this->extensionManager->isEnabled('flarum-mentions')) {
+            return [];
+        }
+
+        $relations = ['mentionsPosts.user', 'mentionsPosts.discussion', 'mentionsUsers', 'mentionsGroups'];
+
+        // flarum/tags defines this relation, so it only exists alongside it.
+        if ($tagsEnabled) {
+            $relations[] = 'mentionsTags';
+        }
+
+        return $relations;
+    }
+
+    /**
      * Build a schema.org Comment node for a reply, or null when the reply has
      * none of the content a Comment requires. Google's forum guidance says a
      * `comment` must specify at least one of `text`, `image` or `video`; a
@@ -287,7 +309,7 @@ class DiscussionPage implements PageDriverInterface
                 ->where('number', '>', 1)
                 ->where('type', 'comment')
                 ->where('is_private', false)
-                ->with('user')
+                ->with(['user', ...$this->mentionRelations($tagsEnabled)])
                 ->withCount($countRelations)
                 ->orderBy('number');
 
