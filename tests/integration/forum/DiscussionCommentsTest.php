@@ -14,8 +14,11 @@ namespace FoF\Seo\Tests\integration\forum;
 use Carbon\Carbon;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Flarum\Tags\Tag;
 use Flarum\User\User;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use Illuminate\Database\ConnectionInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -394,5 +397,121 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
 
         $stat = $entry['comment'][0]['interactionStatistic'] ?? null;
         $this->assertSame(3, $stat['userInteractionCount'] ?? null, 'Likes and gamification upvotes should be summed.');
+    }
+
+    /**
+     * Rendering a reply runs flarum/mentions' formatter, which looks up what
+     * each mention refers to unless the reply has its mentions loaded. Loading
+     * them with the replies keeps that from costing queries per reply. With
+     * tags enabled, replies can mention tags too.
+     */
+    #[Test]
+    #[DataProvider('withAndWithoutTags')]
+    public function rendering_replies_does_not_look_up_their_mentions_one_by_one(bool $tags): void
+    {
+        $this->extension(...($tags ? ['flarum-tags', 'flarum-mentions'] : ['flarum-mentions']));
+
+        $posts = [
+            ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>The question.</p></t>', 'created_at' => Carbon::now()],
+        ];
+        $postMentions = [];
+        $userMentions = [];
+        $tagMentions = [];
+
+        // Each reply mentions a post in another discussion, and its author.
+        for ($i = 2; $i <= 7; $i++) {
+            $mentioned = 100 + $i;
+
+            $posts[] = ['id' => $mentioned, 'discussion_id' => 2, 'number' => $i, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>Elsewhere.</p></t>', 'created_at' => Carbon::now()];
+            $posts[] = [
+                'id'      => $i, 'discussion_id' => 1, 'number' => $i, 'user_id' => 3, 'type' => 'comment', 'created_at' => Carbon::now(),
+                'content' => '<r><p><POSTMENTION displayname="alice" id="'.$mentioned.'" number="'.$i.'" discussionid="2">@"alice"#p'.$mentioned.'</POSTMENTION> '
+                    .'<USERMENTION displayname="alice" id="2">@"alice"#2</USERMENTION> '
+                    .($tags ? '<TAGMENTION id="1" slug="bread" tagname="Bread">#bread</TAGMENTION> ' : '')
+                    .'Reply '.$i.'.</p></r>',
+            ];
+            $postMentions[] = ['post_id' => $i, 'mentions_post_id' => $mentioned];
+            $userMentions[] = ['post_id' => $i, 'mentions_user_id' => 2];
+
+            if ($tags) {
+                $tagMentions[] = ['post_id' => $i, 'mentions_tag_id' => 1];
+            }
+        }
+
+        $this->prepareDatabase([
+            User::class => [
+                ['id' => 2, 'username' => 'alice', 'email' => 'a@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+                ['id' => 3, 'username' => 'bob', 'email' => 'b@example.com', 'password' => '$2y$10$LO59tiT7uggl6Oe23o/O6.utnF6ipngYjvMvaxo1TciKqBttDNKim', 'is_email_confirmed' => 1],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How do I bake bread', 'slug' => 'bake-bread', 'user_id' => 2, 'first_post_id' => 1, 'comment_count' => 7, 'created_at' => Carbon::now()],
+                ['id' => 2, 'title' => 'Sourdough starters', 'slug' => 'sourdough', 'user_id' => 2, 'first_post_id' => 102, 'comment_count' => 6, 'created_at' => Carbon::now()],
+            ],
+            Post::class          => $posts,
+            'post_mentions_post' => $postMentions,
+            'post_mentions_user' => $userMentions,
+        ] + ($tags ? [
+            Tag::class          => [['id' => 1, 'name' => 'Bread', 'slug' => 'bread', 'position' => 0]],
+            'post_mentions_tag' => $tagMentions,
+        ] : []));
+
+        $html = null;
+        $queries = $this->queriesDuring(function () use (&$html) {
+            $html = $this->fetchForumHtml('/d/1-bake-bread');
+        });
+
+        // Six replies: anything run once per reply is per-reply work. How
+        // flarum/mentions looks a mention up differs between its versions, so
+        // count every repeated query rather than one particular shape.
+        $this->assertSame([], $this->repeatedQueries($queries, 6), 'Queries were run once per reply.');
+
+        $comments = $this->findSchemaEntry($html, 'DiscussionForumPosting')['comment'] ?? null;
+        $this->assertIsArray($comments);
+        $this->assertCount(6, $comments);
+        $this->assertStringContainsString('alice', $comments[0]['text'] ?? '');
+        $this->assertStringContainsString('Reply 2.', $comments[0]['text'] ?? '');
+
+        if ($tags) {
+            $this->assertStringContainsString('Bread', $comments[0]['text'] ?? '');
+        }
+    }
+
+    public static function withAndWithoutTags(): array
+    {
+        return ['without tags' => [false], 'with tags' => [true]];
+    }
+
+    /**
+     * @return string[] the SQL run while the callback executed
+     */
+    private function queriesDuring(callable $callback): array
+    {
+        $queries = [];
+        $listening = true;
+
+        $this->app()->getContainer()->make(ConnectionInterface::class)
+            ->listen(function ($query) use (&$queries, &$listening) {
+                if ($listening) {
+                    $queries[] = $query->sql;
+                }
+            });
+
+        $callback();
+        $listening = false;
+
+        return $queries;
+    }
+
+    /**
+     * @param string[] $queries
+     *
+     * @return array<string, int> the queries run at least $times times, with their counts
+     */
+    private function repeatedQueries(array $queries, int $times): array
+    {
+        // Lists of bound values vary in length between otherwise identical queries.
+        $shapes = array_map(fn (string $sql) => preg_replace('/\bin \([?, ]+\)/i', 'in (?)', $sql), $queries);
+
+        return array_filter(array_count_values($shapes), fn (int $count) => $count >= $times);
     }
 }
