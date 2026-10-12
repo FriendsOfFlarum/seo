@@ -53,6 +53,16 @@ class TagPageTest extends ForumHtmlTestCase
                     'is_restricted' => false,
                     'is_hidden'     => false,
                 ],
+                [
+                    'id'            => 3,
+                    'name'          => '動力',
+                    'slug'          => '動力',
+                    'description'   => 'A tag whose slug is not ASCII.',
+                    'color'         => '#00FF00',
+                    'position'      => 2,
+                    'is_restricted' => false,
+                    'is_hidden'     => false,
+                ],
             ],
         ]);
     }
@@ -197,5 +207,41 @@ class TagPageTest extends ForumHtmlTestCase
         $response = $this->send($this->request('GET', '/t/nonexistent'));
 
         $this->assertContains($response->getStatusCode(), [200, 404]);
+    }
+
+    /**
+     * A non-ASCII slug reaches the route percent-encoded, which the raw
+     * getIdForSlug() lookup never matched — the null then reached
+     * findOrFail(int) and the page returned a 500.
+     */
+    #[Test]
+    public function tag_page_resolves_a_non_ascii_slug(): void
+    {
+        $html = $this->fetchForumHtml('/t/'.rawurlencode('動力'));
+
+        $this->assertSame('動力', $this->findMetaByProperty($html, 'og:title'));
+
+        $entry = $this->findSchemaEntry($html, 'CollectionPage');
+        $this->assertNotNull($entry, 'Expected a CollectionPage entry for the non-ASCII tag.');
+        $this->assertSame('動力', $entry['name'] ?? null);
+    }
+
+    /**
+     * Under flarum/tags' `id_with_slug` driver the route param is `{id}-{slug}`,
+     * which must resolve through the SlugManager (as flarum/tags itself does) and
+     * be written back the same way in the page's URLs.
+     */
+    #[Test]
+    public function tag_page_resolves_under_the_id_with_slug_driver(): void
+    {
+        $this->setting('slug_driver_Flarum\\Tags\\Tag', 'id_with_slug');
+
+        $html = $this->fetchForumHtml('/t/1-announcements');
+
+        $entry = $this->findSchemaEntry($html, 'CollectionPage');
+        $this->assertNotNull($entry, 'Expected a CollectionPage entry under the id_with_slug driver.');
+        $this->assertSame('Announcements', $entry['name'] ?? null);
+        $this->assertSame('http://localhost/t/1-announcements', $this->findMetaByProperty($html, 'og:url'));
+        $this->assertSame('http://localhost/t/1-announcements', $this->findCanonicalUrl($html));
     }
 }

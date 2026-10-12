@@ -13,9 +13,10 @@ namespace FoF\Seo\Page;
 
 use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Foundation\DispatchEventsTrait;
+use Flarum\Http\RequestUtil;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
-use Flarum\Tags\TagRepository;
+use Flarum\Tags\Tag;
 use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\SeoMeta\SeoMeta;
@@ -56,17 +57,24 @@ class TagPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        $tagId = Arr::get($request->getQueryParams(), 'slug');
+        $slug = Arr::get($request->getQueryParams(), 'slug');
 
-        // I do support it, but it didn't work
-        if (!is_numeric($tagId)) {
-            $tagId = resolve(TagRepository::class)->getIdForSlug($tagId);
+        if ($slug === null) {
+            return;
         }
 
+        $tagSlugger = $this->slugManager->forResource(Tag::class);
+
         try {
-            $tag = resolve(TagRepository::class)->findOrFail($tagId);
+            // Resolve through the configured tag slug driver, as flarum/tags does
+            // for the page itself: it decodes the slug (a tag slugged `動力` is
+            // requested as /t/%E5%8B%95%E5%8A%9B) and understands `id_with_slug`
+            // URLs. Looking the raw value up with getIdForSlug() returned null for
+            // both, and the null reached findOrFail(int): a 500 for the whole page.
+            /** @var Tag $tag */
+            $tag = $tagSlugger->fromSlug($slug, RequestUtil::getActor($request));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Do nothing, no model found
+            // No tag matched the slug.
             return;
         }
 
@@ -82,11 +90,11 @@ class TagPage implements PageDriverInterface
             ->setSchemaJson('@type', 'CollectionPage')
             ->setSchemaJson('name', $tag->name)
             ->setSchemaJson('about', $seoMeta->description)
-            // Tag URL
-            ->setUrl('/t/'.$tag->slug)
+            // Tag URL, as the configured slug driver writes it
+            ->setUrl('/t/'.$tagSlugger->toSlug($tag))
 
             // Canonical url
-            ->setCanonicalUrl('/t/'.$tag->slug);
+            ->setCanonicalUrl('/t/'.$tagSlugger->toSlug($tag));
 
         // Breadcrumb: Home › Tags › {ancestors} › {this tag}. The tag itself is
         // the current page, so it has no url.
