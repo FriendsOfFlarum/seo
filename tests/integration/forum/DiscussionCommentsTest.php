@@ -107,6 +107,23 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
     }
 
     /**
+     * A reply that has been deleted is hidden from readers, so its content must
+     * not reach the page through the structured data either.
+     */
+    #[Test]
+    public function deleted_replies_are_not_emitted(): void
+    {
+        $this->seedThread();
+        $this->database()->table('posts')->where('id', 3)->update(['hidden_at' => Carbon::now(), 'hidden_user_id' => 2]);
+
+        $html = $this->fetchForumHtml('/d/1-bake-bread');
+
+        $comments = $this->findSchemaEntry($html, 'DiscussionForumPosting')['comment'] ?? [];
+        $this->assertSame(['The popular reply.'], array_column($comments, 'text'));
+        $this->assertStringNotContainsString('Another reply.', $html);
+    }
+
+    /**
      * The number of emitted Comment nodes is capped by the
      * `seo_post_crawler_limit` setting, keeping the lowest-numbered replies
      * (the order they appear on the page). Rendering every reply is the

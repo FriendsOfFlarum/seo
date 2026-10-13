@@ -524,8 +524,11 @@ class BestAnswerPageTest extends ForumHtmlTestCase
      * author and each with a like, so that anything resolved per answer — the
      * author, their groups, the likes relation — repeats often enough for the
      * harness's N+1 detection to see it.
+     *
+     * With `$mentions`, each answer mentions a post in another discussion and
+     * the admin. `$acceptedAnswer` is the accepted answer's position.
      */
-    private function seedQnaWithAnswers(int $discussionId, string $slug, int $answers): void
+    private function seedQnaWithAnswers(int $discussionId, string $slug, int $answers, bool $mentions = false, int $acceptedAnswer = 1): void
     {
         $now = Carbon::now();
         $base = $discussionId * 100;
@@ -535,6 +538,13 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         ];
         $users = [];
         $likes = [];
+        $discussions = [];
+        $postMentions = [];
+        $userMentions = [];
+
+        if ($mentions) {
+            $discussions[] = ['id' => $discussionId + 50, 'title' => 'Elsewhere', 'slug' => 'elsewhere', 'user_id' => 1, 'first_post_id' => $base + 51, 'comment_count' => $answers, 'created_at' => $now, 'last_posted_at' => $now];
+        }
 
         for ($i = 1; $i <= $answers; $i++) {
             $postId = $base + 1 + $i;
@@ -550,7 +560,18 @@ class BestAnswerPageTest extends ForumHtmlTestCase
             // a live forum has already done — leaving it null here would
             // manufacture an N+1 in a dependency and mask ours.
             $users[] = ['id' => $userId, 'username' => 'answerer'.$userId, 'email' => 'answerer'.$userId.'@machine.local', 'is_email_confirmed' => true, 'password' => 'secret', 'best_answer_count' => 0];
-            $posts[] = ['id' => $postId, 'discussion_id' => $discussionId, 'number' => $i + 1, 'user_id' => $userId, 'type' => 'comment', 'content' => "<t><p>Answer {$i}.</p></t>", 'created_at' => $now];
+            $content = "<t><p>Answer {$i}.</p></t>";
+
+            if ($mentions) {
+                $mentioned = $base + 50 + $i;
+                $posts[] = ['id' => $mentioned, 'discussion_id' => $discussionId + 50, 'number' => $i, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Elsewhere.</p></t>', 'created_at' => $now];
+                $content = '<r><p><POSTMENTION displayname="admin" id="'.$mentioned.'" number="'.$i.'" discussionid="'.($discussionId + 50).'">@"admin"#p'.$mentioned.'</POSTMENTION> '
+                    .'<USERMENTION displayname="admin" id="1">@"admin"#1</USERMENTION> Answer '.$i.'.</p></r>';
+                $postMentions[] = ['post_id' => $postId, 'mentions_post_id' => $mentioned];
+                $userMentions[] = ['post_id' => $postId, 'mentions_user_id' => 1];
+            }
+
+            $posts[] = ['id' => $postId, 'discussion_id' => $discussionId, 'number' => $i + 1, 'user_id' => $userId, 'type' => 'comment', 'content' => $content, 'created_at' => $now];
             // A like on every answer — exercises the per-post likes relation.
             $likes[] = ['post_id' => $postId, 'user_id' => 1];
         }
@@ -561,11 +582,14 @@ class BestAnswerPageTest extends ForumHtmlTestCase
                 ['id' => self::QNA_TAG_ID, 'name' => 'Questions', 'slug' => 'questions', 'description' => null, 'color' => '#000', 'position' => 0, 'is_restricted' => false, 'is_hidden' => false, 'is_qna' => true],
             ],
             Discussion::class => [
-                ['id' => $discussionId, 'title' => 'Q '.$slug, 'slug' => $slug, 'user_id' => 1, 'first_post_id' => $base + 1, 'comment_count' => $answers + 1, 'best_answer_post_id' => $base + 2, 'created_at' => $now, 'last_posted_at' => $now],
+                ['id' => $discussionId, 'title' => 'Q '.$slug, 'slug' => $slug, 'user_id' => 1, 'first_post_id' => $base + 1, 'comment_count' => $answers + 1, 'best_answer_post_id' => $base + 1 + $acceptedAnswer, 'created_at' => $now, 'last_posted_at' => $now],
+                ...$discussions,
             ],
-            Post::class      => $posts,
-            'discussion_tag' => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
-            'post_likes'     => $likes,
+            Post::class          => $posts,
+            'discussion_tag'     => [['discussion_id' => $discussionId, 'tag_id' => self::QNA_TAG_ID]],
+            'post_likes'         => $likes,
+            'post_mentions_post' => $postMentions,
+            'post_mentions_user' => $userMentions,
         ]);
     }
 
@@ -606,6 +630,121 @@ class BestAnswerPageTest extends ForumHtmlTestCase
             $this->findSchemaEntry($html, 'QAPage')['mainEntity']['suggestedAnswer'] ?? [],
             'Expected the 7 non-accepted answers in the QAPage schema.'
         );
+    }
+
+    /**
+     * Rendering an answer runs flarum/mentions' formatter, which looks up what
+     * each mention refers to unless the answer has its mentions loaded. Every
+     * answer here mentions the same user, so some of those lookups repeat a
+     * value; counted directly, as the harness would only warn about them.
+     */
+    #[Test]
+    public function answers_with_mentions_do_not_look_them_up_per_answer(): void
+    {
+        $this->extension('flarum-mentions');
+        $this->setting('seo_post_crawler', '1');
+
+        $this->seedQnaWithAnswers(1, 'answers', 8, mentions: true);
+
+        $this->app();
+        $this->database()->enableQueryLog();
+        $html = $this->fetchForumHtml('/d/1-answers');
+        $queries = array_column($this->database()->getQueryLog(), 'query');
+
+        // Eight answers: anything run eight times or more is per-answer work.
+        $repeated = array_filter(array_count_values($queries), fn (int $count) => $count >= 8);
+        $this->assertSame([], $repeated, 'Queries were run once per answer.');
+
+        $suggested = $this->findSchemaEntry($html, 'QAPage')['mainEntity']['suggestedAnswer'] ?? [];
+        $this->assertCount(7, $suggested);
+        $this->assertStringStartsWith('admin @admin Answer 2.', $suggested[0]['text'] ?? '', 'The mentions should be rendered.');
+    }
+
+    /**
+     * Rendering answers is the costly part of the page, so as for comments on
+     * other discussions, `seo_post_crawler_limit` caps how many are rendered:
+     * the first answers by number, plus the accepted answer wherever it is.
+     */
+    #[Test]
+    public function answers_are_capped_by_the_limit_but_the_accepted_answer_is_kept(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->setting('seo_post_crawler_limit', '2');
+
+        $this->seedQnaWithAnswers(1, 'answers', 4, acceptedAnswer: 4);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-answers'), 'QAPage')['mainEntity'] ?? [];
+
+        $suggested = $question['suggestedAnswer'] ?? [];
+        $this->assertCount(2, $suggested);
+        $this->assertStringContainsString('Answer 1.', $suggested[0]['text'] ?? '');
+        $this->assertStringContainsString('Answer 2.', $suggested[1]['text'] ?? '');
+        $this->assertStringContainsString('Answer 4.', $question['acceptedAnswer']['text'] ?? '');
+
+        // The count still describes every answer.
+        $this->assertSame(4, $question['answerCount'] ?? null);
+    }
+
+    /**
+     * A deleted answer is hidden from readers, so its content must not reach
+     * the page through the structured data either.
+     */
+    #[Test]
+    public function deleted_answers_are_not_emitted(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $this->seedQnaWithAnswers(1, 'answers', 3);
+        $this->database()->table('posts')->where('id', 103)->update(['hidden_at' => Carbon::now(), 'hidden_user_id' => 1]);
+
+        $html = $this->fetchForumHtml('/d/1-answers');
+        $question = $this->findSchemaEntry($html, 'QAPage')['mainEntity'] ?? [];
+
+        $this->assertStringContainsString('Answer 1.', $question['acceptedAnswer']['text'] ?? '');
+        $this->assertSame(['Answer 3.'], array_column($question['suggestedAnswer'] ?? [], 'text'));
+        $this->assertStringNotContainsString('Answer 2.', $html);
+    }
+
+    #[Test]
+    public function a_deleted_accepted_answer_is_not_emitted(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+
+        $this->seedQnaWithAnswers(1, 'answers', 2);
+        $this->database()->table('posts')->where('id', 102)->update(['hidden_at' => Carbon::now(), 'hidden_user_id' => 1]);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-answers'), 'QAPage')['mainEntity'] ?? [];
+
+        $this->assertArrayNotHasKey('acceptedAnswer', $question);
+        $this->assertStringNotContainsString('Answer 1.', (string) json_encode($question));
+    }
+
+    /**
+     * An answer's upvote count only needs a count of its likes, not everyone
+     * who liked it.
+     */
+    #[Test]
+    public function answer_upvotes_are_counted_without_loading_who_liked_them(): void
+    {
+        $this->extension('flarum-likes');
+        $this->setting('seo_post_crawler', '1');
+
+        $this->seedQnaWithAnswers(1, 'answers', 3);
+
+        $this->app();
+        $this->database()->enableQueryLog();
+        $html = $this->fetchForumHtml('/d/1-answers');
+
+        // Identifier quoting and table prefixes vary between test setups.
+        $likerLoads = array_filter(
+            array_column($this->database()->getQueryLog(), 'query'),
+            fn (string $sql) => (bool) preg_match('/^select \w*users\.\*, \w*post_likes\.post_id as pivot_post_id/', str_replace(['`', '"'], '', $sql))
+        );
+        $this->assertSame([], array_values($likerLoads), 'Everyone who liked each answer was loaded.');
+
+        $question = $this->findSchemaEntry($html, 'QAPage')['mainEntity'] ?? [];
+        $this->assertSame(1, $question['acceptedAnswer']['upvoteCount'] ?? null);
+        $this->assertSame([1, 1], array_column($question['suggestedAnswer'] ?? [], 'upvoteCount'));
     }
 
     /**

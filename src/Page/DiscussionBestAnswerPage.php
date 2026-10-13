@@ -37,6 +37,7 @@ use Psr\Http\Message\ServerRequestInterface;
 class DiscussionBestAnswerPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
+    use LoadsMentionRelations;
 
     protected Dispatcher $events;
 
@@ -201,30 +202,36 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Only add suggested answers property if there are posts
         $mainEntity['suggestedAnswer'] = [];
 
-        // Get the answer posts for this discussion.
-        // Eager-load the author (and likes, when the extension is enabled)
-        // relations referenced in the loop below to avoid an N+1 per answer post.
-        $with = ['user'];
-        if ($enableLikes) {
-            $with[] = 'likes';
-        }
-
-        $postsQuery = $discussion->posts()
+        // The answers readers can see (`comments()` leaves out deleted and
+        // private posts), with what rendering and describing each one reads (its
+        // author, its mentions, its like count) loaded for all of them, to
+        // avoid queries per answer. This page only runs with flarum/tags
+        // enabled (see extensionDependencies()), so its mention relation exists.
+        $answers = fn () => $discussion->comments()
             ->where('number', '>', '1')
-            ->with($with);
-
-        // With the crawler off we only surface the accepted answer, so load
-        // just that post rather than the whole thread.
-        if (!$crawlerEnabled) {
-            $postsQuery->where('id', $bestAnswerId);
-        }
+            ->with(['user', ...$this->mentionRelations(true)])
+            ->when($enableLikes, fn ($query) => $query->withCount('likes'))
+            ->orderBy('number');
 
         /** @var Collection<int, Post> $posts */
-        $posts = $postsQuery->get();
+        $posts = new Collection();
+
+        // With the crawler off we only surface the accepted answer. With it on,
+        // rendering each answer is the dominant page-load cost, so it's capped
+        // as on other discussions; a value <= 0 disables the cap.
+        if ($crawlerEnabled) {
+            $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
+            $posts = $answers()->when($limit > 0, fn ($query) => $query->limit($limit))->get();
+        }
+
+        // The accepted answer is always included, wherever it falls.
+        if ($bestAnswerId !== null && !$posts->contains('id', $bestAnswerId)) {
+            $posts = $posts->merge($answers()->where('id', $bestAnswerId)->get());
+        }
 
         foreach ($posts as $post) {
             /** @var Post $post */
-            if ($post->is_private || !$post instanceof CommentPost) {
+            if (!$post instanceof CommentPost) {
                 continue;
             }
 
@@ -246,7 +253,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             $generatedPost['author'] = $this->authorSchema->forUser($post->user);
 
             // Upvote/like count
-            $generatedPost['upvoteCount'] = $enableLikes ? $post->likes->count() : 0;
+            $generatedPost['upvoteCount'] = $enableLikes ? (int) $post->getAttribute('likes_count') : 0;
 
             // Set accepted answer
             if ($bestAnswerId === $post->id) {
