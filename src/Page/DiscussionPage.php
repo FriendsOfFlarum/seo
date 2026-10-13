@@ -37,6 +37,7 @@ use Psr\Http\Message\ServerRequestInterface;
 class DiscussionPage implements PageDriverInterface
 {
     use DispatchEventsTrait;
+    use LoadsMentionRelations;
 
     protected Dispatcher $events;
 
@@ -52,28 +53,6 @@ class DiscussionPage implements PageDriverInterface
         protected readonly AuthorSchema $authorSchema,
     ) {
         $this->events = $events;
-    }
-
-    /**
-     * What flarum/mentions' formatter reads when a reply is rendered. Without
-     * these loaded it looks each reply's mentions up separately.
-     *
-     * @return string[]
-     */
-    protected function mentionRelations(bool $tagsEnabled): array
-    {
-        if (!$this->extensionManager->isEnabled('flarum-mentions')) {
-            return [];
-        }
-
-        $relations = ['mentionsPosts.user', 'mentionsPosts.discussion', 'mentionsUsers', 'mentionsGroups'];
-
-        // flarum/tags defines this relation, so it only exists alongside it.
-        if ($tagsEnabled) {
-            $relations[] = 'mentionsTags';
-        }
-
-        return $relations;
     }
 
     /**
@@ -305,10 +284,10 @@ class DiscussionPage implements PageDriverInterface
             // cost, so bound it; a value <= 0 disables the cap entirely.
             $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
 
-            $query = $discussion->posts()
+            // `comments()` leaves out deleted and private posts, which readers
+            // can't see either.
+            $query = $discussion->comments()
                 ->where('number', '>', 1)
-                ->where('type', 'comment')
-                ->where('is_private', false)
                 ->with(['user', ...$this->mentionRelations($tagsEnabled)])
                 ->withCount($countRelations)
                 ->orderBy('number');
