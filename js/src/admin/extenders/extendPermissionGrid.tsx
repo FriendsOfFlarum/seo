@@ -5,7 +5,8 @@ import { SEO_PERMISSION_CATEGORY } from '../permissions';
 
 export default function extendPermissionGrid() {
   extend(PermissionGrid.prototype, 'permissionItems', function (items) {
-    const extensionId = (this.attrs as { extensionId?: string }).extensionId;
+    // The admin search calls permissionItems() on the prototype, where there are no attrs.
+    const extensionId = (this.attrs as { extensionId?: string } | undefined)?.extensionId;
 
     items.add(
       'seo',
