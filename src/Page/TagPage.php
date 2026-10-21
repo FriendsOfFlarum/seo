@@ -85,16 +85,17 @@ class TagPage implements PageDriverInterface
 
         $properties->generateTagsFromMetaData($seoMeta);
 
+        $tagUrl = $this->urlGenerator->to('forum')->route('tag', ['slug' => $tagSlugger->toSlug($tag)]);
+
         $properties
             // Add Schema.org metadata: CollectionPage https://schema.org/CollectionPage
             ->setSchemaJson('@type', 'CollectionPage')
             ->setSchemaJson('name', $tag->name)
             ->setSchemaJson('about', $seoMeta->description)
             // Tag URL, as the configured slug driver writes it
-            ->setUrl('/t/'.$tagSlugger->toSlug($tag))
-
+            ->setUrl($tagUrl, false)
             // Canonical url
-            ->setCanonicalUrl('/t/'.$tagSlugger->toSlug($tag));
+            ->setCanonicalUrl($tagUrl, false);
 
         // Breadcrumb: Home › Tags › {ancestors} › {this tag}. The tag itself is
         // the current page, so it has no url.
@@ -115,7 +116,7 @@ class TagPage implements PageDriverInterface
         $itemListElement = $discussions->values()->map(fn ($discussion, int $index) => [
             '@type'    => 'ListItem',
             'position' => $index + 1,
-            'url'      => $properties->withApplicationPath('/d/'.$discussionSlugger->toSlug($discussion)),
+            'url'      => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlugger->toSlug($discussion)]),
             'name'     => $discussion->title,
         ])->toArray();
 

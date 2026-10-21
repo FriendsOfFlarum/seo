@@ -13,8 +13,12 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use Flarum\Discussion\Discussion;
+use Flarum\Extend;
+use Flarum\Forum\Content\Discussion as DiscussionContent;
+use Flarum\Tags\Content\Tag as TagContent;
 use Flarum\Tags\Tag;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -118,7 +122,7 @@ class TagPageTest extends ForumHtmlTestCase
         $first = $list['itemListElement'][0];
         $this->assertSame('ListItem', $first['@type'] ?? null);
         $this->assertSame(1, $first['position'] ?? null);
-        $this->assertStringContainsString('/d/', $first['url'] ?? '');
+        $this->assertSame('http://localhost/d/2-second-topic', $first['url'] ?? null);
         $this->assertNotEmpty($first['name'] ?? null);
 
         // Positions must be sequential, not all 1.
@@ -126,6 +130,62 @@ class TagPageTest extends ForumHtmlTestCase
         $this->assertSame(
             [1, 2],
             array_column($list['itemListElement'], 'position')
+        );
+    }
+
+    public static function tagRoutesProvider(): array
+    {
+        return [
+            'default routes'                  => [false, 'default', 1, 'announcements'],
+            'default routes with Unicode'     => [false, 'default', 3, '動力'],
+            'default routes with id_with_slug' => [false, 'id_with_slug', 1, '1-announcements'],
+            'custom routes'                   => [true, 'default', 1, 'announcements'],
+            'custom routes with Unicode'      => [true, 'default', 3, '動力'],
+            'custom routes with id_with_slug'  => [true, 'id_with_slug', 1, '1-announcements'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('tagRoutesProvider')]
+    public function tag_metadata_uses_named_routes(bool $customRoutes, string $tagDriver, int $tagId, string $tagSlug): void
+    {
+        if ($customRoutes) {
+            $this->extend(
+                (new Extend\Frontend('forum'))
+                    ->removeRoute('tag')
+                    ->removeRoute('discussion')
+                    ->route('/tag/{slug}', 'tag', TagContent::class)
+                    ->route('/discussion/{id}[/{near}]', 'discussion', DiscussionContent::class)
+            );
+        }
+
+        $this->setting('slug_driver_Flarum\\Tags\\Tag', $tagDriver);
+        $this->setting('slug_driver_Flarum\\Discussion\\Discussion', 'utf8');
+
+        $this->prepareDatabase([
+            Discussion::class => [
+                ['id' => 1, 'title' => '動力', 'slug' => 'stored-slug', 'user_id' => 1, 'comment_count' => 1, 'created_at' => Carbon::now(), 'last_posted_at' => Carbon::now()],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => $tagId],
+            ],
+        ]);
+
+        $tagPath = ($customRoutes ? '/tag/' : '/t/').$tagSlug;
+        $html = $this->fetchForumHtml(($customRoutes ? '/tag/' : '/t/').rawurlencode($tagSlug));
+        $tagUrl = 'http://localhost'.$tagPath;
+
+        $this->assertSame($tagUrl, $this->findCanonicalUrl($html));
+        $this->assertSame($tagUrl, $this->findMetaByProperty($html, 'og:url'));
+        $this->assertSame($tagUrl, $this->findMetaByName($html, 'twitter:url'));
+
+        $entry = $this->findSchemaEntry($html, 'CollectionPage');
+        $this->assertNotNull($entry);
+        $this->assertSame($tagUrl, $entry['url'] ?? null);
+        $this->assertSame(1, $entry['mainEntity']['numberOfItems'] ?? null);
+        $this->assertSame(
+            'http://localhost'.($customRoutes ? '/discussion/' : '/d/').'1-動力',
+            $entry['mainEntity']['itemListElement'][0]['url'] ?? null
         );
     }
 
