@@ -136,11 +136,11 @@ class TagPageTest extends ForumHtmlTestCase
     public static function tagRoutesProvider(): array
     {
         return [
-            'default routes'                  => [false, 'default', 1, 'announcements'],
-            'default routes with Unicode'     => [false, 'default', 3, '動力'],
+            'default routes'                   => [false, 'default', 1, 'announcements'],
+            'default routes with Unicode'      => [false, 'default', 3, '動力'],
             'default routes with id_with_slug' => [false, 'id_with_slug', 1, '1-announcements'],
-            'custom routes'                   => [true, 'default', 1, 'announcements'],
-            'custom routes with Unicode'      => [true, 'default', 3, '動力'],
+            'custom routes'                    => [true, 'default', 1, 'announcements'],
+            'custom routes with Unicode'       => [true, 'default', 3, '動力'],
             'custom routes with id_with_slug'  => [true, 'id_with_slug', 1, '1-announcements'],
         ];
     }
