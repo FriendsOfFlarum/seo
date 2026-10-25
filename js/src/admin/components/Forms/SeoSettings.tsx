@@ -58,7 +58,10 @@ export default class SeoSettings extends Component {
   viewItems(): ItemList<Mithril.Children> {
     const items = new ItemList<Mithril.Children>();
 
-    const submitButton = (
+    // A function, not one vnode: a scoped page shows the button in its field
+    // and in the hidden Twitter card set, and Mithril cannot render a vnode in
+    // two places, so the visible one never saw `disabled` change.
+    const submitButton = () => (
       <Button type="submit" className="Button Button--primary" loading={this.saving} disabled={!this.changed()}>
         {app.translator.trans('core.admin.settings.submit_button')}
       </Button>
@@ -72,7 +75,7 @@ export default class SeoSettings extends Component {
       >
         <div className="helpText">{app.translator.trans('core.admin.basics.forum_description_text')}</div>
         <textarea className="FormControl" bidi={this.values.forum_description} />
-        {this.showField === 'description' && submitButton}
+        {this.showField === 'description' && submitButton()}
       </FieldSet>,
       100
     );
@@ -98,7 +101,7 @@ export default class SeoSettings extends Component {
           <b>{app.translator.trans('fof-seo.admin.settings.keywords.comma_note')}</b>{' '}
           {app.translator.trans('fof-seo.admin.settings.keywords.example')}
         </div>
-        {this.showField === 'keywords' && submitButton}
+        {this.showField === 'keywords' && submitButton()}
       </FieldSet>,
       90
     );
@@ -118,7 +121,7 @@ export default class SeoSettings extends Component {
             this.hasChanges = true;
           }}
         />
-        {submitButton}
+        {submitButton()}
       </FieldSet>,
       70
     );
@@ -237,7 +240,8 @@ export default class SeoSettings extends Component {
   }
 
   changed(): boolean {
-    return SETTING_FIELDS.some((key) => this.values[key]() !== app.data.settings[key]);
+    // Compared as oninit reads them: a setting never saved is '' here, not undefined.
+    return SETTING_FIELDS.some((key) => this.values[key]() !== (app.data.settings[key] || ''));
   }
 
   tagsEnabled(): boolean {
@@ -256,15 +260,16 @@ export default class SeoSettings extends Component {
     this.saving = true;
     if (this.successAlert) app.alerts.dismiss(this.successAlert);
 
+    // Saved as its default, and kept in step so the form reads as saved after.
+    if (this.values.seo_twitter_card_size() === '') {
+      this.values.seo_twitter_card_size('large');
+    }
+
     const settings: Record<string, string> = {};
 
     SETTING_FIELDS.forEach((key) => {
       settings[key] = this.values[key]();
     });
-
-    if (settings.seo_twitter_card_size === '') {
-      settings.seo_twitter_card_size = 'large';
-    }
 
     saveSettings(settings)
       .then(() => app.alerts.show({ type: 'success' }, app.translator.trans('core.admin.settings.saved_message')))
