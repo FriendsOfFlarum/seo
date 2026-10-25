@@ -45,9 +45,14 @@ class FormatLinks
     public function __invoke(Renderer $renderer, mixed $context, string $xml, ?Request $request = null): string
     {
         return Utils::replaceAttributes($xml, 'URL', function (array $attributes): array {
-            $domain = $this->isRelativeToForum($attributes['url'])
+            // This runs on stored XML, which is not parsed again when it renders.
+            // A URL tag with no url (imported or legacy markup) is treated as a
+            // link to an unknown site rather than failing every page showing it.
+            $url = $attributes['url'] ?? '';
+
+            $domain = $this->isRelativeToForum($url)
                 ? $this->internalDomain
-                : $this->urlToDomain($attributes['url']);
+                : $this->urlToDomain($url);
 
             // Do-follow domains (the forum itself + the configured allow-list)
             // should pass ranking signals, so they get neither `nofollow` nor
