@@ -437,7 +437,7 @@ class PageListener
     public function setUrl(string $path = '', bool $prependApplicationUrl = true): self
     {
         if ($prependApplicationUrl) {
-            $path = $this->applicationUrl.$path;
+            $path = $this->getApplicationPath($path);
         }
 
         $this->setMetaTag('twitter:url', $path);
@@ -453,7 +453,7 @@ class PageListener
     public function setCanonicalUrl(string $path, bool $prependApplicationUrl = true): self
     {
         if ($prependApplicationUrl) {
-            $path = $this->applicationUrl.$path;
+            $path = $this->getApplicationPath($path);
         }
 
         $this->canonicalUrl = $path;
@@ -461,9 +461,14 @@ class PageListener
         return $this;
     }
 
+    /**
+     * The forum's URL for a path. The forum root keeps its trailing slash: in a
+     * subdirectory install, `https://example.com/forum` is a 301 to
+     * `https://example.com/forum/`, and a canonical must not point at a redirect.
+     */
     public function getApplicationPath(string $path): string
     {
-        return $this->applicationUrl.$path;
+        return $this->applicationUrl.($path === '' ? '/' : $path);
     }
 
     /**
