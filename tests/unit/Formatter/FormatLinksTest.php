@@ -214,6 +214,21 @@ class FormatLinksTest extends TestCase
     }
 
     /**
+     * Stored XML is not re-validated at render time, so a URL tag from imported
+     * markup can lack its url. It must not take the post down (issue #192).
+     */
+    public function test_url_tag_without_url_is_treated_as_external(): void
+    {
+        $formatter = $this->makeFormatter(forumUrl: 'https://forum.example.com', doFollow: []);
+
+        $xml = '<t><URL>link</URL></t>';
+        $result = $formatter->__invoke(m::mock(Renderer::class), null, $xml);
+
+        $this->assertStringContainsString('rel="ugc noopener nofollow"', $result);
+        $this->assertStringContainsString('target="_blank"', $result);
+    }
+
+    /**
      * When the do-follow settings string is empty JSON/null, the list falls
      * back to an empty array (plus the internal domain).
      */
