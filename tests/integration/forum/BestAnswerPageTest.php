@@ -16,7 +16,9 @@ use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
+use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -903,6 +905,41 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->assertNotNull(
             $this->findSchemaEntry($html, 'DiscussionForumPosting'),
             'Non-Q&A discussions fall back to DiscussionForumPosting.'
+        );
+    }
+
+    public static function robotsIndexingRules(): array
+    {
+        return [
+            'rule enabled' => [true],
+            'rule disabled' => [false],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('robotsIndexingRules')]
+    public function qa_noindex_preserves_item_robots_directives(bool $noindex): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->setting('seo_noindex_tags', $noindex ? '[1]' : '[]');
+        $this->seedQnaDiscussion();
+        $this->prepareDatabase([
+            SeoMeta::class => [[
+                'object_type' => 'discussions',
+                'object_id' => 1,
+                'created_at' => Carbon::now(),
+                'robots_nofollow' => true,
+                'robots_noarchive' => true,
+                'robots_noimageindex' => true,
+                'robots_nosnippet' => true,
+            ]],
+        ]);
+
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+        $this->assertNotNull($this->findSchemaEntry($html, 'QAPage'));
+        $this->assertSame(
+            ($noindex ? 'noindex' : 'index').', nofollow, noarchive, noimageindex, nosnippet',
+            $this->findMetaByName($html, 'robots')
         );
     }
 }

@@ -151,9 +151,8 @@ class ProfilePage implements PageDriverInterface
         $properties->breadcrumb()->push(new Crumb($user->getAttribute('display_name')));
 
         // Optionally keep thin profile pages out of the search index (GH #62).
-        // Links are still followed so crawlers can reach the content they link to.
         if ($this->settings->get('seo_noindex_profiles')) {
-            $properties->setMetaTag('robots', 'noindex, follow');
+            $properties->addRobotsDirectives(['noindex']);
         }
     }
 }

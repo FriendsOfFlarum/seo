@@ -13,7 +13,13 @@ namespace FoF\Seo\Tests\integration\forum;
 
 use Carbon\Carbon;
 use Flarum\User\User;
+use FoF\Seo\Extend\SEO;
+use FoF\Seo\Page\ProfilePage;
+use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
+use Psr\Http\Message\ServerRequestInterface;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -240,5 +246,48 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->assertNotNull($entry, 'Expected a ProfilePage entry under the id slug driver.');
         $this->assertSame('victorinox', $entry['mainEntity']['name'] ?? null);
         $this->assertSame('http://localhost/u/2', $this->findMetaByProperty($html, 'og:url'));
+    }
+
+    public static function robotsIndexingRules(): array
+    {
+        return [
+            'rule enabled' => [true],
+            'rule disabled' => [false],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('robotsIndexingRules')]
+    public function profile_noindex_preserves_item_robots_directives(bool $noindex): void
+    {
+        $this->setting('seo_noindex_profiles', $noindex ? '1' : '0');
+        // Stand in for the built-in driver to supply profile metadata before its noindex rule.
+        $this->extend((new SEO())->addExtender('profile', ProfileWithRobotsMeta::class));
+        $this->prepareDatabase([
+            SeoMeta::class => [[
+                'object_type' => 'users',
+                'object_id' => 2,
+                'created_at' => Carbon::now(),
+                'robots_nofollow' => true,
+                'robots_noarchive' => true,
+                'robots_noimageindex' => true,
+                'robots_nosnippet' => true,
+            ]],
+        ]);
+
+        $this->assertSame(
+            ($noindex ? 'noindex' : 'index').', nofollow, noarchive, noimageindex, nosnippet',
+            $this->findMetaByName($this->fetchForumHtml('/u/victorinox'), 'robots')
+        );
+    }
+}
+
+class ProfileWithRobotsMeta extends ProfilePage
+{
+    public function handle(ServerRequestInterface $request, SeoProperties $properties): void
+    {
+        $properties->generateTagsFromMetaData(SeoMeta::findByObjectTypeOrFail('users', 2));
+
+        parent::handle($request, $properties);
     }
 }
