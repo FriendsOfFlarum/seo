@@ -20,9 +20,9 @@ use FoF\Seo\Extend\SEO;
 use FoF\Seo\Page\PageDriverInterface;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
-use Psr\Http\Message\ServerRequestInterface;
-use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Tests the optional fof/best-answer integration.
@@ -926,10 +926,10 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     public static function unavailableAnswers(): array
     {
         return [
-            'hidden, crawler off' => [false, false],
-            'hidden, crawler on' => [false, true],
+            'hidden, crawler off'  => [false, false],
+            'hidden, crawler on'   => [false, true],
             'deleted, crawler off' => [true, false],
-            'deleted, crawler on' => [true, true],
+            'deleted, crawler on'  => [true, true],
         ];
     }
 

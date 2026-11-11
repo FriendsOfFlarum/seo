@@ -66,6 +66,7 @@ class DiscussionPage implements PageDriverInterface
      * entirely when it has none of the three.
      *
      * @param array<string, mixed>|null $media
+     *
      * @return array<string, mixed>|null
      */
     private function commentSchema(CommentPost $post, FlarumDiscussion $discussion, bool $enableLikes, bool $enableGamification, ?array $media = null): ?array
@@ -170,7 +171,7 @@ class DiscussionPage implements PageDriverInterface
      * Supplied replies must have authors and mention relations loaded, plus
      * likes/upvotes counts when those integrations are enabled.
      *
-     * @param Collection<int, Post>|null $replies
+     * @param Collection<int, Post>|null       $replies
      * @param array<int, array<string, mixed>> $replyMedia
      */
     public function buildForumPosting(FlarumDiscussion $discussion, SeoProperties $properties, ?Collection $replies = null, array $replyMedia = []): void
