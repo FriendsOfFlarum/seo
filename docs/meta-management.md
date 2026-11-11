@@ -29,7 +29,9 @@ can be edited. Turn it off to take full manual control of every field.
 - **Meta title** and **description**
 - **Keywords**
 - **Robots directives** — `noindex`, `nofollow`, `noarchive`, `noimageindex`,
-  `nosnippet` for that page
+  `nosnippet` for that page. With [fof/sitemap](sitemap-and-robots.md)
+  enabled, a discussion, tag or Page set to `noindex` is also left out of the
+  sitemap (from its next build); the other directives don't affect it
 - **Estimated reading time**
 - **Twitter/X card** — a custom title, description and image
 - **Open Graph** — a custom title, description and image

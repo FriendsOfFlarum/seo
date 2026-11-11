@@ -30,8 +30,8 @@ of months.
 | **Twitter card size** | Whether shared links render as a large image card (`summary_large_image`) or a small summary card (`summary`). |
 | **Social media image** | The image used when a page is shared on Facebook, Twitter/X, Reddit, etc. A square 1200×1200 image is recommended; otherwise a 1200×630 landscape image. Falls back to your logo, then favicon. |
 | **Discussion post crawl settings** | Whether search engines index only the first post of a discussion (default) or all posts. See below. |
-| **De-index profile pages** | When enabled, user profile pages emit `noindex, follow` so thin profile pages are kept out of search results. See below. |
-| **De-index tags** | Discussions in chosen tags — and those tags' own listing pages — emit `noindex, follow`. Requires [flarum/tags](https://github.com/flarum/tags). See below. |
+| **De-index profile pages** | When enabled, user profile pages emit `noindex, follow` so thin profile pages are kept out of search results, and are left out of the [sitemap](sitemap-and-robots.md). See below. |
+| **De-index tags** | Discussions in chosen tags — and those tags' own listing pages — emit `noindex, follow` and are left out of the [sitemap](sitemap-and-robots.md). Requires [flarum/tags](https://github.com/flarum/tags). See below. |
 | **No-follow / do-follow links** | External links get `rel="nofollow"` by default; manage exceptions in the [do-follow list](do-follow-links.md). |
 | **Open external links in new tab** | External links open in a new tab. (Always on.) |
 
@@ -59,16 +59,18 @@ profiles emit `<meta name="robots" content="noindex, follow">` — the `follow`
 keeps crawlers traversing the links on the page, which is the recommended
 treatment for low-value pages you want out of the index.
 
-> `robots.txt`-level rules (e.g. `Disallow: /u/`) are handled by
-> [fof/sitemap](sitemap-and-robots.md); this setting controls the per-page
-> `robots` meta tag.
+With [fof/sitemap](sitemap-and-robots.md) enabled, profiles are also left out
+of the sitemap while this is on, and robots.txt never blocks `/u/`: a search
+engine can only see the `noindex` on a page it is allowed to fetch. See
+[Noindex, the sitemap and robots.txt](sitemap-and-robots.md#noindex-the-sitemap-and-robotstxt).
 
 **De-index tags** (shown when [flarum/tags](https://github.com/flarum/tags) is
 enabled) lets you pick tags whose content should stay out of the index. Every
 discussion in a selected tag, and the tag's own listing page, emits
 `noindex, follow`. Selecting a parent tag also covers its child tags. Excluding
 low-value or noisy sections this way raises the overall proportion of quality
-pages a search engine indexes, which can help the rest of the forum rank.
+pages a search engine indexes, which can help the rest of the forum rank. With
+fof/sitemap enabled, the same discussions and tags are left out of the sitemap.
 
 ## What gets rendered
 

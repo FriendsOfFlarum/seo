@@ -73,8 +73,8 @@ fof-seo:
       indexing:
         heading: Indexing controls
         profiles_label: De-index profile pages
-        profiles_help: When enabled, user profile pages emit a 'noindex' meta tag so they are kept out of search results. Links on the page are still followed, so crawlers can still reach the content they point to.
-        tags_help: Discussions in the selected tags (and those tags' own listing pages) will be kept out of search results with a 'noindex' meta tag. Links are still followed. Selecting a parent tag also covers its child tags.
+        profiles_help: When enabled, user profile pages emit a 'noindex' meta tag so they are kept out of search results. Links on the page are still followed, so crawlers can still reach the content they point to. With FoF Sitemap enabled, profiles are also left out of the sitemap, and robots.txt never blocks them, so search engines can read the 'noindex'.
+        tags_help: Discussions in the selected tags (and those tags' own listing pages) will be kept out of search results with a 'noindex' meta tag. Links are still followed. Selecting a parent tag also covers its child tags. With FoF Sitemap enabled, they are also left out of the sitemap, and robots.txt never blocks tag pages, so search engines can read the 'noindex'.
         tags_button: Select tags
         tags_none_selected: No tags excluded from indexing.
 

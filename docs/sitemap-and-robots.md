@@ -21,6 +21,41 @@ Once fof/sitemap is enabled:
 - **`/robots.txt`** — generated for you, telling crawlers which areas they may
   index and pointing them at your sitemap.
 
+## Noindex, the sitemap and robots.txt
+
+While both extensions are enabled, FoF SEO decides which pages search engines
+may index, and fof/sitemap only lists what FoF SEO lets through. A page that
+emits `noindex` is never submitted in the sitemap:
+
+| Page | Left out of the sitemap when |
+| --- | --- |
+| Discussion | one of its tags is selected under **De-index tags**, or is a child of a selected tag; or its own [SEO meta](meta-management.md) has `noindex` |
+| Tag page | the tag is selected under **De-index tags**, or is a child of a selected tag; or its own SEO meta has `noindex` (a tag's own `noindex` does not carry over to its discussions) |
+| [fof/pages](https://github.com/FriendsOfFlarum/pages) Page | its own SEO meta has `noindex` |
+| User profile | **De-index profile pages** is on (every profile) |
+
+fof/sitemap's own rules still apply on top: only guest-visible content is
+listed, its minimum-count thresholds for tags and users still apply, and its
+own **exclude users** / **exclude tags** settings still leave those out of the
+sitemap.
+
+Search engines can only read a `noindex` on a page they are allowed to fetch,
+so a robots.txt `Disallow` would hide it. While FoF SEO is enabled, robots.txt
+therefore never blocks profiles (`/u/`) or tags (`/t/`, `/tags`), even with
+fof/sitemap's **exclude users** or **exclude tags** on. Without FoF SEO,
+fof/sitemap keeps blocking them as before. A robots.txt served by your web
+server instead of fof/sitemap is outside both extensions' control: check that
+it doesn't block pages you want de-indexed.
+
+Notes:
+
+- Leaving a page out of the sitemap doesn't remove it from search results; the
+  `noindex` on the page does, the next time a search engine crawls it.
+- In fof/sitemap's cached modes, a change shows up in the sitemap at its next
+  scheduled build.
+- This needs fof/sitemap 3.1.0 or later; Composer refuses older versions next
+  to FoF SEO.
+
 ## Telling search engines about your sitemap
 
 After the sitemap is live, submit it to the search engines you care about. FoF
