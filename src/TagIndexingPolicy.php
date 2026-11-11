@@ -49,6 +49,30 @@ class TagIndexingPolicy
     }
 
     /**
+     * The IDs of every tag shouldNoindex() treats as excluded: the selected
+     * tags and their direct children (flarum-tags nests one level). One query
+     * over the tags table, for SQL constraints such as the sitemap's; keep it
+     * in step with shouldNoindex().
+     *
+     * @return array<int, int>
+     */
+    public function excludedTagIdsWithChildren(): array
+    {
+        $excluded = $this->excludedTagIds();
+
+        if (empty($excluded)) {
+            return [];
+        }
+
+        return Tag::query()
+            ->whereIn('id', $excluded)
+            ->orWhereIn('parent_id', $excluded)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
      * Whether any of the given tags (or their parent) is excluded. A child of
      * an excluded tag counts as excluded too — flarum-tags nests one level.
      *

@@ -21,6 +21,10 @@ use Flarum\Extend;
 use FoF\Seo\Api\AttachForumResourceFields;
 use FoF\Seo\Extend\SEO;
 use FoF\Seo\Formatter\FormatLinks;
+use FoF\Seo\Integration\Sitemap\ConstrainDiscussions;
+use FoF\Seo\Integration\Sitemap\ConstrainPages;
+use FoF\Seo\Integration\Sitemap\ConstrainTags;
+use FoF\Seo\Integration\Sitemap\ConstrainUsers;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\Page as SeoPage;
 use FoF\Seo\SeoMeta\SeoMeta;
@@ -121,5 +125,28 @@ return [
       ->whenExtensionEnabled('fof-merge-discussions', fn () => [
           (new Extend\Event())
             ->subscribe(Subscribers\MergeDiscussionsSubscriber::class),
+      ])
+      // fof/seo decides what may be indexed (Indexability\IndexabilityPolicy);
+      // fof/sitemap only lists what fof/seo lets through. The closure keeps
+      // fof/sitemap's classes from loading while it is disabled.
+      ->whenExtensionEnabled('fof-sitemap', fn () => [
+          (new \FoF\Sitemap\Extend\Sitemap())
+            ->modifyResourceQuery(\FoF\Sitemap\Resources\Discussion::class, ConstrainDiscussions::class)
+            ->modifyResourceQuery(\FoF\Sitemap\Resources\Tag::class, ConstrainTags::class)
+            ->modifyResourceQuery(\FoF\Sitemap\Resources\User::class, ConstrainUsers::class),
+
+          (new Extend\Conditional())
+            ->whenExtensionEnabled('fof-pages', fn () => [
+                (new \FoF\Sitemap\Extend\Sitemap())
+                  ->modifyResourceQuery(\FoF\Sitemap\Resources\Page::class, ConstrainPages::class),
+            ]),
+
+          // Crawlers can only obey a noindex on a page they may fetch, so
+          // robots.txt must not block profiles or tags while fof/seo is on.
+          // fof/sitemap's excludeUsers/excludeTags still leave them out of
+          // the sitemap.
+          (new \FoF\Sitemap\Extend\Robots())
+            ->removeEntry(\FoF\Sitemap\Robots\Entries\UserEntry::class)
+            ->removeEntry(\FoF\Sitemap\Robots\Entries\TagEntry::class),
       ]),
 ];

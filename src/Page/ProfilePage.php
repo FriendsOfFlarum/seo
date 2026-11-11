@@ -16,6 +16,7 @@ use Flarum\Http\SlugManager;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use FoF\Seo\Breadcrumb\Crumb;
+use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoProperties;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,6 +28,7 @@ class ProfilePage implements PageDriverInterface
         protected readonly TranslatorInterface $translator,
         protected readonly SettingsRepositoryInterface $settings,
         protected readonly SlugManager $slugManager,
+        protected readonly IndexabilityPolicy $indexability,
     ) {
     }
 
@@ -152,7 +154,7 @@ class ProfilePage implements PageDriverInterface
 
         // Optionally keep thin profile pages out of the search index (GH #62).
         // Links are still followed so crawlers can reach the content they link to.
-        if ($this->settings->get('seo_noindex_profiles')) {
+        if ($this->indexability->profilesNoindexed()) {
             $properties->setMetaTag('robots', 'noindex, follow');
         }
     }
