@@ -946,6 +946,41 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->assertForumPostingFallback();
     }
 
+    /**
+     * An accepted answer that renders to no text, image or video can't be an
+     * Answer (Google requires `text`), so it counts as no answer at all.
+     */
+    #[Test]
+    #[DataProvider('crawlerStates')]
+    public function contentless_accepted_answer_alone_falls_back(bool $crawler): void
+    {
+        $this->setting('seo_post_crawler', $crawler ? '1' : '0');
+        $this->seedQnaDiscussion();
+        $this->database()->table('posts')->where('id', 3)->delete();
+        $this->database()->table('posts')->where('id', 2)->update(['content' => '<t><p> </p></t>']);
+
+        $this->assertForumPostingFallback();
+    }
+
+    #[Test]
+    public function contentless_accepted_answer_is_dropped_but_suggested_answers_remain(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion();
+        $this->database()->table('posts')->where('id', 2)->update(['content' => '<t><p> </p></t>']);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity'] ?? [];
+
+        $this->assertArrayNotHasKey('acceptedAnswer', $question);
+        $this->assertSame(['Try a sourdough starter.'], array_column($question['suggestedAnswer'] ?? [], 'text'));
+    }
+
+    /** @return array<string, array{bool}> */
+    public static function crawlerStates(): array
+    {
+        return ['crawler off' => [false], 'crawler on' => [true]];
+    }
+
     private function assertForumPostingFallback(): string
     {
         $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');

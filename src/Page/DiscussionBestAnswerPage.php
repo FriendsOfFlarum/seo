@@ -113,6 +113,8 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             ->where('number', '>', '1')
             ->with(['user', ...$this->mentionRelations(true)])
             ->when($enableLikes, fn ($query) => $query->withCount('likes'))
+            // DiscussionPage::buildForumPosting() reads these when it reuses the replies.
+            ->when($this->extensionManager->isEnabled('fof-gamification'), fn ($query) => $query->withCount('upvotes'))
             ->orderBy('number');
 
         /** @var Collection<int, Post> $posts */
@@ -162,14 +164,15 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             // Upvote/like count
             $generatedPost['upvoteCount'] = $enableLikes ? (int) $post->getAttribute('likes_count') : 0;
 
-            // Set accepted answer
+            // An Answer needs text, image or video; one without is left out
+            // ("Missing field 'text'"), accepted or not.
+            if ($replyMedia[$post->id] === []) {
+                continue;
+            }
+
             if ($bestAnswerId === $post->id) {
                 $answerSchema['acceptedAnswer'] = $generatedPost;
-            }
-            // Add to answers — but only when the answer has the content an
-            // Answer requires (text/image/video). A contentless suggested
-            // answer would trip "Missing field 'text' (in suggestedAnswer)".
-            elseif (isset($generatedPost['text']) || isset($generatedPost['image']) || isset($generatedPost['video'])) {
+            } else {
                 $answerSchema['suggestedAnswer'][] = $generatedPost;
             }
         }
