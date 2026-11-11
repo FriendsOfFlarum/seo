@@ -39,6 +39,7 @@ per-item overrides where you need them.
 - [Per-item SEO (the *Configure SEO* dialog)](meta-management.md)
 - [Do-follow link list](do-follow-links.md)
 - [Sitemap & robots.txt](sitemap-and-robots.md)
+- [Upgrading](upgrading.md)
 
 ### For extension developers
 

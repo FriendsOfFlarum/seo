@@ -40,12 +40,21 @@ own **exclude users** / **exclude tags** settings still leave those out of the
 sitemap.
 
 Search engines can only read a `noindex` on a page they are allowed to fetch,
-so a robots.txt `Disallow` would hide it. While FoF SEO is enabled, robots.txt
-therefore never blocks profiles (`/u/`) or tags (`/t/`, `/tags`), even with
-fof/sitemap's **exclude users** or **exclude tags** on. Without FoF SEO,
-fof/sitemap keeps blocking them as before. A robots.txt served by your web
-server instead of fof/sitemap is outside both extensions' control: check that
-it doesn't block pages you want de-indexed.
+so a robots.txt `Disallow` would hide it. fof/sitemap's **exclude users** and
+**exclude tags** settings normally also block those pages in robots.txt; FoF
+SEO lifts a block only while it noindexes the pages behind it:
+
+| fof/sitemap blocks | Lifted while |
+| --- | --- |
+| Profiles (`Disallow: /u/`, with **exclude users** on) | **De-index profile pages** is on |
+| Tags (`Disallow: /t/` and `/tags`, with **exclude tags** on) | at least one tag is selected under **De-index tags**, or any tag's own SEO meta has `noindex` |
+
+Otherwise robots.txt stays exactly as fof/sitemap writes it, and without FoF
+SEO fof/sitemap keeps blocking them as before. The tags block is all or
+nothing (fof/sitemap blocks every tag page), so with one tag noindexed every
+tag page becomes crawlable; the tags you don't noindex are then indexable. A
+robots.txt served by your web server instead of fof/sitemap is outside both
+extensions' control: check that it doesn't block pages you want de-indexed.
 
 Notes:
 
@@ -55,6 +64,7 @@ Notes:
   scheduled build.
 - This needs fof/sitemap 3.1.0 or later; Composer refuses older versions next
   to FoF SEO.
+- Upgrading an existing forum? See [Upgrading](upgrading.md) for what changes.
 
 ## Telling search engines about your sitemap
 

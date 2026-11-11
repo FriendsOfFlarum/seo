@@ -60,8 +60,9 @@ keeps crawlers traversing the links on the page, which is the recommended
 treatment for low-value pages you want out of the index.
 
 With [fof/sitemap](sitemap-and-robots.md) enabled, profiles are also left out
-of the sitemap while this is on, and robots.txt never blocks `/u/`: a search
-engine can only see the `noindex` on a page it is allowed to fetch. See
+of the sitemap while this is on, and robots.txt stops blocking `/u/` (if
+fof/sitemap's **exclude users** blocked it): a search engine can only see the
+`noindex` on a page it is allowed to fetch. See
 [Noindex, the sitemap and robots.txt](sitemap-and-robots.md#noindex-the-sitemap-and-robotstxt).
 
 **De-index tags** (shown when [flarum/tags](https://github.com/flarum/tags) is
@@ -70,7 +71,9 @@ discussion in a selected tag, and the tag's own listing page, emits
 `noindex, follow`. Selecting a parent tag also covers its child tags. Excluding
 low-value or noisy sections this way raises the overall proportion of quality
 pages a search engine indexes, which can help the rest of the forum rank. With
-fof/sitemap enabled, the same discussions and tags are left out of the sitemap.
+fof/sitemap enabled, the same discussions and tags are left out of the sitemap,
+and robots.txt stops blocking tag pages (if fof/sitemap's **exclude tags**
+blocked them).
 
 ## What gets rendered
 
