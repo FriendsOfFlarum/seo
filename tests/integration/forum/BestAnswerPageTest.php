@@ -16,7 +16,11 @@ use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
+use FoF\Seo\Extend\SEO;
+use FoF\Seo\Page\PageDriverInterface;
+use FoF\Seo\SeoProperties;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use Psr\Http\Message\ServerRequestInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -975,6 +979,27 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->assertSame(['Try a sourdough starter.'], array_column($question['suggestedAnswer'] ?? [], 'text'));
     }
 
+    /**
+     * A third party may replace the `discussion` driver. When a Q&A discussion
+     * has no answer, that driver's output must stand: the fallback must not
+     * write core's DiscussionForumPosting over it.
+     */
+    #[Test]
+    #[DataProvider('crawlerStates')]
+    public function fallback_leaves_a_replaced_discussion_driver_in_charge(bool $crawler): void
+    {
+        $this->extend((new SEO())->addExtender('discussion', ReplacementDiscussionDriver::class));
+        $this->setting('seo_post_crawler', $crawler ? '1' : '0');
+        $this->seedQnaDiscussion(['best_answer_post_id' => null, 'comment_count' => 1]);
+        $this->database()->table('posts')->where('number', '>', 1)->delete();
+
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+
+        $this->assertNotNull($this->findSchemaEntry($html, 'Article'));
+        $this->assertNull($this->findSchemaEntry($html, 'DiscussionForumPosting'));
+        $this->assertNull($this->findSchemaEntry($html, 'QAPage'));
+    }
+
     /** @return array<string, array{bool}> */
     public static function crawlerStates(): array
     {
@@ -1027,5 +1052,26 @@ class BestAnswerPageTest extends ForumHtmlTestCase
             $this->findSchemaEntry($html, 'DiscussionForumPosting'),
             'Non-Q&A discussions fall back to DiscussionForumPosting.'
         );
+    }
+}
+
+/**
+ * Stands in for a third-party driver registered under the `discussion` name.
+ */
+class ReplacementDiscussionDriver implements PageDriverInterface
+{
+    public function extensionDependencies(): array
+    {
+        return [];
+    }
+
+    public function handleRoutes(): array
+    {
+        return ['discussion'];
+    }
+
+    public function handle(ServerRequestInterface $request, SeoProperties $properties): void
+    {
+        $properties->setSchemaJson('@type', 'Article');
     }
 }

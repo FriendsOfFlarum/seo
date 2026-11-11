@@ -30,6 +30,7 @@ use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
 use FoF\Seo\TagIndexingPolicy;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -52,6 +53,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         protected readonly TagIndexingPolicy $tagIndexingPolicy,
         protected readonly AuthorSchema $authorSchema,
         protected readonly DiscussionPage $discussionPage,
+        protected readonly Container $container,
     ) {
         $this->events = $events;
     }
@@ -113,8 +115,6 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             ->where('number', '>', '1')
             ->with(['user', ...$this->mentionRelations(true)])
             ->when($enableLikes, fn ($query) => $query->withCount('likes'))
-            // DiscussionPage::buildForumPosting() reads these when it reuses the replies.
-            ->when($this->extensionManager->isEnabled('fof-gamification'), fn ($query) => $query->withCount('upvotes'))
             ->orderBy('number');
 
         /** @var Collection<int, Post> $posts */
@@ -178,7 +178,15 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         }
 
         if ($answerSchema === []) {
-            $this->discussionPage->buildForumPosting($discussion, $properties, $crawlerEnabled ? $posts : null, $replyMedia);
+            // Describe it like any other discussion, through whichever driver
+            // is registered as `discussion`. A replacement that isn't a
+            // DiscussionPage owns the page itself, so leave its output alone.
+            // Resolved here, not injected: PageManager builds this driver.
+            $discussionDriver = $this->container->make(PageManager::class)->getExtenders('discussion')['discussion'] ?? null;
+
+            if ($discussionDriver instanceof DiscussionPage) {
+                $discussionDriver->buildForumPosting($discussion, $properties, $crawlerEnabled ? $posts : null, $replyMedia);
+            }
 
             return;
         }
