@@ -13,6 +13,7 @@ namespace FoF\Seo\Indexability;
 
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Flarum\Tags\Tag;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,6 +64,33 @@ class IndexabilityPolicy
     public function profilesNoindexed(): bool
     {
         return (bool) $this->settings->get('seo_noindex_profiles');
+    }
+
+    /**
+     * Whether any tag page may be noindexed: a tag is selected in
+     * `seo_noindex_tags`, or any tag's own SEO meta has `robots_noindex`.
+     * At most one query: it walks the (small) tags table and probes the
+     * unique (object_id, object_type) SEO meta index once per tag, rather
+     * than scanning SEO meta rows, which can number one per viewed page.
+     */
+    public function anyTagNoindexed(): bool
+    {
+        if (!empty($this->tags->excludedTagIds())) {
+            return true;
+        }
+
+        $tag = new Tag();
+        $seoMeta = (new SeoMeta())->getTable();
+
+        return $tag->newQuery()
+            ->whereExists(function (QueryBuilder $meta) use ($tag, $seoMeta) {
+                $meta->selectRaw('1')
+                    ->from($seoMeta)
+                    ->whereColumn("$seoMeta.object_id", $tag->getQualifiedKeyName())
+                    ->where("$seoMeta.object_type", $tag->getTable())
+                    ->where("$seoMeta.robots_noindex", true);
+            })
+            ->exists();
     }
 
     /**
