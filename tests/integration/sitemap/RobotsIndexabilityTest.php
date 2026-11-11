@@ -45,6 +45,9 @@ class RobotsIndexabilityTest extends TestCase
             'tags' => [
                 ['id' => 1, 'name' => 'One', 'slug' => 'one', 'position' => 0],
                 ['id' => 2, 'name' => 'Two', 'slug' => 'two', 'position' => 1],
+                // No guest permission: guests (and crawlers) can't open it.
+                ['id' => 3, 'name' => 'Staff', 'slug' => 'staff', 'position' => 2, 'is_restricted' => true],
+                ['id' => 4, 'name' => 'Staff child', 'slug' => 'staff-child', 'position' => 3, 'parent_id' => 3],
             ],
             'discussions' => [
                 ['id' => 1, 'title' => 'D', 'slug' => 'd', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now],
@@ -152,6 +155,41 @@ class RobotsIndexabilityTest extends TestCase
         $this->assertUntouchedEntries($robots);
     }
 
+    /**
+     * A noindex no crawler can reach lifts nothing: a selected ID whose tag
+     * was deleted, or a tag guests can't see.
+     */
+    #[Test]
+    public function tag_blocks_stay_while_only_unreachable_tags_are_noindexed(): void
+    {
+        $this->enable();
+        $this->setting('fof-sitemap.excludeTags', true);
+        $this->setting('seo_noindex_tags', json_encode([99]));
+        $this->seoMeta('tags', 3, true);
+
+        $robots = $this->robotsTxt();
+
+        $this->assertMatchesRegularExpression(self::TAG_PAGES, $robots);
+        $this->assertMatchesRegularExpression(self::TAGS_INDEX, $robots);
+    }
+
+    /**
+     * flarum-tags hides a restricted tag's children from guests too, so
+     * selecting it noindexes no page a crawler can open.
+     */
+    #[Test]
+    public function tag_blocks_stay_while_the_selected_tag_and_its_children_are_hidden_from_guests(): void
+    {
+        $this->enable();
+        $this->setting('fof-sitemap.excludeTags', true);
+        $this->setting('seo_noindex_tags', json_encode([3]));
+
+        $robots = $this->robotsTxt();
+
+        $this->assertMatchesRegularExpression(self::TAG_PAGES, $robots);
+        $this->assertMatchesRegularExpression(self::TAGS_INDEX, $robots);
+    }
+
     #[Test]
     public function profile_and_tag_decisions_are_independent(): void
     {
@@ -224,7 +262,7 @@ class RobotsIndexabilityTest extends TestCase
         $count(); // warm up per-process lookups
         $few = $count();
 
-        for ($id = 3; $id <= 60; $id++) {
+        for ($id = 5; $id <= 60; $id++) {
             $db->table('tags')->insert(['id' => $id, 'name' => "Tag $id", 'slug' => "tag-$id", 'position' => $id]);
             $db->table('seo_meta')->insert(['object_type' => 'tags', 'object_id' => $id, 'robots_noindex' => false, 'created_at' => $now, 'updated_at' => $now]);
         }

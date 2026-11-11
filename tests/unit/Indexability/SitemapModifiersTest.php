@@ -18,6 +18,7 @@ use FoF\Seo\Integration\Sitemap\ConstrainPages;
 use FoF\Seo\Integration\Sitemap\ConstrainTags;
 use FoF\Seo\Integration\Sitemap\ConstrainUsers;
 use Mockery as m;
+use Psr\Log\LoggerInterface;
 
 class SitemapModifiersTest extends TestCase
 {
@@ -29,15 +30,19 @@ class SitemapModifiersTest extends TestCase
 
     /**
      * fof/sitemap lets an earlier modifier swap the query for a Collection;
-     * fof/seo's modifiers leave it alone instead of failing the whole build.
+     * fof/seo's modifiers leave it alone instead of failing the whole build,
+     * and log that it went unfiltered.
      */
     public function test_a_collection_from_an_earlier_modifier_is_left_alone(): void
     {
         $policy = m::mock(IndexabilityPolicy::class);
         $policy->shouldNotReceive('constrainDiscussions', 'constrainTags', 'constrainPages', 'constrainUsers');
 
+        $logger = m::mock(LoggerInterface::class);
+        $logger->shouldReceive('warning')->times(4)->with(m::pattern('/could not leave out noindexed/'));
+
         foreach ([ConstrainDiscussions::class, ConstrainTags::class, ConstrainPages::class, ConstrainUsers::class] as $modifier) {
-            $this->assertNull((new $modifier($policy))(collect(['index'])));
+            $this->assertNull((new $modifier($policy, $logger))(collect(['index'])));
         }
     }
 }

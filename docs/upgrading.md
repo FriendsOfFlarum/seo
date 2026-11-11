@@ -18,7 +18,12 @@ required; Composer refuses older versions next to FoF SEO):
   dropped while any tag is noindexed (selected under **De-index tags**, or
   with its own `noindex`). Search engines need to fetch a page to read its
   `noindex`. Since fof/sitemap's tags block covers every tag page, all tag
-  pages become crawlable in that case, not just the noindexed ones.
+  pages become crawlable in that case, not just the noindexed ones. Only
+  tags guests can open count; a noindexed tag guests can't see lifts nothing.
+  If you relied on these blocks to keep compliant crawlers off profiles or
+  tag pages (for example for members' privacy), note that the pages are then
+  fetched, though still kept out of search results by `noindex`; they were
+  always visible to guests anyway.
 - Nothing changes when those FoF SEO settings are off and no item has its own
   `noindex`: the sitemap and robots.txt stay exactly as fof/sitemap makes
   them.

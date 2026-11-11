@@ -14,6 +14,7 @@ namespace FoF\Seo\Indexability;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
+use Flarum\User\Guest;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +25,9 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
  *
  * The page drivers ask it when they render the robots meta tag, and the
  * fof/sitemap integration turns the same rules into SQL constraints, so a
- * page that renders `noindex` is never submitted in the sitemap:
+ * page that renders `noindex` is not submitted in the sitemap (unless another
+ * extension's sitemap modifier swapped the query for a Collection, which the
+ * Integration\Sitemap modifiers log and leave alone):
  *
  * - a discussion is noindexed when any of its tags is selected in
  *   `seo_noindex_tags` or is a direct child of one, or when its own SEO meta
@@ -67,28 +70,36 @@ class IndexabilityPolicy
     }
 
     /**
-     * Whether any tag page may be noindexed: a tag is selected in
-     * `seo_noindex_tags`, or any tag's own SEO meta has `robots_noindex`.
-     * At most one query: it walks the (small) tags table and probes the
-     * unique (object_id, object_type) SEO meta index once per tag, rather
-     * than scanning SEO meta rows, which can number one per viewed page.
+     * Whether a guest (so a crawler) can reach any tag page that renders
+     * `noindex`: a guest-visible tag that is selected in `seo_noindex_tags`,
+     * is a direct child of a selected tag, or has its own `robots_noindex`.
+     * Deleted IDs left in the setting and tags guests can't open don't count.
+     *
+     * One query: it walks the (small) tags table and probes the unique
+     * (object_id, object_type) SEO meta index once per tag, rather than
+     * scanning SEO meta rows, which can number one per viewed page.
      */
     public function anyTagNoindexed(): bool
     {
-        if (!empty($this->tags->excludedTagIds())) {
-            return true;
-        }
+        $excluded = $this->tags->excludedTagIds();
 
         $tag = new Tag();
         $seoMeta = (new SeoMeta())->getTable();
 
-        return $tag->newQuery()
-            ->whereExists(function (QueryBuilder $meta) use ($tag, $seoMeta) {
-                $meta->selectRaw('1')
-                    ->from($seoMeta)
-                    ->whereColumn("$seoMeta.object_id", $tag->getQualifiedKeyName())
-                    ->where("$seoMeta.object_type", $tag->getTable())
-                    ->where("$seoMeta.robots_noindex", true);
+        return Tag::whereVisibleTo(new Guest())
+            ->where(function (Builder $tags) use ($tag, $seoMeta, $excluded) {
+                if (!empty($excluded)) {
+                    $tags->whereIn($tag->qualifyColumn('id'), $excluded)
+                        ->orWhereIn($tag->qualifyColumn('parent_id'), $excluded);
+                }
+
+                $tags->orWhereExists(function (QueryBuilder $meta) use ($tag, $seoMeta) {
+                    $meta->selectRaw('1')
+                        ->from($seoMeta)
+                        ->whereColumn("$seoMeta.object_id", $tag->getQualifiedKeyName())
+                        ->where("$seoMeta.object_type", $tag->getTable())
+                        ->where("$seoMeta.robots_noindex", true);
+                });
             })
             ->exists();
     }

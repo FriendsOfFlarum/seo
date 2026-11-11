@@ -47,7 +47,7 @@ SEO lifts a block only while it noindexes the pages behind it:
 | fof/sitemap blocks | Lifted while |
 | --- | --- |
 | Profiles (`Disallow: /u/`, with **exclude users** on) | **De-index profile pages** is on |
-| Tags (`Disallow: /t/` and `/tags`, with **exclude tags** on) | at least one tag is selected under **De-index tags**, or any tag's own SEO meta has `noindex` |
+| Tags (`Disallow: /t/` and `/tags`, with **exclude tags** on) | a tag guests can open is selected under **De-index tags** (or is a child of a selected tag), or has `noindex` in its own SEO meta |
 
 Otherwise robots.txt stays exactly as fof/sitemap writes it, and without FoF
 SEO fof/sitemap keeps blocking them as before. The tags block is all or
