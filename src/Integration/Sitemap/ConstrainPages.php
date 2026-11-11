@@ -13,6 +13,7 @@ namespace FoF\Seo\Integration\Sitemap;
 
 use FoF\Seo\Indexability\IndexabilityPolicy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * fof/sitemap query modifier: leaves out the fof/pages Pages fof/seo marks noindex.
@@ -24,8 +25,16 @@ class ConstrainPages
     ) {
     }
 
-    public function __invoke(Builder $query): void
+    /**
+     * fof/sitemap lets an earlier modifier replace the query with a
+     * Collection; that can't be constrained in SQL, so it is left as is.
+     *
+     * @param Builder<\Illuminate\Database\Eloquent\Model>|Collection<array-key, mixed> $query
+     */
+    public function __invoke(Builder|Collection $query): void
     {
-        $this->policy->constrainPages($query);
+        if ($query instanceof Builder) {
+            $this->policy->constrainPages($query);
+        }
     }
 }

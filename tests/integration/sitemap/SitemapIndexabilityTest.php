@@ -144,6 +144,32 @@ class SitemapIndexabilityTest extends ForumHtmlTestCase
         }
     }
 
+    /**
+     * fof/sitemap's riskyPerformanceImprovements narrows the selected columns
+     * of the discussion and user queries; the constraints must still hold.
+     */
+    #[Test]
+    public function exclusions_hold_with_sitemap_risky_performance_improvements(): void
+    {
+        $this->setting('fof-sitemap.riskyPerformanceImprovements', true);
+        $this->setting('seo_noindex_tags', json_encode([1]));
+
+        $paths = $this->sitemapPaths();
+
+        foreach (['/d/1-d1', '/d/6-d6', '/d/7-d7', '/d/8-d8', '/d/9-d9', '/u/alice', '/u/bob'] as $listed) {
+            $this->assertContains($listed, $paths);
+        }
+
+        foreach (['/d/2-d2', '/d/3-d3', '/d/4-d4', '/d/5-d5'] as $excluded) {
+            $this->assertNotContains($excluded, $paths);
+        }
+
+        $this->setting('seo_noindex_profiles', '1');
+        $this->app()->getContainer()->make(\Flarum\Settings\SettingsRepositoryInterface::class)->set('seo_noindex_profiles', '1');
+
+        $this->assertEmpty(array_filter($this->sitemapPaths(), fn (string $path) => str_starts_with($path, '/u/')));
+    }
+
     #[Test]
     public function noindexed_tags_their_children_and_item_noindexed_tags_are_left_out(): void
     {

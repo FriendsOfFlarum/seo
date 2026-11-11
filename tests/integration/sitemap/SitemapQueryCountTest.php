@@ -58,13 +58,17 @@ class SitemapQueryCountTest extends TestCase
                 'password' => '', 'comment_count' => 1, 'joined_at' => $now,
             ]);
             $db->table('discussions')->insert([
-                'id' => $id, 'title' => "Discussion $id", 'slug' => "d$id", 'user_id' => $id + 10, 'first_post_id' => $id,
+                'id' => $id, 'title' => "Discussion $id", 'slug' => "d$id", 'user_id' => $id + 10,
                 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now, 'is_private' => false,
             ]);
+            // Foreign keys are enforced here (unlike in prepareDatabase()):
+            // the discussion must exist before its post, and the post before
+            // the discussion points at it.
             $db->table('posts')->insert([
                 'id' => $id, 'discussion_id' => $id, 'number' => 1, 'user_id' => $id + 10, 'type' => 'comment',
                 'content' => '<t><p>Body.</p></t>', 'created_at' => $now,
             ]);
+            $db->table('discussions')->where('id', $id)->update(['first_post_id' => $id, 'last_post_id' => $id]);
             $db->table('discussion_tag')->insert(['discussion_id' => $id, 'tag_id' => [1, 2, 3][$id % 3]]);
             $db->table('pages')->insert([
                 'id' => $id, 'title' => "Page $id", 'slug' => "page-$id", 'content' => '<p>x</p>', 'is_html' => 1,
