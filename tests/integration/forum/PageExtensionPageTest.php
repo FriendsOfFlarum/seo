@@ -70,10 +70,45 @@ class PageExtensionPageTest extends ForumHtmlTestCase
     }
 
     #[Test]
-    public function page_sets_canonical_url(): void
+    public function page_sets_canonical_url_with_slug(): void
     {
         $html = $this->fetchForumHtml('/p/1-about-us');
 
-        $this->assertSame('http://localhost/p/1', $this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost/p/1-about-us', $this->findCanonicalUrl($html));
+    }
+
+    #[Test]
+    public function page_alias_uses_the_stored_slug_in_its_canonical_url(): void
+    {
+        $html = $this->fetchForumHtml('/p/1-outdated-slug');
+
+        $this->assertSame('http://localhost/p/1-about-us', $this->findCanonicalUrl($html));
+    }
+
+    #[Test]
+    public function former_home_page_is_canonical_to_its_page_url(): void
+    {
+        $this->setting('default_route', '/all');
+        $this->setting('pages_home', '1');
+
+        $html = $this->fetchForumHtml('/pages/home');
+
+        $this->assertSame('http://localhost/p/1-about-us', $this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost/p/1-about-us', $this->findMetaByProperty($html, 'og:url'));
+    }
+
+    #[Test]
+    public function home_page_is_canonical_to_the_forum_root(): void
+    {
+        $this->setting('default_route', '/pages/home');
+        $this->setting('pages_home', '1');
+
+        foreach (['/', '/pages/home', '/p/1-about-us'] as $path) {
+            $html = $this->fetchForumHtml($path);
+
+            $this->assertSame('http://localhost', $this->findCanonicalUrl($html));
+            $this->assertSame('http://localhost', $this->findMetaByProperty($html, 'og:url'));
+            $this->assertSame('About us', $this->findMetaByProperty($html, 'og:title'));
+        }
     }
 }
