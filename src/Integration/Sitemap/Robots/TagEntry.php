@@ -23,8 +23,9 @@ use FoF\Sitemap\Robots\Entries\TagEntry as SitemapTagEntry;
  *
  * Each tag gets two rules, `Allow: /t/<slug>$` (the page itself) and
  * `Allow: /t/<slug>?` (the page with a query string). Google and RFC 9309
- * use the longest matching rule, so both beat `Disallow: /t/`; the `$` and
- * `?` keep `/t/<slug>` from also opening `/t/<slug>-other`.
+ * use the longest matching rule, so both beat `Disallow: /t/`; they also
+ * come first, for crawlers that take the first match. The `$` and `?` keep
+ * `/t/<slug>` from also opening `/t/<slug>-other`.
  */
 class TagEntry extends SitemapTagEntry
 {
@@ -44,21 +45,39 @@ class TagEntry extends SitemapTagEntry
         }
 
         $slugger = $this->slugManager->forResource(Tag::class);
+        $allows = [];
 
         foreach ($this->indexability->noindexedTagsGuestsCanOpen() as $tag) {
-            // RFC 9309 compares percent-encoded paths, and `*`, `$` and `?`
-            // are robots.txt syntax: encode the slug so it matches literally.
-            $url = $this->generateRouteUrl('tag', ['slug' => rawurlencode($slugger->toSlug($tag))]);
+            $url = $this->generateRouteUrl('tag', ['slug' => static::encodeForRobots($slugger->toSlug($tag))]);
             $path = parse_url($url, PHP_URL_PATH);
 
             if (!is_string($path) || $path === '') {
                 continue;
             }
 
-            $rules[] = $this->allowForAll($path.'$');
-            $rules[] = $this->allowForAll($path.'?');
+            $allows[] = $this->allowForAll($path.'$');
+            $allows[] = $this->allowForAll($path.'?');
         }
 
-        return $rules;
+        // Allow lines first, for crawlers that take the first matching rule
+        // rather than the longest.
+        return array_merge($allows, $rules);
+    }
+
+    /**
+     * Percent-encode what a crawler would not request literally, and nothing
+     * else: non-ASCII bytes, control characters and whitespace (which also
+     * keeps a slug from starting a new robots.txt line), `%`, the URL
+     * delimiters `?` and `#`, and the robots.txt wildcards `*` and `$`
+     * (RFC 9309 section 2.2.3 matches a literal `*` with `%2A`). Other ASCII,
+     * such as `&` or `+`, stays as Flarum's links and crawlers write it.
+     */
+    protected static function encodeForRobots(string $slug): string
+    {
+        return (string) preg_replace_callback(
+            '/[^\x21-\x7E]|[%*$?#]/',
+            fn (array $match) => sprintf('%%%02X', ord($match[0])),
+            $slug
+        );
     }
 }

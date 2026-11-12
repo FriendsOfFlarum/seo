@@ -53,18 +53,22 @@ For example, with **exclude tags** on and only *Off topic* noindexed:
 
 ```
 User-agent: *
-Disallow: /t/
-Disallow: /tags
+Disallow: /admin
+...
 Allow: /t/off-topic$
 Allow: /t/off-topic?
+Disallow: /t/
+Disallow: /tags
 ```
 
 Search engines apply the most specific (longest) matching rule, so
 `/t/off-topic` and `/t/off-topic?sort=newest` may be fetched, while every other
 tag page, `/t/off-topic-archive` included, and `/tags` stay blocked. The `$`
 ends the match at the tag's own path; the `?` covers the same page with a query
-string. The paths follow your forum's URL (base path, tag slug format), with
-non-ASCII slugs percent-encoded.
+string. The `Allow` lines come first for the few crawlers that take the first
+matching rule instead. The paths follow your forum's URL (base path, tag slug
+format); non-ASCII characters and robots.txt syntax (`*`, `$`) in a slug are
+percent-encoded.
 
 Otherwise robots.txt stays exactly as fof/sitemap writes it, and without FoF
 SEO fof/sitemap keeps blocking them as before. A robots.txt served by your web

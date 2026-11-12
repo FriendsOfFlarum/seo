@@ -53,6 +53,8 @@ class RobotsTagAllowTest extends TestCase
                 $tag(5, 'staff', ['is_restricted' => true]), // guests can't open it...
                 $tag(6, 'staff-child', ['parent_id' => 5]),  // ...nor its children
                 $tag(7, '動力'),
+                $tag(8, "q&a(1)+it's"),                     // ASCII crawlers request as typed
+                $tag(9, 'a*b$c?d#e%f'),                     // robots.txt / URL syntax
             ],
         ]);
     }
@@ -184,6 +186,44 @@ class RobotsTagAllowTest extends TestCase
 
         $this->assertSame(['Allow: /t/%E5%8B%95%E5%8A%9B$', 'Allow: /t/%E5%8B%95%E5%8A%9B?'], $this->allowLines($robots));
         $this->assertTrue($this->crawlable($robots, '/t/%E5%8B%95%E5%8A%9B'));
+    }
+
+    /**
+     * Ordinary ASCII stays as crawlers request it; only robots.txt and URL
+     * syntax (`*`, `$`, `?`, `#`, `%`) is percent-encoded, as RFC 9309
+     * section 2.2.3 does for a literal `*` (`%2A`).
+     */
+    #[Test]
+    public function only_robots_and_url_syntax_is_percent_encoded(): void
+    {
+        $this->enable();
+        $this->setting('seo_noindex_tags', json_encode([8, 9]));
+
+        $robots = $this->robotsTxt();
+
+        $this->assertSame([
+            "Allow: /t/q&a(1)+it's$",
+            "Allow: /t/q&a(1)+it's?",
+            'Allow: /t/a%2Ab%24c%3Fd%23e%25f$',
+            'Allow: /t/a%2Ab%24c%3Fd%23e%25f?',
+        ], $this->allowLines($robots));
+        $this->assertTrue($this->crawlable($robots, "/t/q&a(1)+it's"));
+    }
+
+    /**
+     * Crawlers that take the first matching rule (instead of the longest)
+     * must meet the Allow lines before `Disallow: /t/`.
+     */
+    #[Test]
+    public function allow_lines_come_before_the_tag_disallows(): void
+    {
+        $this->enable();
+        $this->setting('seo_noindex_tags', json_encode([4]));
+
+        $robots = $this->robotsTxt();
+
+        $this->assertLessThan(strpos($robots, 'Disallow: /t/'), strpos($robots, 'Allow: /t/two$'));
+        $this->assertSitemapBlocksKept($robots);
     }
 
     #[Test]
