@@ -42,19 +42,34 @@ sitemap.
 Search engines can only read a `noindex` on a page they are allowed to fetch,
 so a robots.txt `Disallow` would hide it. fof/sitemap's **exclude users** and
 **exclude tags** settings normally also block those pages in robots.txt; FoF
-SEO lifts a block only while it noindexes the pages behind it:
+SEO opens only the noindexed pages behind those blocks:
 
-| fof/sitemap blocks | Lifted while |
+| fof/sitemap blocks | What FoF SEO changes |
 | --- | --- |
-| Profiles (`Disallow: /u/`, with **exclude users** on) | **De-index profile pages** is on |
-| Tags (`Disallow: /t/` and `/tags`, with **exclude tags** on) | a tag guests can open is selected under **De-index tags** (or is a child of a selected tag), or has `noindex` in its own SEO meta |
+| Profiles (`Disallow: /u/`, with **exclude users** on) | Drops the block while **De-index profile pages** is on (every profile is then noindexed). |
+| Tags (`Disallow: /t/` and `/tags`, with **exclude tags** on) | Keeps both blocks and adds `Allow: /t/<slug>$` and `Allow: /t/<slug>?` for each noindexed tag guests can open: one selected under **De-index tags**, a child of a selected tag, or one with `noindex` in its own SEO meta. |
+
+For example, with **exclude tags** on and only *Off topic* noindexed:
+
+```
+User-agent: *
+Disallow: /t/
+Disallow: /tags
+Allow: /t/off-topic$
+Allow: /t/off-topic?
+```
+
+Search engines apply the most specific (longest) matching rule, so
+`/t/off-topic` and `/t/off-topic?sort=newest` may be fetched, while every other
+tag page, `/t/off-topic-archive` included, and `/tags` stay blocked. The `$`
+ends the match at the tag's own path; the `?` covers the same page with a query
+string. The paths follow your forum's URL (base path, tag slug format), with
+non-ASCII slugs percent-encoded.
 
 Otherwise robots.txt stays exactly as fof/sitemap writes it, and without FoF
-SEO fof/sitemap keeps blocking them as before. The tags block is all or
-nothing (fof/sitemap blocks every tag page), so with one tag noindexed every
-tag page becomes crawlable; the tags you don't noindex are then indexable. A
-robots.txt served by your web server instead of fof/sitemap is outside both
-extensions' control: check that it doesn't block pages you want de-indexed.
+SEO fof/sitemap keeps blocking them as before. A robots.txt served by your web
+server instead of fof/sitemap is outside both extensions' control: check that
+it doesn't block pages you want de-indexed.
 
 Notes:
 

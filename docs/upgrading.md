@@ -12,18 +12,20 @@ required; Composer refuses older versions next to FoF SEO):
   **De-index profile pages** is on, and discussions, tags and Pages whose own
   SEO meta has `noindex` are no longer listed. In fof/sitemap's cached modes
   this takes effect at its next scheduled build.
-- **robots.txt can stop blocking profiles and tags.** If fof/sitemap's
-  **exclude users** is on, `Disallow: /u/` is dropped while **De-index profile
-  pages** is on. If **exclude tags** is on, `Disallow: /t/` and `/tags` are
-  dropped while any tag is noindexed (selected under **De-index tags**, or
-  with its own `noindex`). Search engines need to fetch a page to read its
-  `noindex`. Since fof/sitemap's tags block covers every tag page, all tag
-  pages become crawlable in that case, not just the noindexed ones. Only
-  tags guests can open count; a noindexed tag guests can't see lifts nothing.
+- **robots.txt lets crawlers fetch noindexed profiles and tag pages.**
+  Search engines need to fetch a page to read its `noindex`.
+  - If fof/sitemap's **exclude users** is on, `Disallow: /u/` is dropped
+    while **De-index profile pages** is on.
+  - If **exclude tags** is on, `Disallow: /t/` and `/tags` stay, and an
+    `Allow: /t/<slug>$` and `Allow: /t/<slug>?` line is added for each
+    noindexed tag (selected under **De-index tags**, a child of a selected
+    tag, or with its own `noindex`) that guests can open. Every other tag
+    page stays blocked.
+
   If you relied on these blocks to keep compliant crawlers off profiles or
-  tag pages (for example for members' privacy), note that the pages are then
-  fetched, though still kept out of search results by `noindex`; they were
-  always visible to guests anyway.
+  those tag pages (for example for members' privacy), note that they are
+  then fetched, though kept out of search results by `noindex`; guests could
+  always see them anyway.
 - Nothing changes when those FoF SEO settings are off and no item has its own
   `noindex`: the sitemap and robots.txt stay exactly as fof/sitemap makes
   them.

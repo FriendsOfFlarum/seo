@@ -72,8 +72,8 @@ discussion in a selected tag, and the tag's own listing page, emits
 low-value or noisy sections this way raises the overall proportion of quality
 pages a search engine indexes, which can help the rest of the forum rank. With
 fof/sitemap enabled, the same discussions and tags are left out of the sitemap,
-and robots.txt stops blocking tag pages (if fof/sitemap's **exclude tags**
-blocked them).
+and if fof/sitemap's **exclude tags** blocks tag pages in robots.txt, the
+noindexed ones are allowed again so search engines can read their `noindex`.
 
 ## What gets rendered
 
