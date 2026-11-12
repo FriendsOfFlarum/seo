@@ -911,7 +911,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     public static function robotsIndexingRules(): array
     {
         return [
-            'rule enabled' => [true],
+            'rule enabled'  => [true],
             'rule disabled' => [false],
         ];
     }
@@ -925,13 +925,13 @@ class BestAnswerPageTest extends ForumHtmlTestCase
         $this->seedQnaDiscussion();
         $this->prepareDatabase([
             SeoMeta::class => [[
-                'object_type' => 'discussions',
-                'object_id' => 1,
-                'created_at' => Carbon::now(),
-                'robots_nofollow' => true,
-                'robots_noarchive' => true,
+                'object_type'         => 'discussions',
+                'object_id'           => 1,
+                'created_at'          => Carbon::now(),
+                'robots_nofollow'     => true,
+                'robots_noarchive'    => true,
                 'robots_noimageindex' => true,
-                'robots_nosnippet' => true,
+                'robots_nosnippet'    => true,
             ]],
         ]);
 

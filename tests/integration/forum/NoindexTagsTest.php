@@ -150,7 +150,7 @@ class NoindexTagsTest extends ForumHtmlTestCase
     public static function robotsIndexingRules(): array
     {
         return [
-            'rule enabled' => [true],
+            'rule enabled'  => [true],
             'rule disabled' => [false],
         ];
     }
@@ -162,13 +162,13 @@ class NoindexTagsTest extends ForumHtmlTestCase
         $this->setting('seo_noindex_tags', $noindex ? '[3]' : '[]');
         $this->prepareDatabase([
             SeoMeta::class => [[
-                'object_type' => 'discussions',
-                'object_id' => 1,
-                'created_at' => Carbon::now(),
-                'robots_nofollow' => true,
-                'robots_noarchive' => true,
+                'object_type'         => 'discussions',
+                'object_id'           => 1,
+                'created_at'          => Carbon::now(),
+                'robots_nofollow'     => true,
+                'robots_noarchive'    => true,
                 'robots_noimageindex' => true,
-                'robots_nosnippet' => true,
+                'robots_nosnippet'    => true,
             ]],
         ]);
 
@@ -185,13 +185,13 @@ class NoindexTagsTest extends ForumHtmlTestCase
         $this->setting('seo_noindex_tags', $noindex ? '[3]' : '[]');
         $this->prepareDatabase([
             SeoMeta::class => [[
-                'object_type' => 'tags',
-                'object_id' => 3,
-                'created_at' => Carbon::now(),
-                'robots_nofollow' => true,
-                'robots_noarchive' => true,
+                'object_type'         => 'tags',
+                'object_id'           => 3,
+                'created_at'          => Carbon::now(),
+                'robots_nofollow'     => true,
+                'robots_noarchive'    => true,
                 'robots_noimageindex' => true,
-                'robots_nosnippet' => true,
+                'robots_nosnippet'    => true,
             ]],
         ]);
 

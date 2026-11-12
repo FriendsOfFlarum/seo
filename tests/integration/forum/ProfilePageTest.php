@@ -17,10 +17,10 @@ use FoF\Seo\Extend\SEO;
 use FoF\Seo\Page\ProfilePage;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
-use Psr\Http\Message\ServerRequestInterface;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * What crawlers see on a user profile page (`GET /u/{username}`).
@@ -251,7 +251,7 @@ class ProfilePageTest extends ForumHtmlTestCase
     public static function robotsIndexingRules(): array
     {
         return [
-            'rule enabled' => [true],
+            'rule enabled'  => [true],
             'rule disabled' => [false],
         ];
     }
@@ -265,13 +265,13 @@ class ProfilePageTest extends ForumHtmlTestCase
         $this->extend((new SEO())->addExtender('profile', ProfileWithRobotsMeta::class));
         $this->prepareDatabase([
             SeoMeta::class => [[
-                'object_type' => 'users',
-                'object_id' => 2,
-                'created_at' => Carbon::now(),
-                'robots_nofollow' => true,
-                'robots_noarchive' => true,
+                'object_type'         => 'users',
+                'object_id'           => 2,
+                'created_at'          => Carbon::now(),
+                'robots_nofollow'     => true,
+                'robots_noarchive'    => true,
                 'robots_noimageindex' => true,
-                'robots_nosnippet' => true,
+                'robots_nosnippet'    => true,
             ]],
         ]);
 
