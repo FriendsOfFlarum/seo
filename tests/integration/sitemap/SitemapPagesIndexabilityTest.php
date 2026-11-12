@@ -31,7 +31,7 @@ class SitemapPagesIndexabilityTest extends ForumHtmlTestCase
 
         $now = Carbon::parse('2026-01-01 12:00:00');
         $page = fn (int $id, string $slug, array $extra = []) => array_merge([
-            'id' => $id, 'title' => ucfirst($slug), 'slug' => $slug, 'content' => '<p>Content.</p>',
+            'id'      => $id, 'title' => ucfirst($slug), 'slug' => $slug, 'content' => '<p>Content.</p>',
             'is_html' => 1, 'is_hidden' => 0, 'is_restricted' => 0, 'created_at' => $now, 'updated_at' => $now,
         ], $extra);
 

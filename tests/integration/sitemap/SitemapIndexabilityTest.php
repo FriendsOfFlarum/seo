@@ -42,21 +42,21 @@ class SitemapIndexabilityTest extends ForumHtmlTestCase
 
         $now = Carbon::parse('2026-01-01 12:00:00');
         $tag = fn (int $id, string $slug, ?int $parentId = null, array $extra = []) => array_merge([
-            'id' => $id, 'name' => ucfirst($slug), 'slug' => $slug, 'description' => null, 'color' => '#000',
-            'position' => $id, 'is_restricted' => false, 'is_hidden' => false, 'parent_id' => $parentId,
+            'id'               => $id, 'name' => ucfirst($slug), 'slug' => $slug, 'description' => null, 'color' => '#000',
+            'position'         => $id, 'is_restricted' => false, 'is_hidden' => false, 'parent_id' => $parentId,
             'discussion_count' => 1,
         ], $extra);
         $discussion = fn (int $id, array $extra = []) => array_merge([
-            'id' => $id, 'title' => "Discussion $id", 'slug' => "d$id", 'user_id' => 2, 'first_post_id' => $id,
+            'id'            => $id, 'title' => "Discussion $id", 'slug' => "d$id", 'user_id' => 2, 'first_post_id' => $id,
             'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now, 'is_private' => false,
         ], $extra);
         $post = fn (int $id) => [
-            'id' => $id, 'discussion_id' => $id, 'number' => 1, 'user_id' => 2, 'type' => 'comment',
+            'id'      => $id, 'discussion_id' => $id, 'number' => 1, 'user_id' => 2, 'type' => 'comment',
             'content' => '<t><p>Body.</p></t>', 'created_at' => $now,
         ];
         $meta = fn (string $type, int $id, bool $noindex, array $extra = []) => array_merge([
             'object_type' => $type, 'object_id' => $id, 'robots_noindex' => $noindex,
-            'created_at' => $now, 'updated_at' => $now,
+            'created_at'  => $now, 'updated_at' => $now,
         ], $extra);
 
         $this->prepareDatabase([
@@ -87,7 +87,7 @@ class SitemapIndexabilityTest extends ForumHtmlTestCase
                 $discussion(11, ['hidden_at' => $now]),   // hidden
                 $discussion(12, ['is_private' => true]),  // private
             ],
-            Post::class => array_map($post, range(1, 12)),
+            Post::class      => array_map($post, range(1, 12)),
             'discussion_tag' => [
                 ['discussion_id' => 1, 'tag_id' => 3],
                 ['discussion_id' => 2, 'tag_id' => 1],

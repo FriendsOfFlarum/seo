@@ -54,24 +54,24 @@ class SitemapQueryCountTest extends TestCase
 
         for ($id = $from; $id <= $total; $id++) {
             $db->table('users')->insert([
-                'id' => $id + 10, 'username' => "user$id", 'email' => "user$id@example.com", 'is_email_confirmed' => 1,
+                'id'       => $id + 10, 'username' => "user$id", 'email' => "user$id@example.com", 'is_email_confirmed' => 1,
                 'password' => '', 'comment_count' => 1, 'joined_at' => $now,
             ]);
             $db->table('discussions')->insert([
-                'id' => $id, 'title' => "Discussion $id", 'slug' => "d$id", 'user_id' => $id + 10,
+                'id'            => $id, 'title' => "Discussion $id", 'slug' => "d$id", 'user_id' => $id + 10,
                 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now, 'is_private' => false,
             ]);
             // Foreign keys are enforced here (unlike in prepareDatabase()):
             // the discussion must exist before its post, and the post before
             // the discussion points at it.
             $db->table('posts')->insert([
-                'id' => $id, 'discussion_id' => $id, 'number' => 1, 'user_id' => $id + 10, 'type' => 'comment',
+                'id'      => $id, 'discussion_id' => $id, 'number' => 1, 'user_id' => $id + 10, 'type' => 'comment',
                 'content' => '<t><p>Body.</p></t>', 'created_at' => $now,
             ]);
             $db->table('discussions')->where('id', $id)->update(['first_post_id' => $id, 'last_post_id' => $id]);
             $db->table('discussion_tag')->insert(['discussion_id' => $id, 'tag_id' => [1, 2, 3][$id % 3]]);
             $db->table('pages')->insert([
-                'id' => $id, 'title' => "Page $id", 'slug' => "page-$id", 'content' => '<p>x</p>', 'is_html' => 1,
+                'id'        => $id, 'title' => "Page $id", 'slug' => "page-$id", 'content' => '<p>x</p>', 'is_html' => 1,
                 'is_hidden' => 0, 'is_restricted' => 0, 'created_at' => $now, 'updated_at' => $now,
             ]);
 
@@ -79,7 +79,7 @@ class SitemapQueryCountTest extends TestCase
                 foreach (['discussions', 'pages', 'users'] as $type) {
                     $db->table('seo_meta')->insert([
                         'object_type' => $type, 'object_id' => $id, 'robots_noindex' => true,
-                        'created_at' => $now, 'updated_at' => $now,
+                        'created_at'  => $now, 'updated_at' => $now,
                     ]);
                 }
             }
