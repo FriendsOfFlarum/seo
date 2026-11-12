@@ -142,12 +142,13 @@ return [
                   ->modifyResourceQuery(\FoF\Sitemap\Resources\Page::class, ConstrainPages::class),
             ]),
 
-          // Crawlers can only obey a noindex on a page they may fetch, so
-          // robots.txt must not block profiles or tags while fof/seo
-          // noindexes them. These entries drop fof/sitemap's blocks only
-          // then; fof/sitemap's excludeUsers/excludeTags still leave them out
-          // of the sitemap. fof/sitemap boots first (optional dependency), so
-          // the TagEntry it adds under flarum-tags exists when this runs.
+          // Crawlers can only obey a noindex on a page they may fetch. The
+          // user entry drops fof/sitemap's `Disallow: /u/` while fof/seo
+          // noindexes profiles; the tag entry keeps fof/sitemap's tag
+          // Disallows and adds an Allow for each noindexed tag page. Both
+          // behave exactly like fof/sitemap's otherwise. fof/sitemap boots
+          // first (optional dependency), so the TagEntry it adds under
+          // flarum-tags exists when this runs.
           (new \FoF\Sitemap\Extend\Robots())
             ->replace(\FoF\Sitemap\Robots\Entries\UserEntry::class, Robots\UserEntry::class)
             ->replace(\FoF\Sitemap\Robots\Entries\TagEntry::class, Robots\TagEntry::class),

@@ -11,28 +11,54 @@
 
 namespace FoF\Seo\Integration\Sitemap\Robots;
 
+use Flarum\Http\SlugManager;
+use Flarum\Tags\Tag;
 use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Sitemap\Robots\Entries\TagEntry as SitemapTagEntry;
 
 /**
- * fof/sitemap's tag Disallows (`/t/`, `/tags`), dropped while fof/seo
- * noindexes any tag page: crawlers can only read a noindex on a page they
- * may fetch. Otherwise it behaves exactly like fof/sitemap's own entry.
+ * fof/sitemap's tag Disallows (`/t/`, `/tags`), unchanged, plus an `Allow`
+ * for each noindexed tag page guests can open, so crawlers may fetch exactly
+ * those pages and read their noindex.
+ *
+ * Each tag gets two rules, `Allow: /t/<slug>$` (the page itself) and
+ * `Allow: /t/<slug>?` (the page with a query string). Google and RFC 9309
+ * use the longest matching rule, so both beat `Disallow: /t/`; the `$` and
+ * `?` keep `/t/<slug>` from also opening `/t/<slug>-other`.
  */
 class TagEntry extends SitemapTagEntry
 {
     public function __construct(
         protected readonly IndexabilityPolicy $indexability,
+        protected readonly SlugManager $slugManager,
     ) {
     }
 
     public function getRules(): array
     {
-        // Only ask the policy (which may query) when fof/sitemap would block.
-        if (!$this->enabled() || $this->indexability->anyTagNoindexed()) {
-            return [];
+        $rules = parent::getRules();
+
+        // fof/sitemap blocks nothing (exclude tags off): nothing to allow.
+        if (empty($rules)) {
+            return $rules;
         }
 
-        return parent::getRules();
+        $slugger = $this->slugManager->forResource(Tag::class);
+
+        foreach ($this->indexability->noindexedTagsGuestsCanOpen() as $tag) {
+            // RFC 9309 compares percent-encoded paths, and `*`, `$` and `?`
+            // are robots.txt syntax: encode the slug so it matches literally.
+            $url = $this->generateRouteUrl('tag', ['slug' => rawurlencode($slugger->toSlug($tag))]);
+            $path = parse_url($url, PHP_URL_PATH);
+
+            if (!is_string($path) || $path === '') {
+                continue;
+            }
+
+            $rules[] = $this->allowForAll($path.'$');
+            $rules[] = $this->allowForAll($path.'?');
+        }
+
+        return $rules;
     }
 }

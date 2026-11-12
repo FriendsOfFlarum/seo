@@ -18,6 +18,7 @@ use Flarum\User\Guest;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
@@ -70,16 +71,19 @@ class IndexabilityPolicy
     }
 
     /**
-     * Whether a guest (so a crawler) can reach any tag page that renders
-     * `noindex`: a guest-visible tag that is selected in `seo_noindex_tags`,
-     * is a direct child of a selected tag, or has its own `robots_noindex`.
-     * Deleted IDs left in the setting and tags guests can't open don't count.
+     * The tags whose page renders `noindex` and that a guest (so a crawler)
+     * can open: guest-visible tags that are selected in `seo_noindex_tags`,
+     * are a direct child of a selected tag, or have their own
+     * `robots_noindex`. Deleted IDs left in the setting and tags guests can't
+     * open don't count.
      *
      * One query: it walks the (small) tags table and probes the unique
      * (object_id, object_type) SEO meta index once per tag, rather than
      * scanning SEO meta rows, which can number one per viewed page.
+     *
+     * @return EloquentCollection<int, Tag>
      */
-    public function anyTagNoindexed(): bool
+    public function noindexedTagsGuestsCanOpen(): EloquentCollection
     {
         $excluded = $this->tags->excludedTagIds();
 
@@ -101,7 +105,8 @@ class IndexabilityPolicy
                         ->where("$seoMeta.robots_noindex", true);
                 });
             })
-            ->exists();
+            ->orderBy($tag->getQualifiedKeyName())
+            ->get();
     }
 
     /**
