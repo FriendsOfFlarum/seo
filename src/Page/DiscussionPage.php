@@ -29,6 +29,7 @@ use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\AuthorSchema;
+use FoF\Seo\Support\PostDates;
 use FoF\Seo\Support\PostMedia;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
@@ -82,15 +83,18 @@ class DiscussionPage implements PageDriverInterface
 
         $comment = [
             '@type'         => 'Comment',
-            // Google requires `datePublished` on Comment nodes; keep
-            // `dateCreated` too for schema.org completeness.
-            'datePublished' => $post->created_at->toIso8601String(),
-            'dateCreated'   => $post->created_at->toIso8601String(),
+            // Google requires `datePublished` on Comment nodes.
+            'datePublished' => PostDates::published($post),
             // A `#post-{id}` fragment keeps each comment URL unique even when
             // post `number` collides on old discussions (Google requires
             // unique URLs across comment items).
             'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion), 'near' => $post->number]).'#post-'.$post->id,
         ] + $media;
+
+        // When the reply itself was last edited; omitted if never.
+        if (($dateModified = PostDates::modified($post)) !== null) {
+            $comment['dateModified'] = $dateModified;
+        }
 
         // `author` is required on a Comment; AuthorSchema yields a "[deleted]"
         // Person for a removed user rather than omitting it.
@@ -222,10 +226,10 @@ class DiscussionPage implements PageDriverInterface
             $properties->setSchemaJson('datePublished', $discussion->created_at->toIso8601String());
         }
 
-        // Surface the last activity as `dateModified` (recommended).
-        if ($discussion->last_posted_at !== null) {
-            $properties->setSchemaJson('dateModified', $discussion->last_posted_at->toIso8601String());
-        }
+        // `dateModified` is when the opening post (the posting itself) was
+        // edited, not the last reply; omitted when it never was. This replaces
+        // the stored SEO row's time from generateTagsFromMetaData().
+        $this->setFirstPostModified($discussion, $properties);
 
         $replyCount = max(0, $discussion->comment_count - 1);
         $properties->setSchemaJson('commentCount', $replyCount);
@@ -338,6 +342,22 @@ class DiscussionPage implements PageDriverInterface
         // Keep discussions in admin-excluded tags out of the index (GH #117).
         if ($tagsEnabled && $this->indexability->tagsNoindexed($discussionTags)) {
             $properties->addRobotsDirectives(['noindex']);
+        }
+    }
+
+    /**
+     * Set or remove the page's `dateModified` (and so `article:modified_time`)
+     * from the opening post's own edit time.
+     */
+    private function setFirstPostModified(FlarumDiscussion $discussion, SeoProperties $properties): void
+    {
+        $firstPost = $discussion->firstPost;
+        $dateModified = $firstPost instanceof Post ? PostDates::modified($firstPost) : null;
+
+        if ($dateModified !== null) {
+            $properties->setSchemaJson('dateModified', $dateModified);
+        } else {
+            $properties->removeSchemaJson('dateModified');
         }
     }
 

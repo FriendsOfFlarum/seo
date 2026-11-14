@@ -48,6 +48,34 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
         $this->assertSame('Example Forum', $website['name'] ?? null);
     }
 
+    /**
+     * A forum without a logo or description gets neither key on its publisher
+     * rather than `"logo": null` / `"description": ""`.
+     */
+    #[Test]
+    public function publisher_omits_empty_logo_and_description(): void
+    {
+        $this->setting('forum_description', '');
+
+        $publisher = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebPage')['publisher'] ?? null;
+
+        $this->assertSame('Organization', $publisher['@type'] ?? null);
+        $this->assertSame('Example Forum', $publisher['name'] ?? null);
+        $this->assertArrayNotHasKey('logo', $publisher);
+        $this->assertArrayNotHasKey('description', $publisher);
+    }
+
+    #[Test]
+    public function publisher_keeps_a_set_logo_and_description(): void
+    {
+        $this->setting('logo_path', 'logo-abc.png');
+
+        $publisher = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebPage')['publisher'] ?? null;
+
+        $this->assertSame('http://localhost/assets/logo-abc.png', $publisher['logo'] ?? null);
+        $this->assertSame('An example forum.', $publisher['description'] ?? null);
+    }
+
     #[Test]
     public function every_forum_page_emits_the_website_search_action_entry(): void
     {
