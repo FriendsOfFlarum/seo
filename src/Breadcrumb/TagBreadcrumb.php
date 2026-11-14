@@ -156,6 +156,11 @@ class TagBreadcrumb
         }
     }
 
+    public function parentOf(Tag $tag): ?Tag
+    {
+        return $tag->parent_id !== null ? $this->allTagsById()->get($tag->parent_id) : null;
+    }
+
     public function crumbFor(Tag $tag): Crumb
     {
         return new Crumb(
