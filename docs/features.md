@@ -55,9 +55,8 @@ standout replies apart even when you don't use the best-answer extension.
 **De-index profile pages** keeps user profiles (`/u/*`) out of search results.
 Profile pages are often thin, near-duplicate content, and dropping them can raise
 the overall proportion of "quality" pages a search engine indexes. When enabled,
-profiles emit `<meta name="robots" content="noindex, follow">` — the `follow`
-keeps crawlers traversing the links on the page, which is the recommended
-treatment for low-value pages you want out of the index.
+profiles add `noindex` to the robots meta tag while preserving other directives.
+Links remain followed unless another directive explicitly sets `nofollow`.
 
 With [fof/sitemap](sitemap-and-robots.md) enabled, profiles are also left out
 of the sitemap while this is on, and robots.txt stops blocking `/u/` (if
@@ -67,8 +66,9 @@ fof/sitemap's **exclude users** blocked it): a search engine can only see the
 
 **De-index tags** (shown when [flarum/tags](https://github.com/flarum/tags) is
 enabled) lets you pick tags whose content should stay out of the index. Every
-discussion in a selected tag, and the tag's own listing page, emits
-`noindex, follow`. Selecting a parent tag also covers its child tags. Excluding
+discussion in a selected tag, and the tag's own listing page, adds `noindex`
+while keeping its other robots settings, including `nofollow`, `noarchive`,
+`noimageindex` and `nosnippet`. Selecting a parent tag also covers its child tags. Excluding
 low-value or noisy sections this way raises the overall proportion of quality
 pages a search engine indexes, which can help the rest of the forum rank. With
 fof/sitemap enabled, the same discussions and tags are left out of the sitemap,

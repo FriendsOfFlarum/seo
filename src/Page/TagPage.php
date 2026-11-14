@@ -127,9 +127,8 @@ class TagPage implements PageDriverInterface
         ]);
 
         // Keep the listing page of an admin-excluded tag out of the index (GH #117).
-        // Overrides the robots directive set by generateTagsFromMetaData above.
         if ($this->indexability->tagsNoindexed([$tag])) {
-            $properties->setMetaTag('robots', 'noindex, follow');
+            $properties->addRobotsDirectives(['noindex']);
         }
     }
 }

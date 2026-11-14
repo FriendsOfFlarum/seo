@@ -239,7 +239,7 @@ class PageListener
             ->setMetaPropertyTag('og:type', 'website')
 
             // Robots, follow please! :)
-            ->setMetaTag('robots', 'index, follow')
+            ->addRobotsDirectives(['index', 'follow'])
 
             // Twitter card
             ->setMetaTag('twitter:card', $twitterCardLargeSize ? 'summary_large_image' : 'summary');
@@ -706,9 +706,34 @@ class PageListener
             $robotTags[] = 'nosnippet';
         }
 
-        $this->setMetaTag('robots', implode(', ', $robotTags));
+        $this->addRobotsDirectives($robotTags);
 
         return $this;
+    }
+
+    /**
+     * Merge directives without weakening an existing noindex or nofollow.
+     *
+     * @param list<string> $directives
+     */
+    public function addRobotsDirectives(array $directives): self
+    {
+        $existing = array_filter(array_map('trim', explode(',', $this->flarumDocument->meta['robots'] ?? '')));
+        $directives = array_fill_keys(array_merge($existing, $directives), true);
+
+        if (isset($directives['noindex'])) {
+            unset($directives['index']);
+        }
+
+        if (isset($directives['nofollow'])) {
+            unset($directives['follow']);
+        }
+
+        // Keep the established order, followed by any third-party directives.
+        $order = array_fill_keys(['index', 'noindex', 'follow', 'nofollow', 'noarchive', 'noimageindex', 'nosnippet'], true);
+        $directives = array_intersect_key($order, $directives) + $directives;
+
+        return $this->setMetaTag('robots', implode(', ', array_keys($directives)));
     }
 
     /**

@@ -15,7 +15,9 @@ use Carbon\Carbon;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
+use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -143,5 +145,59 @@ class NoindexTagsTest extends ForumHtmlTestCase
         $html = $this->fetchForumHtml('/t/parent');
 
         $this->assertSame('index, follow', $this->findMetaByName($html, 'robots'));
+    }
+
+    public static function robotsIndexingRules(): array
+    {
+        return [
+            'rule enabled'  => [true],
+            'rule disabled' => [false],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('robotsIndexingRules')]
+    public function discussion_noindex_preserves_item_robots_directives(bool $noindex): void
+    {
+        $this->setting('seo_noindex_tags', $noindex ? '[3]' : '[]');
+        $this->prepareDatabase([
+            SeoMeta::class => [[
+                'object_type'         => 'discussions',
+                'object_id'           => 1,
+                'created_at'          => Carbon::now(),
+                'robots_nofollow'     => true,
+                'robots_noarchive'    => true,
+                'robots_noimageindex' => true,
+                'robots_nosnippet'    => true,
+            ]],
+        ]);
+
+        $this->assertSame(
+            ($noindex ? 'noindex' : 'index').', nofollow, noarchive, noimageindex, nosnippet',
+            $this->findMetaByName($this->fetchForumHtml('/d/1-in-unrelated'), 'robots')
+        );
+    }
+
+    #[Test]
+    #[DataProvider('robotsIndexingRules')]
+    public function tag_noindex_preserves_item_robots_directives(bool $noindex): void
+    {
+        $this->setting('seo_noindex_tags', $noindex ? '[3]' : '[]');
+        $this->prepareDatabase([
+            SeoMeta::class => [[
+                'object_type'         => 'tags',
+                'object_id'           => 3,
+                'created_at'          => Carbon::now(),
+                'robots_nofollow'     => true,
+                'robots_noarchive'    => true,
+                'robots_noimageindex' => true,
+                'robots_nosnippet'    => true,
+            ]],
+        ]);
+
+        $this->assertSame(
+            ($noindex ? 'noindex' : 'index').', nofollow, noarchive, noimageindex, nosnippet',
+            $this->findMetaByName($this->fetchForumHtml('/t/unrelated'), 'robots')
+        );
     }
 }

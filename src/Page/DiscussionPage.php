@@ -336,9 +336,8 @@ class DiscussionPage implements PageDriverInterface
         (new TagBreadcrumb($this->urlGenerator))->emitDiscussionTrails($properties, $tags, $discussion->title);
 
         // Keep discussions in admin-excluded tags out of the index (GH #117).
-        // Overrides the robots directive set by generateTagsFromMetaData above.
         if ($tagsEnabled && $this->indexability->tagsNoindexed($discussionTags)) {
-            $properties->setMetaTag('robots', 'noindex, follow');
+            $properties->addRobotsDirectives(['noindex']);
         }
     }
 
