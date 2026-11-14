@@ -30,6 +30,7 @@ use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -51,6 +52,8 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         protected readonly SlugManager $slugManager,
         protected readonly IndexabilityPolicy $indexability,
         protected readonly AuthorSchema $authorSchema,
+        protected readonly DiscussionPage $discussionPage,
+        protected readonly Container $container,
     ) {
         $this->events = $events;
     }
@@ -90,35 +93,103 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // The canonical discussion slug under the configured driver, for URLs.
         $discussionSlug = $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion);
 
-        // When best-answer isn't installed, DiscussionPage emits the standard
-        // DiscussionForumPosting, so there's nothing for us to do.
-        $enableBestAnswer = $this->extensionManager->isEnabled('fof-best-answer');
-
-        if (!$enableBestAnswer) {
+        if (!$this->discussionPage->isQnaDiscussion($discussion)) {
             return;
         }
 
         /** @var Collection<int, Tag> $discussionTags */
         $discussionTags = $discussion->tags;
 
-        // Not a Q&A discussion — DiscussionPage already emitted DiscussionForumPosting.
-        // A child of a Q&A tag counts as Q&A too (flarum-tags nests one level).
-        if (!$discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna)) {
-            return;
-        }
-
         $crawlerEnabled = $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1;
 
-        // With the post crawler on we emit the full QAPage (every answer). With
-        // it off we still emit a QAPage — but only when an accepted answer
-        // exists, and only that answer, which is cheap because the best-answer
-        // post is loaded on its own. A Q&A discussion with no accepted answer
-        // falls through to DiscussionPage's DiscussionForumPosting.
-        if (!$crawlerEnabled && $discussion->best_answer_post_id === null) {
-            return;
+        $enableLikes = $this->extensionManager->isEnabled('flarum-likes');
+
+        $bestAnswerId = $discussion->best_answer_post_id;
+
+        // The answers readers can see (`comments()` leaves out deleted and
+        // private posts), with what rendering and describing each one reads (its
+        // author, its mentions, its like count) loaded for all of them, to
+        // avoid queries per answer. This page only runs with flarum/tags
+        // enabled (see extensionDependencies()), so its mention relation exists.
+        $answers = fn () => $discussion->comments()
+            ->where('number', '>', '1')
+            ->with(['user', ...$this->mentionRelations(true)])
+            ->when($enableLikes, fn ($query) => $query->withCount('likes'))
+            ->orderBy('number');
+
+        /** @var Collection<int, Post> $posts */
+        $posts = new Collection();
+
+        // With the crawler off we only surface the accepted answer. With it on,
+        // rendering each answer is the dominant page-load cost, so it's capped
+        // as on other discussions; a value <= 0 disables the cap.
+        if ($crawlerEnabled) {
+            $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
+            $posts = $answers()->when($limit > 0, fn ($query) => $query->limit($limit))->get();
         }
 
-        $enableLikes = $this->extensionManager->isEnabled('flarum-likes');
+        // The accepted answer is always included, wherever it falls.
+        if ($bestAnswerId !== null && !$posts->contains('id', $bestAnswerId)) {
+            $posts = $posts->merge($answers()->where('id', $bestAnswerId)->get());
+        }
+
+        $answerSchema = [];
+        $replyMedia = [];
+
+        foreach ($posts as $post) {
+            /** @var Post $post */
+            if (!$post instanceof CommentPost) {
+                continue;
+            }
+
+            $replyMedia[$post->id] = PostMedia::schemaFields($post->formatContent());
+
+            // Temp post. text/image/video from the rendered HTML so an
+            // image-only answer carries `image` instead of an empty `text`
+            // (Google's "Either 'text', 'image' or 'video'" rule).
+            $generatedPost = [
+                '@type'       => 'Answer',
+                'dateCreated' => $post->created_at->toIso8601String(),
+                // A `#post-{id}` fragment keeps each answer URL unique even when
+                // post `number` collides on old discussions — Google requires
+                // unique URLs across suggestedAnswer items.
+                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]).'#post-'.$post->id,
+            ] + $replyMedia[$post->id];
+
+            // `author` is recommended on an Answer; AuthorSchema yields a
+            // "[deleted]" Person for a removed user (with a name, so the
+            // `author.name` requirement is met) rather than omitting it.
+            $generatedPost['author'] = $this->authorSchema->forUser($post->user);
+
+            // Upvote/like count
+            $generatedPost['upvoteCount'] = $enableLikes ? (int) $post->getAttribute('likes_count') : 0;
+
+            // An Answer needs text, image or video; one without is left out
+            // ("Missing field 'text'"), accepted or not.
+            if ($replyMedia[$post->id] === []) {
+                continue;
+            }
+
+            if ($bestAnswerId === $post->id) {
+                $answerSchema['acceptedAnswer'] = $generatedPost;
+            } else {
+                $answerSchema['suggestedAnswer'][] = $generatedPost;
+            }
+        }
+
+        if ($answerSchema === []) {
+            // Describe it like any other discussion, through whichever driver
+            // is registered as `discussion`. A replacement that isn't a
+            // DiscussionPage owns the page itself, so leave its output alone.
+            // Resolved here, not injected: PageManager builds this driver.
+            $discussionDriver = $this->container->make(PageManager::class)->getExtenders('discussion')['discussion'] ?? null;
+
+            if ($discussionDriver instanceof DiscussionPage) {
+                $discussionDriver->buildForumPosting($discussion, $properties, $crawlerEnabled ? $posts : null, $replyMedia);
+            }
+
+            return;
+        }
 
         // Get seo-meta-date
         $seoMeta = SeoMeta::findByModelOrCreate($discussion);
@@ -159,9 +230,6 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             }
         }
 
-        // Get posted on and Last posted on
-        $bestAnswerId = $discussion->best_answer_post_id;
-
         // Update topic url
         $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug]), false);
 
@@ -199,75 +267,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // trail per primary lineage (secondary tags excluded).
         (new TagBreadcrumb($this->urlGenerator))->emitDiscussionTrails($properties, $discussionTags, $discussion->title);
 
-        // Only add suggested answers property if there are posts
-        $mainEntity['suggestedAnswer'] = [];
-
-        // The answers readers can see (`comments()` leaves out deleted and
-        // private posts), with what rendering and describing each one reads (its
-        // author, its mentions, its like count) loaded for all of them, to
-        // avoid queries per answer. This page only runs with flarum/tags
-        // enabled (see extensionDependencies()), so its mention relation exists.
-        $answers = fn () => $discussion->comments()
-            ->where('number', '>', '1')
-            ->with(['user', ...$this->mentionRelations(true)])
-            ->when($enableLikes, fn ($query) => $query->withCount('likes'))
-            ->orderBy('number');
-
-        /** @var Collection<int, Post> $posts */
-        $posts = new Collection();
-
-        // With the crawler off we only surface the accepted answer. With it on,
-        // rendering each answer is the dominant page-load cost, so it's capped
-        // as on other discussions; a value <= 0 disables the cap.
-        if ($crawlerEnabled) {
-            $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
-            $posts = $answers()->when($limit > 0, fn ($query) => $query->limit($limit))->get();
-        }
-
-        // The accepted answer is always included, wherever it falls.
-        if ($bestAnswerId !== null && !$posts->contains('id', $bestAnswerId)) {
-            $posts = $posts->merge($answers()->where('id', $bestAnswerId)->get());
-        }
-
-        foreach ($posts as $post) {
-            /** @var Post $post */
-            if (!$post instanceof CommentPost) {
-                continue;
-            }
-
-            // Temp post. text/image/video from the rendered HTML so an
-            // image-only answer carries `image` instead of an empty `text`
-            // (Google's "Either 'text', 'image' or 'video'" rule).
-            $generatedPost = [
-                '@type'       => 'Answer',
-                'dateCreated' => $post->created_at->toIso8601String(),
-                // A `#post-{id}` fragment keeps each answer URL unique even when
-                // post `number` collides on old discussions — Google requires
-                // unique URLs across suggestedAnswer items.
-                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]).'#post-'.$post->id,
-            ] + PostMedia::schemaFields($post->formatContent());
-
-            // `author` is recommended on an Answer; AuthorSchema yields a
-            // "[deleted]" Person for a removed user (with a name, so the
-            // `author.name` requirement is met) rather than omitting it.
-            $generatedPost['author'] = $this->authorSchema->forUser($post->user);
-
-            // Upvote/like count
-            $generatedPost['upvoteCount'] = $enableLikes ? (int) $post->getAttribute('likes_count') : 0;
-
-            // Set accepted answer
-            if ($bestAnswerId === $post->id) {
-                $mainEntity['acceptedAnswer'] = $generatedPost;
-            }
-            // Add to answers — but only when the answer has the content an
-            // Answer requires (text/image/video). A contentless suggested
-            // answer would trip "Missing field 'text' (in suggestedAnswer)".
-            elseif (isset($generatedPost['text']) || isset($generatedPost['image']) || isset($generatedPost['video'])) {
-                $mainEntity['suggestedAnswer'][] = $generatedPost;
-            }
-        }
-
-        $properties->setSchemaJson('mainEntity', $mainEntity);
+        $properties->setSchemaJson('mainEntity', $mainEntity + $answerSchema);
 
         // Keep discussions in admin-excluded tags out of the index (GH #117).
         // Overrides the robots directive set by generateTagsFromMetaData above.

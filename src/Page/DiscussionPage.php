@@ -65,14 +65,16 @@ class DiscussionPage implements PageDriverInterface
      * plus any images/videos found in the rendered HTML, and omit the comment
      * entirely when it has none of the three.
      *
+     * @param array<string, mixed>|null $media
+     *
      * @return array<string, mixed>|null
      */
-    private function commentSchema(CommentPost $post, FlarumDiscussion $discussion, bool $enableLikes, bool $enableGamification): ?array
+    private function commentSchema(CommentPost $post, FlarumDiscussion $discussion, bool $enableLikes, bool $enableGamification, ?array $media = null): ?array
     {
         // Render once and pull text/image/video from the same HTML so any
         // extension's final URLs (e.g. fof/upload's image preview) are
         // reflected. Google requires a Comment to specify at least one of them.
-        $media = PostMedia::schemaFields($post->formatContent());
+        $media ??= PostMedia::schemaFields($post->formatContent());
 
         if ($media === []) {
             return null;
@@ -148,32 +150,38 @@ class DiscussionPage implements PageDriverInterface
             return;
         }
 
-        // The canonical discussion slug under the configured driver, for URLs.
-        $discussionSlug = $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion);
+        // The Q&A driver owns the answer decision and fallback.
+        if ($this->isQnaDiscussion($discussion)) {
+            return;
+        }
 
+        $this->buildForumPosting($discussion, $properties);
+    }
+
+    public function isQnaDiscussion(FlarumDiscussion $discussion): bool
+    {
+        return $this->extensionManager->isEnabled('flarum-tags')
+            && $this->extensionManager->isEnabled('fof-best-answer')
+            && $discussion->tags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna);
+    }
+
+    /**
+     * Reuse the normal posting schema for unanswered Q&A discussions. Reply
+     * media already inspected by the Q&A driver avoids a second render/query.
+     * Supplied replies must have authors and mention relations loaded, plus
+     * likes/upvotes counts when those integrations are enabled.
+     *
+     * @param Collection<int, Post>|null       $replies
+     * @param array<int, array<string, mixed>> $replyMedia
+     */
+    public function buildForumPosting(FlarumDiscussion $discussion, SeoProperties $properties, ?Collection $replies = null, array $replyMedia = []): void
+    {
+        $discussionSlug = $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion);
         $tagsEnabled = $this->extensionManager->isEnabled('flarum-tags');
-        $enableBestAnswer = $this->extensionManager->isEnabled('fof-best-answer');
         $enableLikes = $this->extensionManager->isEnabled('flarum-likes');
         $enableGamification = $this->extensionManager->isEnabled('fof-gamification');
-
         /** @var Collection<int, Tag> $discussionTags */
         $discussionTags = $discussion->tags;
-
-        // Defer to DiscussionBestAnswerPage when it will actually emit a QAPage
-        // for this discussion: best-answer installed, this is a Q&A discussion,
-        // and either the post crawler is on (full QAPage) or an accepted answer
-        // exists (lightweight QAPage with just that answer). In every other case
-        // (no best-answer, non-Q&A, crawler off without an accepted answer) we
-        // emit the standard DiscussionForumPosting here.
-        $isQna = $tagsEnabled && $enableBestAnswer && $discussionTags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna);
-
-        if ($isQna) {
-            $crawlerEnabled = $this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1;
-
-            if ($crawlerEnabled || $discussion->best_answer_post_id !== null) {
-                return;
-            }
-        }
 
         // Get seo-meta-date
         $seoMeta = SeoMeta::findByModelOrCreate(
@@ -269,41 +277,43 @@ class DiscussionPage implements PageDriverInterface
         // approval signal search engines use to surface standout replies (GH #130),
         // using the standards-compliant DiscussionForumPosting > comment structure.
         if ($this->settingsRepositoryInterface->get('seo_post_crawler', 0) == 1) {
-            $countRelations = [];
+            if ($replies === null) {
+                $countRelations = [];
 
-            if ($enableLikes) {
-                $countRelations[] = 'likes';
+                if ($enableLikes) {
+                    $countRelations[] = 'likes';
+                }
+
+                if ($enableGamification) {
+                    $countRelations[] = 'upvotes';
+                }
+
+                // Cap the number of replies rendered into the comment[] block.
+                // Rendering each reply (formatContent) is the dominant page-load
+                // cost, so bound it; a value <= 0 disables the cap entirely.
+                $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
+
+                // `comments()` leaves out deleted and private posts, which readers
+                // can't see either.
+                $query = $discussion->comments()
+                    ->where('number', '>', 1)
+                    ->with(['user', ...$this->mentionRelations($tagsEnabled)])
+                    ->withCount($countRelations)
+                    ->orderBy('number');
+
+                if ($limit > 0) {
+                    $query->limit($limit);
+                }
+
+                /** @var Collection<int, Post> $replies */
+                $replies = $query->get();
             }
-
-            if ($enableGamification) {
-                $countRelations[] = 'upvotes';
-            }
-
-            // Cap the number of replies rendered into the comment[] block.
-            // Rendering each reply (formatContent) is the dominant page-load
-            // cost, so bound it; a value <= 0 disables the cap entirely.
-            $limit = (int) $this->settingsRepositoryInterface->get('seo_post_crawler_limit', 100);
-
-            // `comments()` leaves out deleted and private posts, which readers
-            // can't see either.
-            $query = $discussion->comments()
-                ->where('number', '>', 1)
-                ->with(['user', ...$this->mentionRelations($tagsEnabled)])
-                ->withCount($countRelations)
-                ->orderBy('number');
-
-            if ($limit > 0) {
-                $query->limit($limit);
-            }
-
-            /** @var Collection<int, Post> $replies */
-            $replies = $query->get();
 
             $comments = $replies
                 ->filter(fn (Post $post) => $post instanceof CommentPost)
                 // commentSchema() returns null for a reply with no text/image —
                 // such a comment node would be invalid, so drop it entirely.
-                ->map(fn (CommentPost $post) => $this->commentSchema($post, $discussion, $enableLikes, $enableGamification))
+                ->map(fn (CommentPost $post) => $this->commentSchema($post, $discussion, $enableLikes, $enableGamification, $replyMedia[$post->id] ?? null))
                 ->filter()
                 ->values()
                 ->toArray();
