@@ -270,9 +270,8 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $properties->setSchemaJson('mainEntity', $mainEntity + $answerSchema);
 
         // Keep discussions in admin-excluded tags out of the index (GH #117).
-        // Overrides the robots directive set by generateTagsFromMetaData above.
         if ($this->tagIndexingPolicy->shouldNoindex($discussionTags)) {
-            $properties->setMetaTag('robots', 'noindex, follow');
+            $properties->addRobotsDirectives(['noindex']);
         }
     }
 }

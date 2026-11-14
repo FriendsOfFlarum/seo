@@ -184,6 +184,19 @@ class SeoProperties
     }
 
     /**
+     * Add directives, preserving existing restrictions. Noindex and nofollow
+     * take precedence over index and follow; use setMetaTag() to replace them.
+     *
+     * @param list<string> $directives
+     */
+    public function addRobotsDirectives(array $directives): self
+    {
+        $this->container->addRobotsDirectives($directives);
+
+        return $this;
+    }
+
+    /**
      * Adds or updates a JSON schema key.
      *
      * @param mixed $value

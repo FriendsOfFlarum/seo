@@ -115,6 +115,17 @@ $properties->setMetaPropertyTag('og:site_name', 'My forum'); // arbitrary <meta 
 $properties->setSchemaJson('@type', 'WebPage');              // arbitrary JSON-LD key
 ```
 
+`addRobotsDirectives()` merges directives as a set in a stable order:
+
+```php
+$properties->addRobotsDirectives(['noindex']);
+```
+
+Existing directives are retained. `noindex` takes precedence over `index`, and
+`nofollow` over `follow`; adding `index` or `follow` cannot lift a restriction.
+`generateTagsFromMetaData()` also adds its robots directives through this merge.
+Use `setMetaTag('robots', ...)` when you intend to replace the complete value.
+
 ## Content helpers
 
 ```php
