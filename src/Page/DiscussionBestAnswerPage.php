@@ -29,6 +29,7 @@ use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\AuthorSchema;
+use FoF\Seo\Support\PostDates;
 use FoF\Seo\Support\PostMedia;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -148,13 +149,18 @@ class DiscussionBestAnswerPage implements PageDriverInterface
             // image-only answer carries `image` instead of an empty `text`
             // (Google's "Either 'text', 'image' or 'video'" rule).
             $generatedPost = [
-                '@type'       => 'Answer',
-                'dateCreated' => $post->created_at->toIso8601String(),
+                '@type'         => 'Answer',
+                'datePublished' => PostDates::published($post),
                 // A `#post-{id}` fragment keeps each answer URL unique even when
                 // post `number` collides on old discussions — Google requires
                 // unique URLs across suggestedAnswer items.
-                'url'         => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]).'#post-'.$post->id,
+                'url'           => $this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug, 'near' => $post->number]).'#post-'.$post->id,
             ] + $replyMedia[$post->id];
+
+            // When the answer itself was last edited; omitted if never.
+            if (($dateModified = PostDates::modified($post)) !== null) {
+                $generatedPost['dateModified'] = $dateModified;
+            }
 
             // `author` is recommended on an Answer; AuthorSchema yields a
             // "[deleted]" Person for a removed user (with a name, so the
@@ -233,13 +239,38 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Update topic url
         $properties->setUrl($this->urlGenerator->to('forum')->route('discussion', ['id' => $discussionSlug]), false);
 
+        // The question is the opening post: published with the discussion,
+        // modified when that post was edited (omitted when it never was).
+        $questionPublished = $discussion->created_at?->toIso8601String();
+        $questionModified = $firstPost instanceof Post ? PostDates::modified($firstPost) : null;
+
+        // Like a DiscussionForumPosting, the page's dates (and so the
+        // `article:*_time` tags) are the question's, not the stored SEO row's
+        // from generateTagsFromMetaData().
+        if ($questionPublished !== null) {
+            $properties->setSchemaJson('datePublished', $questionPublished);
+        }
+
+        if ($questionModified !== null) {
+            $properties->setSchemaJson('dateModified', $questionModified);
+        } else {
+            $properties->removeSchemaJson('dateModified');
+        }
+
         // Schema
         $mainEntity = [
             '@type'       => 'Question',
             'name'        => $seoMeta->title,
-            'dateCreated' => $seoMeta->created_at,
             'answerCount' => $discussion->comment_count - 1,
         ];
+
+        if ($questionPublished !== null) {
+            $mainEntity['datePublished'] = $questionPublished;
+        }
+
+        if ($questionModified !== null) {
+            $mainEntity['dateModified'] = $questionModified;
+        }
 
         // text/image/video for the question (its first post).
         $questionMedia = $firstPost instanceof CommentPost

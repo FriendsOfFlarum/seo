@@ -107,12 +107,48 @@ These record the dates on the schema.org entity. The matching Open Graph
 `article:published_time` / `article:modified_time` (`property`) tags are emitted
 automatically — but only when the page's `og:type` is `article`.
 
+`generateTagsFromMetaData()` sets both from the `SeoMeta` record's `created_at`
+and `updated_at`, which are page-level times. The discussion drivers then use
+post dates instead: `datePublished` is when the discussion was started, and
+`dateModified` is when its opening post was last edited, or is removed when it
+never was. Replies and answers carry their own `datePublished` and, when
+edited, `dateModified`.
+
+## Removing a JSON-LD property
+
+```php
+$properties->removeSchemaJson('dateModified');
+```
+
+Removes a top-level key from the page's main JSON-LD node (the one
+`setSchemaJson()` writes to). Removing a key that isn't set does nothing, and
+the method returns `$this` like the setters.
+
+It only affects that node's own top-level keys:
+
+- the `BreadcrumbList` and `WebSite` nodes in the same `@graph` are left alone;
+- nested values stay: to change part of e.g. `mainEntity` or `author`, read
+  what you need and set the whole value again with `setSchemaJson()`;
+- meta and Open Graph tags you set yourself stay. The exception is
+  `article:published_time` / `article:modified_time`, which are written from
+  `datePublished` / `dateModified` after `PreparingPageMeta`: removing the
+  schema date in a page driver or a `PreparingPageMeta` listener leaves the
+  generated tag out too, but not one set explicitly with
+  `setMetaPropertyTag()`.
+
+The last call wins: a later `setSchemaJson()` for the same key, a later
+`generateTagsFromMetaData()` (which sets `datePublished`, `dateModified` and
+others again) or a later `PreparingPageMeta` listener can put the key back.
+Removing a key the page type needs, such as `@type`, produces invalid
+structured data, as setting a wrong value would.
+
 ## Lower-level helpers
 
 ```php
 $properties->setMetaTag('robots', 'index, follow');         // arbitrary <meta name>
 $properties->setMetaPropertyTag('og:site_name', 'My forum'); // arbitrary <meta property>
 $properties->setSchemaJson('@type', 'WebPage');              // arbitrary JSON-LD key
+$properties->removeSchemaJson('dateModified');               // remove a JSON-LD key
 ```
 
 `addRobotsDirectives()` merges directives as a set in a stable order:

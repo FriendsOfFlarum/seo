@@ -213,6 +213,23 @@ class SeoProperties
     }
 
     /**
+     * Removes a top-level key from the page's main JSON-LD node. A missing key
+     * is a no-op. Breadcrumb and WebSite nodes, nested values and explicitly set
+     * meta tags are not affected, but the generated `article:published_time` /
+     * `article:modified_time` follow `datePublished` / `dateModified`. A later
+     * setSchemaJson() for the key sets it again.
+     *
+     * example:
+     * - key: "dateModified"
+     */
+    public function removeSchemaJson(string $key): self
+    {
+        $this->container->removeSchemaJson($key);
+
+        return $this;
+    }
+
+    /**
      * Returns current application full-path.
      */
     public function withApplicationPath(string $path): string

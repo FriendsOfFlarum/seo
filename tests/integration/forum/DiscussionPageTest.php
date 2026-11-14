@@ -210,14 +210,9 @@ class DiscussionPageTest extends ForumHtmlTestCase
     public function discussion_page_emits_article_times_as_open_graph_properties(): void
     {
         $publishedAt = Carbon::parse('2025-06-01 12:34:56');
-        $modifiedAt = Carbon::parse('2025-06-02 08:00:00');
+        $editedAt = Carbon::parse('2025-06-02 08:00:00');
 
-        $this->seedDiscussion(
-            title: 'How to bake bread',
-            slug: 'bake-bread',
-            createdAt: $publishedAt,
-            metaOverrides: ['updated_at' => $modifiedAt],
-        );
+        $this->seedEditedThread(createdAt: $publishedAt, firstPostEditedAt: $editedAt);
 
         $html = $this->fetchForumHtml('/d/1-bake-bread');
 
@@ -229,7 +224,7 @@ class DiscussionPageTest extends ForumHtmlTestCase
             $this->findMetaByProperty($html, 'article:published_time')
         );
         $this->assertSame(
-            $modifiedAt->format('c'),
+            $editedAt->format('c'),
             $this->findMetaByProperty($html, 'article:modified_time')
         );
 
@@ -237,6 +232,51 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertNull($this->findMetaByName($html, 'article:published_time'));
         $this->assertNull($this->findMetaByName($html, 'article:updated_time'));
         $this->assertNull($this->findMetaByProperty($html, 'article:updated_time'));
+    }
+
+    /**
+     * Google: `dateModified` is "the date and time the post was edited". The
+     * posting is the opening post, so a later reply must not move it.
+     */
+    #[Test]
+    public function date_modified_is_the_first_post_edit_time(): void
+    {
+        $this->seedEditedThread(
+            createdAt: Carbon::parse('2025-01-01 10:00:00'),
+            firstPostEditedAt: Carbon::parse('2025-01-02 09:00:00'),
+            lastPostedAt: Carbon::parse('2025-01-03 18:30:00'),
+        );
+
+        $html = $this->fetchForumHtml('/d/1-bake-bread');
+        $fp = $this->findSchemaEntry($html, 'DiscussionForumPosting');
+
+        $this->assertSame('2025-01-01T10:00:00+00:00', $fp['datePublished'] ?? null);
+        $this->assertSame('2025-01-02T09:00:00+00:00', $fp['dateModified'] ?? null);
+        $this->assertSame('2025-01-02T09:00:00+00:00', $this->findMetaByProperty($html, 'article:modified_time'));
+    }
+
+    /**
+     * An opening post that was never edited has no `dateModified` (Google: "If
+     * no changes have happened, it's not necessary to duplicate the publish
+     * date"), even when replies and a stored SEO row carry later times.
+     */
+    #[Test]
+    public function date_modified_is_absent_when_first_post_never_edited(): void
+    {
+        $this->seedEditedThread(
+            createdAt: Carbon::parse('2025-01-01 10:00:00'),
+            firstPostEditedAt: null,
+            lastPostedAt: Carbon::parse('2025-01-03 18:30:00'),
+            metaUpdatedAt: Carbon::parse('2025-02-01 00:00:00'),
+        );
+
+        $html = $this->fetchForumHtml('/d/1-bake-bread');
+        $fp = $this->findSchemaEntry($html, 'DiscussionForumPosting');
+
+        $this->assertSame('2025-01-01T10:00:00+00:00', $fp['datePublished'] ?? null);
+        $this->assertArrayNotHasKey('dateModified', $fp);
+        $this->assertNull($this->findMetaByProperty($html, 'article:modified_time'));
+        $this->assertSame('2025-01-01T10:00:00+00:00', $this->findMetaByProperty($html, 'article:published_time'));
     }
 
     /**
@@ -489,6 +529,37 @@ class DiscussionPageTest extends ForumHtmlTestCase
 
         $this->assertSame('A unique opening sentence for this thread.', $description);
         $this->assertNotSame('The forum-wide description.', $description);
+    }
+
+    /**
+     * A discussion with an opening post (edited or not) and one reply, plus an
+     * optional stored seo_meta row carrying a stale `updated_at`.
+     */
+    private function seedEditedThread(
+        Carbon $createdAt,
+        ?Carbon $firstPostEditedAt,
+        ?Carbon $lastPostedAt = null,
+        ?Carbon $metaUpdatedAt = null,
+    ): void {
+        $lastPostedAt ??= $createdAt;
+
+        $db = [
+            Discussion::class => [
+                ['id' => 1, 'title' => 'How to bake bread', 'slug' => 'bake-bread', 'user_id' => 1, 'first_post_id' => 1, 'comment_count' => 2, 'created_at' => $createdAt, 'last_posted_at' => $lastPostedAt],
+            ],
+            Post::class => [
+                ['id' => 1, 'discussion_id' => 1, 'number' => 1, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Opening post body.</p></t>', 'created_at' => $createdAt, 'edited_at' => $firstPostEditedAt, 'edited_user_id' => $firstPostEditedAt ? 1 : null],
+                ['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>A reply.</p></t>', 'created_at' => $lastPostedAt],
+            ],
+        ];
+
+        if ($metaUpdatedAt !== null) {
+            $db['seo_meta'] = [
+                ['id' => 1, 'object_type' => 'discussions', 'object_id' => 1, 'auto_update_data' => 1, 'title' => null, 'description' => null, 'created_at' => $createdAt, 'updated_at' => $metaUpdatedAt],
+            ];
+        }
+
+        $this->prepareDatabase($db);
     }
 
     /**
