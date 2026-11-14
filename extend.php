@@ -21,6 +21,11 @@ use Flarum\Extend;
 use FoF\Seo\Api\AttachForumResourceFields;
 use FoF\Seo\Extend\SEO;
 use FoF\Seo\Formatter\FormatLinks;
+use FoF\Seo\Integration\Sitemap\ConstrainDiscussions;
+use FoF\Seo\Integration\Sitemap\ConstrainPages;
+use FoF\Seo\Integration\Sitemap\ConstrainTags;
+use FoF\Seo\Integration\Sitemap\ConstrainUsers;
+use FoF\Seo\Integration\Sitemap\Robots;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\Page as SeoPage;
 use FoF\Seo\SeoMeta\SeoMeta;
@@ -121,5 +126,31 @@ return [
       ->whenExtensionEnabled('fof-merge-discussions', fn () => [
           (new Extend\Event())
             ->subscribe(Subscribers\MergeDiscussionsSubscriber::class),
+      ])
+      // fof/seo decides what may be indexed (Indexability\IndexabilityPolicy);
+      // fof/sitemap only lists what fof/seo lets through. The closure keeps
+      // fof/sitemap's classes from loading while it is disabled.
+      ->whenExtensionEnabled('fof-sitemap', fn () => [
+          (new \FoF\Sitemap\Extend\Sitemap())
+            ->modifyResourceQuery(\FoF\Sitemap\Resources\Discussion::class, ConstrainDiscussions::class)
+            ->modifyResourceQuery(\FoF\Sitemap\Resources\Tag::class, ConstrainTags::class)
+            ->modifyResourceQuery(\FoF\Sitemap\Resources\User::class, ConstrainUsers::class),
+
+          (new Extend\Conditional())
+            ->whenExtensionEnabled('fof-pages', fn () => [
+                (new \FoF\Sitemap\Extend\Sitemap())
+                  ->modifyResourceQuery(\FoF\Sitemap\Resources\Page::class, ConstrainPages::class),
+            ]),
+
+          // Crawlers can only obey a noindex on a page they may fetch. The
+          // user entry drops fof/sitemap's `Disallow: /u/` while fof/seo
+          // noindexes profiles; the tag entry keeps fof/sitemap's tag
+          // Disallows and adds an Allow for each noindexed tag page. Both
+          // behave exactly like fof/sitemap's otherwise. fof/sitemap boots
+          // first (optional dependency), so the TagEntry it adds under
+          // flarum-tags exists when this runs.
+          (new \FoF\Sitemap\Extend\Robots())
+            ->replace(\FoF\Sitemap\Robots\Entries\UserEntry::class, Robots\UserEntry::class)
+            ->replace(\FoF\Sitemap\Robots\Entries\TagEntry::class, Robots\TagEntry::class),
       ]),
 ];

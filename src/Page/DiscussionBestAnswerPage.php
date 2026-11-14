@@ -25,11 +25,11 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\UserRepository;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
+use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
-use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
@@ -50,7 +50,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         protected readonly UrlGenerator $urlGenerator,
         Dispatcher $events,
         protected readonly SlugManager $slugManager,
-        protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly IndexabilityPolicy $indexability,
         protected readonly AuthorSchema $authorSchema,
         protected readonly DiscussionPage $discussionPage,
         protected readonly Container $container,
@@ -270,7 +270,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         $properties->setSchemaJson('mainEntity', $mainEntity + $answerSchema);
 
         // Keep discussions in admin-excluded tags out of the index (GH #117).
-        if ($this->tagIndexingPolicy->shouldNoindex($discussionTags)) {
+        if ($this->indexability->tagsNoindexed($discussionTags)) {
             $properties->addRobotsDirectives(['noindex']);
         }
     }

@@ -43,11 +43,13 @@
         "fof/upload": "*",
         "fof/user-directory": "*",
         "fof/merge-discussions": "*",
-        "flarum/mentions": "*"
+        "flarum/mentions": "*",
+        "fof/sitemap": "^3.1.0"
     },
     "conflict": {
         "zerosonesfun/elint": "*",
-        "franzl/flarum-open-links-in-new-tab": "*"
+        "franzl/flarum-open-links-in-new-tab": "*",
+        "fof/sitemap": "<3.1.0"
     },
     "replace": {
         "v17development/flarum-seo": "*"

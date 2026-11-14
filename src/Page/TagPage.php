@@ -19,9 +19,9 @@ use Flarum\Http\UrlGenerator;
 use Flarum\Tags\Tag;
 use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
+use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
-use FoF\Seo\TagIndexingPolicy;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
@@ -36,7 +36,7 @@ class TagPage implements PageDriverInterface
     public function __construct(
         protected readonly TranslatorInterface $translator,
         Dispatcher $events,
-        protected readonly TagIndexingPolicy $tagIndexingPolicy,
+        protected readonly IndexabilityPolicy $indexability,
         protected readonly UrlGenerator $urlGenerator,
         protected readonly SlugManager $slugManager,
     ) {
@@ -127,7 +127,7 @@ class TagPage implements PageDriverInterface
         ]);
 
         // Keep the listing page of an admin-excluded tag out of the index (GH #117).
-        if ($this->tagIndexingPolicy->shouldNoindex([$tag])) {
+        if ($this->indexability->tagsNoindexed([$tag])) {
             $properties->addRobotsDirectives(['noindex']);
         }
     }
