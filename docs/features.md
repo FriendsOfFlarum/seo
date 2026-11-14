@@ -85,7 +85,7 @@ The JSON-LD is tailored per page type and carries `inLanguage` on every page:
 | --- | --- | --- |
 | Index | `WebPage` + `WebSite` | `publisher`, `SearchAction` (sitelinks search box) |
 | Discussion | `DiscussionForumPosting` | `author`, `headline`, `text`, `datePublished`/`dateModified`, breadcrumb, `interactionStatistic` for comments, likes and views, and (with post crawling on) a `comment[]` of replies each with their like/upvote count |
-| Q&A discussion | `QAPage` | `Question` with `acceptedAnswer`/`suggestedAnswer`, `upvoteCount`, `answerCount` (needs fof/best-answer) |
+| Q&A discussion | `QAPage` | `Question` with `acceptedAnswer`/`suggestedAnswer`, `upvoteCount`, `answerCount` (needs fof/best-answer). Only when at least one answer with text, an image or a video is included: the accepted answer, or (with post crawling on) any reply. Otherwise the discussion is described like any other, as `DiscussionForumPosting` |
 | Tag | `CollectionPage` | `name`, and a `mainEntity` `ItemList` of the tag's recent discussions |
 | User profile | `ProfilePage` | `Person` with `alternateName`, `identifier`, `agentInteractionStatistic` (posts/discussions) |
 
