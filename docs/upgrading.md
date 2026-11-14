@@ -45,3 +45,9 @@ If you extend one of FoF SEO's page drivers and override its constructor:
   `IndexabilityPolicy $indexability` as its last argument.
 
 `TagIndexingPolicy` itself is unchanged and can still be injected.
+
+`DiscussionPage` and `DiscussionBestAnswerPage` also take
+`FoF\Seo\Page\DiscussionContext $context` immediately after `$authorSchema`.
+Pass it through when overriding the constructor. This internal service shares
+lookups between the drivers for a single request; `PageDriverInterface` and
+`DiscussionPage::buildForumPosting()` are unchanged.
