@@ -16,10 +16,14 @@ use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
+use FoF\Seo\Extend\SEO;
+use FoF\Seo\Page\PageDriverInterface;
 use FoF\Seo\SeoMeta\SeoMeta;
+use FoF\Seo\SeoProperties;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Tests the optional fof/best-answer integration.
@@ -465,7 +469,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         // Accepted answer present; the empty suggested answer is dropped.
         $this->assertArrayHasKey('text', $question['acceptedAnswer'] ?? []);
-        $this->assertSame([], $question['suggestedAnswer'] ?? ['x']);
+        $this->assertArrayNotHasKey('suggestedAnswer', $question);
     }
 
     /**
@@ -847,7 +851,7 @@ class BestAnswerPageTest extends ForumHtmlTestCase
 
         // With the crawler off we only surface the accepted answer, not the
         // full thread of suggested answers (that is the crawler-on behaviour).
-        $this->assertSame([], $qaPage['mainEntity']['suggestedAnswer'] ?? null);
+        $this->assertArrayNotHasKey('suggestedAnswer', $qaPage['mainEntity']);
     }
 
     /**
@@ -871,6 +875,149 @@ class BestAnswerPageTest extends ForumHtmlTestCase
             $this->findSchemaEntry($html, 'DiscussionForumPosting'),
             'Without an accepted answer the discussion falls back to DiscussionForumPosting.'
         );
+    }
+
+    #[Test]
+    public function unanswered_qa_discussion_falls_back_with_crawler_on(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion(['best_answer_post_id' => null, 'comment_count' => 1]);
+        $this->database()->table('posts')->where('number', '>', 1)->delete();
+
+        $this->assertForumPostingFallback();
+    }
+
+    #[Test]
+    public function contentless_replies_fall_back_without_extra_queries_or_renders(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion(['best_answer_post_id' => null]);
+        $this->database()->table('posts')->where('number', '>', 1)->update(['content' => '<t><p> </p></t>']);
+        $this->database()->table('tags')->where('id', self::QNA_TAG_ID)->update(['is_qna' => false]);
+
+        // Warm the formatter and metadata before comparing the same page twice.
+        $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+        $renders = [];
+        $this->app()->getContainer()->make(\Flarum\Formatter\Formatter::class)->addRenderingCallback(
+            function ($renderer, $context, $xml) use (&$renders) {
+                if ($context instanceof Post) {
+                    $renders[] = $context->id;
+                }
+
+                return $xml;
+            }
+        );
+        $this->database()->enableQueryLog();
+        $this->database()->flushQueryLog();
+        $plainHtml = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+        $plainQueries = count($this->database()->getQueryLog());
+        $plainRenders = array_count_values($renders);
+
+        $this->database()->table('tags')->where('id', self::QNA_TAG_ID)->update(['is_qna' => true]);
+        $renders = [];
+        $this->database()->flushQueryLog();
+        $html = $this->assertForumPostingFallback();
+        $fallbackQueries = count($this->database()->getQueryLog());
+        $this->assertLessThanOrEqual($plainQueries, $fallbackQueries, "Plain: $plainQueries; fallback: $fallbackQueries");
+        $this->assertSame($plainRenders, array_count_values($renders), 'Fallback must not format posts twice.');
+        $this->assertSame($this->findSchemaEntry($plainHtml, 'DiscussionForumPosting'), $this->findSchemaEntry($html, 'DiscussionForumPosting'));
+    }
+
+    /** @return array<string, array{bool, bool}> */
+    public static function unavailableAnswers(): array
+    {
+        return [
+            'hidden, crawler off'  => [false, false],
+            'hidden, crawler on'   => [false, true],
+            'deleted, crawler off' => [true, false],
+            'deleted, crawler on'  => [true, true],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('unavailableAnswers')]
+    public function unavailable_accepted_answer_falls_back(bool $deleted, bool $crawler): void
+    {
+        $this->setting('seo_post_crawler', $crawler ? '1' : '0');
+        $this->seedQnaDiscussion();
+        $this->database()->table('posts')->where('id', 3)->delete();
+        $accepted = $this->database()->table('posts')->where('id', 2);
+        if ($deleted) {
+            $accepted->delete();
+        } else {
+            $accepted->update(['hidden_at' => Carbon::now(), 'hidden_user_id' => 1]);
+        }
+
+        $this->assertForumPostingFallback();
+    }
+
+    /**
+     * An accepted answer that renders to no text, image or video can't be an
+     * Answer (Google requires `text`), so it counts as no answer at all.
+     */
+    #[Test]
+    #[DataProvider('crawlerStates')]
+    public function contentless_accepted_answer_alone_falls_back(bool $crawler): void
+    {
+        $this->setting('seo_post_crawler', $crawler ? '1' : '0');
+        $this->seedQnaDiscussion();
+        $this->database()->table('posts')->where('id', 3)->delete();
+        $this->database()->table('posts')->where('id', 2)->update(['content' => '<t><p> </p></t>']);
+
+        $this->assertForumPostingFallback();
+    }
+
+    #[Test]
+    public function contentless_accepted_answer_is_dropped_but_suggested_answers_remain(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion();
+        $this->database()->table('posts')->where('id', 2)->update(['content' => '<t><p> </p></t>']);
+
+        $question = $this->findSchemaEntry($this->fetchForumHtml('/d/1-how-do-i-bake-bread'), 'QAPage')['mainEntity'] ?? [];
+
+        $this->assertArrayNotHasKey('acceptedAnswer', $question);
+        $this->assertSame(['Try a sourdough starter.'], array_column($question['suggestedAnswer'] ?? [], 'text'));
+    }
+
+    /**
+     * A third party may replace the `discussion` driver. When a Q&A discussion
+     * has no answer, that driver's output must stand: the fallback must not
+     * write core's DiscussionForumPosting over it.
+     */
+    #[Test]
+    #[DataProvider('crawlerStates')]
+    public function fallback_leaves_a_replaced_discussion_driver_in_charge(bool $crawler): void
+    {
+        $this->extend((new SEO())->addExtender('discussion', ReplacementDiscussionDriver::class));
+        $this->setting('seo_post_crawler', $crawler ? '1' : '0');
+        $this->seedQnaDiscussion(['best_answer_post_id' => null, 'comment_count' => 1]);
+        $this->database()->table('posts')->where('number', '>', 1)->delete();
+
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+
+        $this->assertNotNull($this->findSchemaEntry($html, 'Article'));
+        $this->assertNull($this->findSchemaEntry($html, 'DiscussionForumPosting'));
+        $this->assertNull($this->findSchemaEntry($html, 'QAPage'));
+    }
+
+    /** @return array<string, array{bool}> */
+    public static function crawlerStates(): array
+    {
+        return ['crawler off' => [false], 'crawler on' => [true]];
+    }
+
+    private function assertForumPostingFallback(): string
+    {
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+        $this->assertNull($this->findSchemaEntry($html, 'QAPage'));
+        $posting = $this->findSchemaEntry($html, 'DiscussionForumPosting');
+        $this->assertNotNull($posting);
+        $this->assertSame('How do I bake bread?', $posting['headline']);
+        $this->assertSame('How do I bake bread?', $posting['text']);
+        $this->assertArrayNotHasKey('mainEntity', $posting);
+
+        return $html;
     }
 
     #[Test]
@@ -941,5 +1088,26 @@ class BestAnswerPageTest extends ForumHtmlTestCase
             ($noindex ? 'noindex' : 'index').', nofollow, noarchive, noimageindex, nosnippet',
             $this->findMetaByName($html, 'robots')
         );
+    }
+}
+
+/**
+ * Stands in for a third-party driver registered under the `discussion` name.
+ */
+class ReplacementDiscussionDriver implements PageDriverInterface
+{
+    public function extensionDependencies(): array
+    {
+        return [];
+    }
+
+    public function handleRoutes(): array
+    {
+        return ['discussion'];
+    }
+
+    public function handle(ServerRequestInterface $request, SeoProperties $properties): void
+    {
+        $properties->setSchemaJson('@type', 'Article');
     }
 }

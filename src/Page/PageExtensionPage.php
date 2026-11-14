@@ -12,6 +12,8 @@
 namespace FoF\Seo\Page;
 
 use Carbon\Carbon;
+use Flarum\Http\UrlGenerator;
+use Flarum\Settings\SettingsRepositoryInterface;
 use FoF\Pages\PageRepository;
 use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\SeoMeta\SeoMeta;
@@ -25,6 +27,8 @@ class PageExtensionPage implements PageDriverInterface
     public function __construct(
         protected readonly TranslatorInterface $translator,
         protected readonly PageRepository $pageRepository,
+        protected readonly UrlGenerator $urlGenerator,
+        protected readonly SettingsRepositoryInterface $settings,
     ) {
     }
 
@@ -46,7 +50,8 @@ class PageExtensionPage implements PageDriverInterface
         // the numeric id so the lookup works on all databases (SQLite won't coerce
         // "1-about-us" to 1), falling back to the raw value so bare-slug URLs still
         // resolve via the repository's slug match.
-        $rawId = Arr::get($request->getQueryParams(), 'id');
+        $isHomeRoute = in_array($request->getAttribute('routeName'), ['pages.home', 'default'], true);
+        $rawId = $isHomeRoute ? $this->settings->get('pages_home') : Arr::get($request->getQueryParams(), 'id');
         $pageId = (int) $rawId ?: $rawId;
 
         try {
@@ -73,16 +78,25 @@ class PageExtensionPage implements PageDriverInterface
             }
         );
 
+        $isHome = $this->settings->get('default_route') === '/pages/home'
+            && (string) $page->getAttribute('id') === (string) $this->settings->get('pages_home');
+
+        $pageUrl = $isHome
+            ? $properties->withApplicationPath('')
+            : $this->urlGenerator->to('forum')->route('pages.page', [
+                'id' => $page->getAttribute('id').'-'.$page->getAttribute('slug'),
+            ]);
+
         $properties
             // Add Schema.org metadata: WebPage https://schema.org/WebPage
             ->setSchemaJson('@type', 'WebPage')
             ->setSchemaJson('text', e(strip_tags($content)))
 
-            // Tag URL
-            ->setUrl('/p/'.$page->getAttribute('id').'-'.$page->getAttribute('slug'))
+            // Page URL
+            ->setUrl($pageUrl, false)
 
             // Canonical url
-            ->setCanonicalUrl('/p/'.$page->getAttribute('id'))
+            ->setCanonicalUrl($pageUrl, false)
 
             ->generateTagsFromMetaData($seoMeta);
 
