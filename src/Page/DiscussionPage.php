@@ -16,7 +16,6 @@ use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Discussion\DiscussionRepository;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
-use Flarum\Http\RequestUtil;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
@@ -24,14 +23,12 @@ use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\UserRepository;
-use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
 use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 
 class DiscussionPage implements PageDriverInterface
@@ -51,6 +48,7 @@ class DiscussionPage implements PageDriverInterface
         protected readonly SlugManager $slugManager,
         protected readonly IndexabilityPolicy $indexability,
         protected readonly AuthorSchema $authorSchema,
+        protected readonly DiscussionContext $context,
     ) {
         $this->events = $events;
     }
@@ -131,22 +129,9 @@ class DiscussionPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        $slug = Arr::get($request->getQueryParams(), 'id');
+        $discussion = $this->context->resolve($request);
 
-        if ($slug === null) {
-            return;
-        }
-
-        try {
-            // Resolve through the configured discussion slug driver, so the
-            // lookup works whatever form the `/d/{id}` route param takes.
-            /** @var FlarumDiscussion $discussion */
-            $discussion = $this->slugManager->forResource(FlarumDiscussion::class)->fromSlug(
-                $slug,
-                RequestUtil::getActor($request)
-            );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Do nothing, no model found
+        if ($discussion === null) {
             return;
         }
 
@@ -162,7 +147,7 @@ class DiscussionPage implements PageDriverInterface
     {
         return $this->extensionManager->isEnabled('flarum-tags')
             && $this->extensionManager->isEnabled('fof-best-answer')
-            && $discussion->tags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $tag->parent?->is_qna);
+            && $discussion->tags->contains(fn (Tag $tag) => (bool) $tag->is_qna || (bool) $this->context->breadcrumb($discussion)->parentOf($tag)?->is_qna);
     }
 
     /**
@@ -181,7 +166,7 @@ class DiscussionPage implements PageDriverInterface
         $enableLikes = $this->extensionManager->isEnabled('flarum-likes');
         $enableGamification = $this->extensionManager->isEnabled('fof-gamification');
         /** @var Collection<int, Tag> $discussionTags */
-        $discussionTags = $discussion->tags;
+        $discussionTags = $tagsEnabled ? $discussion->tags : new Collection();
 
         // Get seo-meta-date
         $seoMeta = SeoMeta::findByModelOrCreate(
@@ -247,7 +232,7 @@ class DiscussionPage implements PageDriverInterface
             ];
         }
 
-        $firstPost = $discussion->firstPost;
+        $firstPost = $this->context->firstPost($discussion, $enableLikes, $enableGamification);
 
         if ($firstPost instanceof CommentPost) {
             // Full post text for the `text` property. Render to HTML first so
@@ -333,7 +318,7 @@ class DiscussionPage implements PageDriverInterface
         // are not part of any breadcrumb path. With no primary tags (untagged,
         // or secondary-only) the trail is simply Home › title.
         $tags = $tagsEnabled ? $discussionTags : new Collection();
-        (new TagBreadcrumb($this->urlGenerator))->emitDiscussionTrails($properties, $tags, $discussion->title);
+        $this->context->breadcrumb($discussion)->emitDiscussionTrails($properties, $tags, $discussion->title);
 
         // Keep discussions in admin-excluded tags out of the index (GH #117).
         if ($tagsEnabled && $this->indexability->tagsNoindexed($discussionTags)) {
@@ -350,12 +335,12 @@ class DiscussionPage implements PageDriverInterface
         $count = 0;
 
         if ($enableLikes) {
-            $count += $post->likes()->count();
+            $count += (int) ($post->getAttribute('likes_count') ?? $post->likes()->count());
         }
 
         if ($enableGamification) {
             // Positive gamification votes only (mirrors its `upvotes` relation).
-            $count += $post->votes()->where('value', '>', 0)->count();
+            $count += (int) ($post->getAttribute('upvotes_count') ?? $post->votes()->where('value', '>', 0)->count());
         }
 
         return $count;

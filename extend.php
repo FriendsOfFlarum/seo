@@ -31,6 +31,7 @@ use FoF\Seo\Page as SeoPage;
 use FoF\Seo\SeoMeta\SeoMeta;
 
 return [
+    (new Extend\ServiceProvider())->register(Provider\DiscussionContextProvider::class),
     (new Extend\Frontend('forum'))
       ->content(PageListener::class)
       ->js(__DIR__.'/js/dist/forum.js')

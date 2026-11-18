@@ -16,7 +16,6 @@ use Flarum\Discussion\Discussion as FlarumDiscussion;
 use Flarum\Discussion\DiscussionRepository;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Foundation\DispatchEventsTrait;
-use Flarum\Http\RequestUtil;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
@@ -24,7 +23,6 @@ use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Tags\Tag;
 use Flarum\User\UserRepository;
-use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\Indexability\IndexabilityPolicy;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
@@ -32,7 +30,6 @@ use FoF\Seo\Support\AuthorSchema;
 use FoF\Seo\Support\PostMedia;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 
 class DiscussionBestAnswerPage implements PageDriverInterface
@@ -52,6 +49,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         protected readonly SlugManager $slugManager,
         protected readonly IndexabilityPolicy $indexability,
         protected readonly AuthorSchema $authorSchema,
+        protected readonly DiscussionContext $context,
         protected readonly DiscussionPage $discussionPage,
         protected readonly Container $container,
     ) {
@@ -72,25 +70,12 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         ServerRequestInterface $request,
         SeoProperties $properties
     ): void {
-        $slug = Arr::get($request->getQueryParams(), 'id');
+        $discussion = $this->context->resolve($request);
 
-        if ($slug === null) {
+        if ($discussion === null) {
             return;
         }
 
-        try {
-            // Resolve through the configured discussion slug driver.
-            /** @var FlarumDiscussion $discussion */
-            $discussion = $this->slugManager->forResource(FlarumDiscussion::class)->fromSlug(
-                $slug,
-                RequestUtil::getActor($request)
-            );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Do nothing, no model found
-            return;
-        }
-
-        // The canonical discussion slug under the configured driver, for URLs.
         $discussionSlug = $this->slugManager->forResource(FlarumDiscussion::class)->toSlug($discussion);
 
         if (!$this->discussionPage->isQnaDiscussion($discussion)) {
@@ -197,7 +182,7 @@ class DiscussionBestAnswerPage implements PageDriverInterface
         // Run events in case the model was created
         $this->dispatchEventsFor($seoMeta);
 
-        $firstPost = $discussion->firstPost;
+        $firstPost = $this->context->firstPost($discussion, $enableLikes, false);
 
         // Update ld-json
         $properties
@@ -260,12 +245,12 @@ class DiscussionBestAnswerPage implements PageDriverInterface
 
         // Upvotes on the question itself (the first post), when likes are available.
         if ($enableLikes && $firstPost !== null) {
-            $mainEntity['upvoteCount'] = $firstPost->likes()->count();
+            $mainEntity['upvoteCount'] = (int) ($firstPost->getAttribute('likes_count') ?? $firstPost->likes()->count());
         }
 
         // Breadcrumb: Home › Tags › {primary lineage} › {discussion title}, one
         // trail per primary lineage (secondary tags excluded).
-        (new TagBreadcrumb($this->urlGenerator))->emitDiscussionTrails($properties, $discussionTags, $discussion->title);
+        $this->context->breadcrumb($discussion)->emitDiscussionTrails($properties, $discussionTags, $discussion->title);
 
         $properties->setSchemaJson('mainEntity', $mainEntity + $answerSchema);
 
