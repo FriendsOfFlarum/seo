@@ -107,6 +107,48 @@ class DiscussionCommentsTest extends ForumHtmlTestCase
     }
 
     /**
+     * Google: a Comment's `dateModified` is "the date and time the comment was
+     * last edited", so an edited reply carries its own edit time.
+     */
+    #[Test]
+    public function edited_reply_has_date_modified(): void
+    {
+        $this->seedThread();
+        $this->database()->table('posts')->where('id', 2)->update([
+            'created_at'     => Carbon::parse('2025-01-01 10:00:00'),
+            'edited_at'      => Carbon::parse('2025-01-02 11:30:00'),
+            'edited_user_id' => 3,
+        ]);
+
+        $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting');
+        $reply = $entry['comment'][0] ?? [];
+
+        $this->assertSame('2025-01-01T10:00:00+00:00', $reply['datePublished'] ?? null);
+        $this->assertSame('2025-01-02T11:30:00+00:00', $reply['dateModified'] ?? null);
+        $this->assertArrayNotHasKey('dateCreated', $reply);
+    }
+
+    /**
+     * A reply never edited has no `dateModified`; `dateCreated` (not in
+     * Google's forum guide) gives way to the required `datePublished`.
+     */
+    #[Test]
+    public function unedited_reply_has_neither_date_modified_nor_date_created(): void
+    {
+        $this->seedThread();
+
+        $entry = $this->findSchemaEntry($this->fetchForumHtml('/d/1-bake-bread'), 'DiscussionForumPosting');
+
+        $this->assertCount(2, $entry['comment'] ?? []);
+
+        foreach ($entry['comment'] as $reply) {
+            $this->assertNotEmpty($reply['datePublished'] ?? null);
+            $this->assertArrayNotHasKey('dateModified', $reply);
+            $this->assertArrayNotHasKey('dateCreated', $reply);
+        }
+    }
+
+    /**
      * A reply that has been deleted is hidden from readers, so its content must
      * not reach the page through the structured data either.
      */

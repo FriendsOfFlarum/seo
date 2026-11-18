@@ -68,4 +68,55 @@ class PageMetaExtensibilityTest extends ForumHtmlTestCase
         $this->assertSame('Overridden by a third-party listener.', $this->findMetaByName($html, 'description'));
         $this->assertSame('Overridden by a third-party listener.', $this->findMetaByProperty($html, 'og:description'));
     }
+
+    /**
+     * removeSchemaJson() drops a top-level key of the page's main node only:
+     * other graph nodes and the meta tags set for the same value stay, and a
+     * missing key is a no-op.
+     */
+    #[Test]
+    public function remove_schema_json_from_a_preparing_page_meta_listener(): void
+    {
+        $this->extend(
+            (new Extend\Event())->listen(PreparingPageMeta::class, function (PreparingPageMeta $event) {
+                $event->properties
+                    ->removeSchemaJson('description')
+                    ->removeSchemaJson('isAccessibleForFree')
+                    ->removeSchemaJson('name')
+                    ->removeSchemaJson('not-a-key');
+            })
+        );
+
+        $html = $this->fetchForumHtml('/');
+        $webPage = $this->findSchemaEntry($html, 'WebPage');
+        $webSite = $this->findSchemaEntry($html, 'WebSite');
+
+        $this->assertNotNull($webPage);
+        $this->assertArrayNotHasKey('description', $webPage);
+        $this->assertArrayNotHasKey('isAccessibleForFree', $webPage);
+        $this->assertSame('de', $webPage['inLanguage'] ?? null);
+        $this->assertSame('An example forum.', $webPage['publisher']['description'] ?? null);
+
+        // The WebSite node keeps its own `name`.
+        $this->assertSame('Example Forum', $webSite['name'] ?? null);
+
+        // Meta tags are not schema keys.
+        $this->assertSame('Overridden by a third-party listener.', $this->findMetaByName($html, 'description'));
+    }
+
+    #[Test]
+    public function a_later_set_restores_a_removed_schema_key(): void
+    {
+        $this->extend(
+            (new Extend\Event())->listen(PreparingPageMeta::class, function (PreparingPageMeta $event) {
+                $event->properties
+                    ->removeSchemaJson('isAccessibleForFree')
+                    ->setSchemaJson('isAccessibleForFree', false);
+            })
+        );
+
+        $webPage = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebPage');
+
+        $this->assertFalse($webPage['isAccessibleForFree'] ?? null);
+    }
 }

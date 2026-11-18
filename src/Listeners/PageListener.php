@@ -245,13 +245,22 @@ class PageListener
             ->setMetaTag('twitter:card', $twitterCardLargeSize ? 'summary_large_image' : 'summary');
 
         // Add application information
-        $this->setSchemaJson('publisher', [
-            '@type'       => 'Organization',
-            'name'        => $applicationName,
-            'url'         => $this->applicationUrl,
-            'description' => $applicationDescription,
-            'logo'        => $applicationLogo ? $this->applicationUrl.'/assets/'.$applicationLogo : null,
-        ]);
+        $publisher = [
+            '@type' => 'Organization',
+            'name'  => $applicationName,
+            'url'   => $this->applicationUrl,
+        ];
+
+        // Leave out a missing description or logo rather than emit ""/null.
+        if ($applicationDescription !== null && $applicationDescription !== '') {
+            $publisher['description'] = $applicationDescription;
+        }
+
+        if ($applicationLogo) {
+            $publisher['logo'] = $this->applicationUrl.'/assets/'.$applicationLogo;
+        }
+
+        $this->setSchemaJson('publisher', $publisher);
 
         // Set image
         if ($applicationSeoSocialMediaImage !== null) {
@@ -409,6 +418,17 @@ class PageListener
     public function setSchemaJson(string $key, mixed $value): self
     {
         $this->schemaArray[$key] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Remove a top-level key from the page's main schema node. A missing key
+     * is a no-op; breadcrumb and WebSite nodes are not affected.
+     */
+    public function removeSchemaJson(string $key): self
+    {
+        unset($this->schemaArray[$key]);
 
         return $this;
     }

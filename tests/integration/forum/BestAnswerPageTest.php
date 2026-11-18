@@ -177,6 +177,73 @@ class BestAnswerPageTest extends ForumHtmlTestCase
     }
 
     /**
+     * Question and Answer carry Google's `datePublished` in ISO 8601 (not a
+     * raw Carbon string), and no `dateCreated`, which the Q&A guide doesn't
+     * list. Nothing was edited, so there is no `dateModified` anywhere.
+     */
+    #[Test]
+    public function question_and_answers_use_iso_date_published(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion(['created_at' => Carbon::parse('2025-01-01 10:00:00')]);
+        // A stored SEO row whose creation time differs from the discussion's.
+        $this->prepareDatabase([
+            'seo_meta' => [
+                ['id' => 1, 'object_type' => 'discussions', 'object_id' => 1, 'auto_update_data' => 1, 'title' => 'How do I bake bread?', 'description' => null, 'created_at' => Carbon::parse('2025-03-01 00:00:00'), 'updated_at' => Carbon::parse('2025-03-01 00:00:00')],
+            ],
+        ]);
+        $this->database()->table('posts')->where('id', 2)->update(['created_at' => Carbon::parse('2025-01-01 11:00:00')]);
+        $this->database()->table('posts')->where('id', 3)->update(['created_at' => Carbon::parse('2025-01-01 12:00:00')]);
+
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+        $qaPage = $this->findSchemaEntry($html, 'QAPage');
+        $question = $qaPage['mainEntity'] ?? [];
+
+        $this->assertSame('2025-01-01T10:00:00+00:00', $question['datePublished'] ?? null);
+        $this->assertSame('2025-01-01T11:00:00+00:00', $question['acceptedAnswer']['datePublished'] ?? null);
+        $this->assertSame('2025-01-01T12:00:00+00:00', $question['suggestedAnswer'][0]['datePublished'] ?? null);
+
+        foreach ([$question, $question['acceptedAnswer'], $question['suggestedAnswer'][0]] as $node) {
+            $this->assertArrayNotHasKey('dateCreated', $node);
+            $this->assertArrayNotHasKey('dateModified', $node);
+        }
+
+        // The page's dates are the question's: not the stored SEO row's
+        // creation time, and its last activity is not a modification date.
+        $this->assertSame('2025-01-01T10:00:00+00:00', $qaPage['datePublished'] ?? null);
+        $this->assertSame('2025-01-01T10:00:00+00:00', $this->findMetaByProperty($html, 'article:published_time'));
+        $this->assertArrayNotHasKey('dateModified', $qaPage);
+        $this->assertNull($this->findMetaByProperty($html, 'article:modified_time'));
+    }
+
+    /**
+     * An edited answer carries its own edit time; an edited question carries
+     * the opening post's edit time, on the Question and on the page.
+     */
+    #[Test]
+    public function edited_answer_has_date_modified(): void
+    {
+        $this->setting('seo_post_crawler', '1');
+        $this->seedQnaDiscussion(['created_at' => Carbon::parse('2025-01-01 10:00:00')]);
+        $this->database()->table('posts')->where('id', 1)->update(['created_at' => Carbon::parse('2025-01-01 10:00:00'), 'edited_at' => Carbon::parse('2025-01-04 09:00:00'), 'edited_user_id' => 1]);
+        $this->database()->table('posts')->where('id', 2)->update([
+            'created_at'     => Carbon::parse('2025-01-01 11:00:00'),
+            'edited_at'      => Carbon::parse('2025-01-02 08:15:00'),
+            'edited_user_id' => 1,
+        ]);
+
+        $html = $this->fetchForumHtml('/d/1-how-do-i-bake-bread');
+        $qaPage = $this->findSchemaEntry($html, 'QAPage');
+        $question = $qaPage['mainEntity'] ?? [];
+
+        $this->assertSame('2025-01-02T08:15:00+00:00', $question['acceptedAnswer']['dateModified'] ?? null);
+        $this->assertArrayNotHasKey('dateModified', $question['suggestedAnswer'][0] ?? []);
+        $this->assertSame('2025-01-04T09:00:00+00:00', $question['dateModified'] ?? null);
+        $this->assertSame('2025-01-04T09:00:00+00:00', $qaPage['dateModified'] ?? null);
+        $this->assertSame('2025-01-04T09:00:00+00:00', $this->findMetaByProperty($html, 'article:modified_time'));
+    }
+
+    /**
      * A deleted answer author still yields a "[deleted]" Person (with a name,
      * no url) rather than omitting `author` — `author.name` is required, and an
      * omitted author trips "Missing field 'author' (in suggestedAnswer)".
