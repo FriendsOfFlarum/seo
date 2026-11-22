@@ -113,7 +113,8 @@ class IndexPageTest extends ForumHtmlTestCase
     {
         $html = $this->fetchForumHtml('/');
 
-        $this->assertNotEmpty($this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost/', $this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost/', $this->findMetaByProperty($html, 'og:url'));
     }
 
     #[Test]

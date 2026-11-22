@@ -65,8 +65,8 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     {
         $html = $this->fetchForumHtml('/tags');
 
-        $this->assertSame('http://localhost', $this->findCanonicalUrl($html));
-        $this->assertSame('http://localhost', $this->findMetaByProperty($html, 'og:url'));
+        $this->assertSame('http://localhost/', $this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost/', $this->findMetaByProperty($html, 'og:url'));
     }
 
     #[Test]
@@ -95,7 +95,7 @@ class NonDefaultIndexRouteTest extends ForumHtmlTestCase
     {
         $html = $this->fetchForumHtml('/');
 
-        $this->assertSame('http://localhost', $this->findCanonicalUrl($html));
+        $this->assertSame('http://localhost/', $this->findCanonicalUrl($html));
         $this->assertNotSame('http://localhost/all', $this->findMetaByProperty($html, 'og:url'));
     }
 }
