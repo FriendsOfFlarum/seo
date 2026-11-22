@@ -274,7 +274,7 @@ fof-seo:
           follow: Allow following links to different pages
           noarchive: Disable archiving page (noarchive)
           noimageindex: Disable indexing images on this page (noimageindex)
-          nosnippet: Disable text-snippes on page (nosnippet)
+          nosnippet: Disable text snippets on page (nosnippet)
 
       reading_time:
         label: Estimated reading time
