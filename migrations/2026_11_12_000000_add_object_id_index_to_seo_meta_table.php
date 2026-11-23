@@ -13,11 +13,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Builder;
 
 /*
- * Installs that ran an early version of the create migration have no index on
- * seo_meta: object_type was TEXT, MySQL refused the unique index, and the
- * hasTable() guard skipped every retry. Fresh installs already have
- * unique(object_id, object_type), so this only adds an index where none leads
- * with object_id. Non-unique, because those old tables may hold duplicates.
+ * Installs that ran an early version of the create migration have no usable
+ * index on seo_meta.object_id. object_type was TEXT then: MySQL rejected the
+ * unique (object_id, object_type) index, MariaDB 10.4+ built it as a long
+ * unique HASH index that cannot serve lookups, and the hasTable() guard
+ * skipped every retry. Non-unique, because old MySQL tables may hold duplicates.
  *
  * Indexes are read from information_schema rather than Doctrine DBAL 2, which
  * throws on MySQL functional indexes (their key parts have no column name).
@@ -28,7 +28,7 @@ return [
         $connection = $schema->getConnection();
 
         $covered = $connection->selectOne(
-            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND seq_in_index = 1 AND column_name = ?',
+            "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND seq_in_index = 1 AND column_name = ? AND index_type = 'BTREE'",
             [$connection->getTablePrefix().'seo_meta', 'object_id']
         );
 
