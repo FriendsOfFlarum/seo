@@ -18,17 +18,22 @@ use Illuminate\Database\Schema\Builder;
  * hasTable() guard skipped every retry. Fresh installs already have
  * unique(object_id, object_type), so this only adds an index where none leads
  * with object_id. Non-unique, because those old tables may hold duplicates.
+ *
+ * Indexes are read from information_schema rather than Doctrine DBAL 2, which
+ * throws on MySQL functional indexes (their key parts have no column name).
  */
 
 return [
     'up' => function (Builder $schema) {
         $connection = $schema->getConnection();
-        $indexes = $connection->getDoctrineSchemaManager()->listTableIndexes($connection->getTablePrefix().'seo_meta');
 
-        foreach ($indexes as $index) {
-            if ($index->hasColumnAtPosition('object_id')) {
-                return;
-            }
+        $covered = $connection->selectOne(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND seq_in_index = 1 AND column_name = ?',
+            [$connection->getTablePrefix().'seo_meta', 'object_id']
+        );
+
+        if ($covered) {
+            return;
         }
 
         $schema->table('seo_meta', function (Blueprint $table) {
@@ -37,9 +42,13 @@ return [
     },
     'down' => function (Builder $schema) {
         $connection = $schema->getConnection();
-        $indexes = $connection->getDoctrineSchemaManager()->listTableIndexes($connection->getTablePrefix().'seo_meta');
 
-        if (!array_key_exists(strtolower($connection->getTablePrefix().'seo_meta_object_id_index'), $indexes)) {
+        $exists = $connection->selectOne(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?',
+            [$connection->getTablePrefix().'seo_meta', $connection->getTablePrefix().'seo_meta_object_id_index']
+        );
+
+        if (!$exists) {
             return;
         }
 
