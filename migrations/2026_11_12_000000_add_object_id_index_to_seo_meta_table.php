@@ -18,6 +18,10 @@ use Illuminate\Database\Schema\Builder;
  * unique (object_id, object_type) index, MariaDB 10.4+ built it as a long
  * unique HASH index that cannot serve lookups, and the hasTable() guard
  * skipped every retry. Non-unique, because old MySQL tables may hold duplicates.
+ *
+ * The index gets a name of its own rather than Laravel's conventional one, so
+ * it cannot collide with a hand-made seo_meta_object_id_index and down() never
+ * drops an index this migration did not create.
  */
 
 return [
@@ -29,17 +33,21 @@ return [
             }
         }
 
-        $schema->table('seo_meta', function (Blueprint $table) {
-            $table->index(['object_id']);
+        $name = $schema->getConnection()->getTablePrefix().'seo_meta_object_id_lookup_index';
+
+        $schema->table('seo_meta', function (Blueprint $table) use ($name) {
+            $table->index(['object_id'], $name);
         });
     },
     'down' => function (Builder $schema) {
-        if (!$schema->hasIndex('seo_meta', $schema->getConnection()->getTablePrefix().'seo_meta_object_id_index')) {
+        $name = $schema->getConnection()->getTablePrefix().'seo_meta_object_id_lookup_index';
+
+        if (!$schema->hasIndex('seo_meta', $name)) {
             return;
         }
 
-        $schema->table('seo_meta', function (Blueprint $table) {
-            $table->dropIndex(['object_id']);
+        $schema->table('seo_meta', function (Blueprint $table) use ($name) {
+            $table->dropIndex($name);
         });
     },
 ];
