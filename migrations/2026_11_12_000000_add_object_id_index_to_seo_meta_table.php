@@ -13,17 +13,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Builder;
 
 /*
- * Installs that ran an early version of the create migration have no index on
- * seo_meta: object_type was TEXT, MySQL refused the unique index, and the
- * hasTable() guard skipped every retry. Fresh installs already have
- * unique(object_id, object_type), so this only adds an index where none leads
- * with object_id. Non-unique, because those old tables may hold duplicates.
+ * Installs that ran an early version of the create migration have no usable
+ * index on seo_meta.object_id. object_type was TEXT then: MySQL rejected the
+ * unique (object_id, object_type) index, MariaDB 10.4+ built it as a long
+ * unique HASH index that cannot serve lookups, and the hasTable() guard
+ * skipped every retry. Non-unique, because old MySQL tables may hold duplicates.
  */
 
 return [
     'up' => function (Builder $schema) {
         foreach ($schema->getIndexes('seo_meta') as $index) {
-            if (($index['columns'][0] ?? null) === 'object_id') {
+            // SQLite reports no type; its indexes are always B-trees.
+            if (($index['columns'][0] ?? null) === 'object_id' && ($index['type'] ?? 'btree') === 'btree') {
                 return;
             }
         }
