@@ -17,6 +17,7 @@ use Flarum\Http\RequestUtil;
 use Flarum\Http\SlugManager;
 use Flarum\Http\UrlGenerator;
 use Flarum\Tags\Tag;
+use Flarum\User\Guest;
 use FoF\Seo\Breadcrumb\Crumb;
 use FoF\Seo\Breadcrumb\TagBreadcrumb;
 use FoF\Seo\Indexability\IndexabilityPolicy;
@@ -103,10 +104,10 @@ class TagPage implements PageDriverInterface
         $tagBreadcrumb->pushAncestorsOf($properties->breadcrumb(), $tag);
         $properties->breadcrumb()->push(new Crumb($tag->name));
 
-        // List the tag's most recent public discussions as a schema.org ItemList.
+        // List the tag's most recent discussions as a schema.org ItemList: those a
+        // guest can see, whoever renders the page.
         $discussions = $tag->discussions()
-            ->where('is_private', false)
-            ->whereNull('hidden_at')
+            ->whereVisibleTo(new Guest())
             ->latest('last_posted_at')
             ->limit(20)
             ->get();

@@ -133,6 +133,51 @@ class TagPageTest extends ForumHtmlTestCase
         );
     }
 
+    /**
+     * The list is what a guest may see, whoever renders the page: a discussion
+     * also in a restricted tag must not leak its title.
+     */
+    #[Test]
+    #[DataProvider('viewerProvider')]
+    public function tag_item_list_only_lists_discussions_a_guest_can_see(?int $viewer): void
+    {
+        $now = Carbon::now();
+
+        $this->prepareDatabase([
+            Tag::class => [
+                ['id' => 4, 'name' => 'Staff', 'slug' => 'staff', 'position' => 3, 'is_restricted' => true, 'is_hidden' => false],
+            ],
+            Discussion::class => [
+                ['id' => 1, 'title' => 'Public topic', 'slug' => 'public-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
+                ['id' => 2, 'title' => 'Private topic', 'slug' => 'private-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now, 'is_private' => true],
+                ['id' => 3, 'title' => 'Staff only', 'slug' => 'staff-only', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now],
+                ['id' => 4, 'title' => 'Hidden topic', 'slug' => 'hidden-topic', 'user_id' => 1, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now, 'hidden_at' => $now],
+            ],
+            'discussion_tag' => [
+                ['discussion_id' => 1, 'tag_id' => 1],
+                ['discussion_id' => 2, 'tag_id' => 1],
+                ['discussion_id' => 3, 'tag_id' => 1],
+                ['discussion_id' => 3, 'tag_id' => 4],
+                ['discussion_id' => 4, 'tag_id' => 1],
+            ],
+        ]);
+
+        $collectionPage = $this->findSchemaEntry($this->fetchForumHtml('/t/announcements', $viewer), 'CollectionPage');
+
+        $this->assertSame(
+            ['Public topic'],
+            array_column($collectionPage['mainEntity']['itemListElement'] ?? [], 'name')
+        );
+    }
+
+    public static function viewerProvider(): array
+    {
+        return [
+            'guest' => [null],
+            'admin' => [1],
+        ];
+    }
+
     public static function tagRoutesProvider(): array
     {
         return [
