@@ -124,6 +124,10 @@ return [
           (new SEO())
             ->addExtender('fof_user_directory', SeoPage\UserDirectoryPage::class),
       ])
+      ->whenExtensionEnabled('flarum-mcp', fn () => [
+          (new \Flarum\Mcp\Extend\Mcp())
+            ->describe('seoMeta', 'Per-page SEO overrides (title, meta description, keywords, robots directives, Open Graph and Twitter titles, descriptions and images) for a discussion, tag or fof/pages page, identified by objectType (its table, such as discussions) and objectId. Only users who may configure SEO can read them.'),
+      ])
       ->whenExtensionEnabled('fof-merge-discussions', fn () => [
           (new Extend\Event())
             ->subscribe(Subscribers\MergeDiscussionsSubscriber::class),
