@@ -145,6 +145,22 @@ class SiteImageTest extends ForumHtmlTestCase
     }
 
     #[Test]
+    public function a_preparing_page_meta_listener_replacing_the_app_icon_gets_the_configured_card(): void
+    {
+        $this->uploadAppIcon();
+        $this->extend(
+            (new Extend\Event())->listen(PreparingPageMeta::class, function (PreparingPageMeta $event) {
+                $event->properties->setImage('https://example.com/landscape.png');
+            })
+        );
+
+        $html = $this->fetchForumHtml('/');
+
+        $this->assertSame('https://example.com/landscape.png', $this->findMetaByName($html, 'twitter:image'));
+        $this->assertSame('summary_large_image', $this->findMetaByName($html, 'twitter:card'));
+    }
+
+    #[Test]
     public function a_preparing_page_meta_listener_can_choose_the_card_for_the_app_icon_fallback(): void
     {
         $this->uploadAppIcon();

@@ -41,8 +41,7 @@ class SiteImages
     }
 
     /**
-     * The 512px square app icon, the only one of core's icons and logos large
-     * enough for social previews and the Organization logo.
+     * The 512px square app icon: unlike the logo and favicon, its size is known.
      */
     public function appIconUrl(): ?string
     {

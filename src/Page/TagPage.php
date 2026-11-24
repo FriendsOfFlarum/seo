@@ -104,8 +104,7 @@ class TagPage implements PageDriverInterface
         $tagBreadcrumb->pushAncestorsOf($properties->breadcrumb(), $tag);
         $properties->breadcrumb()->push(new Crumb($tag->name));
 
-        // List the tag's most recent discussions as a schema.org ItemList: those a
-        // guest can see, whoever renders the page.
+        // As a guest sees them: a signed-in viewer must not widen what crawlers get.
         $discussions = $tag->discussions()
             ->whereVisibleTo(new Guest())
             ->latest('last_posted_at')

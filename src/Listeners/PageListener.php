@@ -62,8 +62,7 @@ class PageListener
     protected array $metaProperty = [];
 
     /**
-     * The app icon, when the forum has no social image and it was set as the
-     * social image fallback; compared with what the page ends up with.
+     * The app icon, when it is the social image only because the forum has none.
      */
     private ?string $appIconFallback = null;
 
@@ -233,7 +232,7 @@ class PageListener
         $applicationDescription = $this->settings->get('forum_description');
         $socialImage = $this->siteImages->socialImageUrl();
         $appIcon = $this->siteImages->appIconUrl();
-        // Core stores an uploaded logo 90px tall, below Google's 112px minimum.
+        // Core stores an uploaded logo 90px tall by default, below Google's 112px minimum.
         $logo = $appIcon ?? $this->siteImages->logoUrl();
         $twitterCardLargeSize = $this->settings->get('seo_twitter_card_size', 'large') === 'large';
 
@@ -267,8 +266,8 @@ class PageListener
 
         $this->setSchemaJson('publisher', $publisher);
 
-        // Not the logo or favicon: core stores them smaller than social platforms
-        // accept (a 90px-tall logo, a 64px favicon), or as .ico/SVG.
+        // Not the logo or favicon: by default core stores them smaller than social
+        // platforms accept (a 90px-tall logo, a 64px favicon), or as .ico/SVG.
         if ($socialImage !== null) {
             $this->setImage($socialImage);
         } elseif ($appIcon !== null) {
@@ -309,9 +308,13 @@ class PageListener
             $this->events->dispatch(new BuildingBreadcrumb($trail, $serverRequest));
         }
 
-        // A large card crops the square app icon to 2:1. Decided before the event
-        // so its listeners can still choose the card.
-        if ($this->appIconFallback !== null && ($this->flarumDocument->meta['twitter:image'] ?? null) === $this->appIconFallback) {
+        // A large card crops the square app icon to 2:1. Set before the event so
+        // listeners can choose another card, and taken back if one replaced the
+        // image without choosing a card.
+        $configuredCard = $this->flarumDocument->meta['twitter:card'] ?? null;
+        $iconCard = $this->appIconFallback !== null && ($this->flarumDocument->meta['twitter:image'] ?? null) === $this->appIconFallback;
+
+        if ($iconCard) {
             $this->setMetaTag('twitter:card', 'summary');
         }
 
@@ -319,6 +322,14 @@ class PageListener
         $this->events->dispatch(
             new PreparingPageMeta(new SeoProperties($this), $this->flarumDocument, $serverRequest)
         );
+
+        if ($iconCard
+            && $configuredCard !== null
+            && ($this->flarumDocument->meta['twitter:card'] ?? null) === 'summary'
+            && ($this->flarumDocument->meta['twitter:image'] ?? null) !== $this->appIconFallback
+        ) {
+            $this->setMetaTag('twitter:card', $configuredCard);
+        }
 
         // Open Graph article dates only belong on article-type pages; emit them
         // from the recorded schema.org dates when this page is an article.

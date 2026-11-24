@@ -15,10 +15,8 @@ export default class SettingsPage extends ExtensionPage {
   oninit(vnode: Mithril.Vnode<ExtensionPageAttrs, this>) {
     super.oninit(vnode);
 
-    // Links from before the page had native tabs name the tab `?page=`. The page
-    // is keyed on its route params except `tab`, so it is reopened with `tab`
-    // before anything is edited: a later tab switch would drop `page` and lose
-    // unsaved changes.
+    // Old links name the tab `?page=`. Core keys the page on every route param
+    // but `tab`, so a later tab switch would remount it and lose unsaved changes.
     const page = m.route.param('page');
     if (!this.attrs.tab && typeof page === 'string') {
       m.route.set(app.route('extension', { id: this.extension.id, tab: page }), undefined, { replace: true });
@@ -26,9 +24,7 @@ export default class SettingsPage extends ExtensionPage {
   }
 
   /**
-   * Core's reset deletes every setting the extension registered; the forum
-   * description belongs to the Basics page and is edited here only for
-   * convenience.
+   * Leaves the forum description, which belongs to the Basics page, out of the reset.
    */
   settingsFormControls(): ItemList<Mithril.Children> {
     const items = super.settingsFormControls();

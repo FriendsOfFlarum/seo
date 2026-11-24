@@ -113,7 +113,6 @@ export default [
           large: app.translator.trans('fof-seo.admin.settings.twitter_card.option_large'),
           summary: app.translator.trans('fof-seo.admin.settings.twitter_card.option_summary'),
         },
-        default: 'large',
         section: 'social',
       }),
       70
@@ -177,8 +176,7 @@ export default [
       20,
       'links'
     )
-    // Custom settings aren't in the settings registry, so the admin search is
-    // told about them here.
+    // The admin search can't read a label or help text out of a custom setting.
     .generalIndexItems('settings', () => [
       indexItem(
         'social-media-image',
@@ -187,7 +185,10 @@ export default [
         'fof-seo.admin.settings.social_media_image.help_usage'
       ),
       indexItem('crawl', 'indexing', 'fof-seo.admin.settings.crawl.heading', 'fof-seo.admin.settings.crawl.help'),
-      indexItem('noindex-tags', 'indexing', 'fof-seo.admin.settings.indexing.tags_label', 'fof-seo.admin.settings.indexing.tags_help'),
+      {
+        ...indexItem('noindex-tags', 'indexing', 'fof-seo.admin.settings.indexing.tags_label', 'fof-seo.admin.settings.indexing.tags_help'),
+        visible: () => isExtensionEnabled('flarum-tags'),
+      },
       indexItem('nofollow', 'links', 'fof-seo.admin.settings.nofollow.heading', 'fof-seo.admin.settings.nofollow.help_dofollow'),
     ])
     .permission(
