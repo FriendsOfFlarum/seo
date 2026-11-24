@@ -65,12 +65,7 @@ export default class HealthCheck extends Page {
       <tr>
         <td>
           {app.translator.trans('fof-seo.admin.pages.health.checks.description.label')}
-          {this.notPassedError(
-            passed,
-            reason,
-            app.translator.trans('fof-seo.admin.pages.health.checks.description.button'),
-            this.getSettingUrl('description')
-          )}
+          {this.notPassedError(passed, reason, app.translator.trans('fof-seo.admin.pages.health.checks.description.button'), this.settingsUrl())}
         </td>
         {this.passed(passed)}
       </tr>
@@ -86,12 +81,7 @@ export default class HealthCheck extends Page {
       <tr>
         <td>
           {app.translator.trans('fof-seo.admin.pages.health.checks.keywords.label')}
-          {this.notPassedError(
-            passed,
-            reason,
-            app.translator.trans('fof-seo.admin.pages.health.checks.keywords.button'),
-            this.getSettingUrl('keywords')
-          )}
+          {this.notPassedError(passed, reason, app.translator.trans('fof-seo.admin.pages.health.checks.keywords.button'), this.settingsUrl())}
         </td>
         {this.passed(passed)}
       </tr>
@@ -111,7 +101,7 @@ export default class HealthCheck extends Page {
             app.translator.trans('fof-seo.admin.pages.health.checks.ssl.button'),
             app.route('extension', {
               id: 'fof-seo',
-              page: 'ssl',
+              tab: 'ssl',
             })
           )}
         </td>
@@ -131,7 +121,7 @@ export default class HealthCheck extends Page {
             passed,
             app.translator.trans('fof-seo.admin.pages.health.checks.crawl.reason'),
             app.translator.trans('fof-seo.admin.pages.health.checks.crawl.button'),
-            this.getSettingUrl('discussion-post')
+            this.settingsUrl()
           )}
         </td>
         {this.passed(passed)}
@@ -151,7 +141,7 @@ export default class HealthCheck extends Page {
             passed,
             app.translator.trans('fof-seo.admin.pages.health.checks.social_media.reason'),
             app.translator.trans('fof-seo.admin.pages.health.checks.social_media.button'),
-            this.getSettingUrl('social-media')
+            this.settingsUrl()
           )}
         </td>
         {this.passed(passed)}
@@ -173,7 +163,7 @@ export default class HealthCheck extends Page {
             app.translator.trans('fof-seo.admin.pages.health.checks.sitemap.button'),
             app.route('extension', {
               id: 'fof-seo',
-              page: 'sitemap',
+              tab: 'sitemap',
             })
           )}
         </td>
@@ -196,7 +186,7 @@ export default class HealthCheck extends Page {
             app.translator.trans('fof-seo.admin.pages.health.checks.robots.button'),
             app.route('extension', {
               id: 'fof-seo',
-              page: 'sitemap',
+              tab: 'sitemap',
             })
           )}
         </td>
@@ -227,7 +217,7 @@ export default class HealthCheck extends Page {
             app.translator.trans('fof-seo.admin.pages.health.checks.search_engines.button'),
             app.route('extension', {
               id: 'fof-seo',
-              page: 'search-engines',
+              tab: 'search-engines',
             })
           )}
         </td>
@@ -275,18 +265,8 @@ export default class HealthCheck extends Page {
     );
   }
 
-  getSettingUrl(setting: string = ''): string {
-    if (setting === '') {
-      return app.route('extension', {
-        id: 'fof-seo',
-      });
-    }
-
-    return app.route('extension', {
-      id: 'fof-seo',
-      page: 'settings',
-      setting: setting,
-    });
+  settingsUrl(): string {
+    return app.route('extension', { id: 'fof-seo', tab: 'settings' });
   }
 
   passed(passed: PassState): Mithril.Children {
