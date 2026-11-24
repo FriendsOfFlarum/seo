@@ -67,6 +67,13 @@ class DiscussionContext
     public function firstPost(Discussion $discussion, bool $likes, bool $gamification): ?Post
     {
         if (!$discussion->relationLoaded('firstPost')) {
+            // A deleted opening post leaves no key to look up.
+            if ($discussion->first_post_id === null) {
+                $discussion->setRelation('firstPost', null);
+
+                return null;
+            }
+
             $counts = [];
             if ($likes) {
                 $counts[] = 'likes';

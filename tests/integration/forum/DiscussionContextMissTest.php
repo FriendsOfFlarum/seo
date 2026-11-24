@@ -11,7 +11,10 @@
 
 namespace FoF\Seo\Tests\integration\forum;
 
+use Carbon\Carbon;
+use Flarum\Discussion\Discussion;
 use Flarum\Http\RequestUtil;
+use Flarum\Post\Post;
 use Flarum\User\Guest;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\Page\DiscussionBestAnswerPage;
@@ -48,5 +51,26 @@ class DiscussionContextMissTest extends ForumHtmlTestCase
             $driver->handle(clone $request, $properties);
         }
         $this->assertCount(3, $lookups(), 'Each distinct request must resolve afresh');
+    }
+
+    #[Test]
+    public function a_deleted_opening_post_is_not_looked_up(): void
+    {
+        $this->extension('flarum-likes', 'fof-seo');
+        $now = Carbon::parse('2025-01-01 00:00:00');
+        $this->prepareDatabase([
+            Discussion::class => [['id' => 1, 'title' => 'Topic', 'slug' => 'topic', 'user_id' => 1, 'first_post_id' => null, 'last_post_id' => 2, 'comment_count' => 1, 'created_at' => $now, 'last_posted_at' => $now]],
+            Post::class       => [['id' => 2, 'discussion_id' => 1, 'number' => 2, 'user_id' => 1, 'type' => 'comment', 'content' => '<t><p>Reply body.</p></t>', 'created_at' => $now]],
+        ]);
+        $queries = [];
+        $this->app()->getContainer()->make('events')->listen(QueryExecuted::class, function (QueryExecuted $event) use (&$queries) {
+            $queries[] = $event->sql;
+        });
+
+        $response = $this->send($this->request('GET', '/d/1-topic'));
+
+        $this->assertSame(200, $response->getStatusCode());
+        $postId = $this->database()->getQueryGrammar()->wrap('posts.id').' is null';
+        $this->assertSame([], array_values(array_filter($queries, fn ($sql) => str_contains($sql, $postId))));
     }
 }
