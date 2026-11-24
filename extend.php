@@ -63,7 +63,10 @@ return [
     // post crawler is enabled. Rendering each reply is the dominant cost on
     // page load, so bound it; Google only needs the comments shown on the page.
     (new Extend\Settings())
-      ->default('seo_post_crawler_limit', 100),
+      ->default('seo_post_crawler_limit', 100)
+      ->default('forum_keywords', '')
+      ->default('seo_twitter_card_size', 'large')
+      ->default('seo_noindex_profiles', false),
 
     // FormatLinks sets rel/target on URL tags at render time. Core's
     // Formatter::configureExternalLinks() is what copies them onto the
