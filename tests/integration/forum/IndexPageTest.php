@@ -80,8 +80,7 @@ class IndexPageTest extends ForumHtmlTestCase
     #[Test]
     public function og_image_carries_alt_text_describing_the_page(): void
     {
-        // og:image is emitted once an image source (here, the logo) is configured.
-        $this->setting('logo_path', 'logo.png');
+        $this->setting('seo_social_media_image_path', 'site-image.png');
 
         $html = $this->fetchForumHtml('/');
 

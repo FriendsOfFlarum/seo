@@ -21,9 +21,9 @@ use FoF\Seo\Event\PreparingPageMeta;
 use FoF\Seo\Page\PageManager;
 use FoF\Seo\SeoMeta\SeoMeta;
 use FoF\Seo\SeoProperties;
+use FoF\Seo\SiteImages;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -61,7 +61,11 @@ class PageListener
      */
     protected array $metaProperty = [];
 
-    protected Cloud $assets;
+    /**
+     * The app icon, when it is the page's og:image only because the forum has
+     * no social image of its own.
+     */
+    private ?string $appIconFallback = null;
 
     public function __construct(
         protected readonly SettingsRepositoryInterface $settings,
@@ -69,9 +73,9 @@ class PageListener
         protected readonly PageManager $pageManager,
         protected readonly Dispatcher $events,
         protected readonly Container $container,
+        protected readonly SiteImages $siteImages,
     ) {
         $this->applicationUrl = $url->to('forum')->base();
-        $this->assets = $container->make('filesystem')->disk('flarum-assets');
     }
 
     /**
@@ -227,9 +231,9 @@ class PageListener
     {
         $applicationName = $this->settings->get('forum_title');
         $applicationDescription = $this->settings->get('forum_description');
-        $applicationFavicon = $this->settings->get('favicon_path');
-        $applicationLogo = $this->settings->get('logo_path');
-        $applicationSeoSocialMediaImage = $this->settings->get('seo_social_media_image_path');
+        $socialImage = $this->siteImages->socialImageUrl();
+        $appIcon = $this->siteImages->appIconUrl();
+        $logo = $this->siteImages->logoUrl() ?? $appIcon;
         $twitterCardLargeSize = $this->settings->get('seo_twitter_card_size', 'large') === 'large';
 
         $this
@@ -256,23 +260,19 @@ class PageListener
             $publisher['description'] = $applicationDescription;
         }
 
-        if ($applicationLogo) {
-            $publisher['logo'] = $this->applicationUrl.'/assets/'.$applicationLogo;
+        if ($logo !== null) {
+            $publisher['logo'] = $logo;
         }
 
         $this->setSchemaJson('publisher', $publisher);
 
-        // Set image
-        if ($applicationSeoSocialMediaImage !== null) {
-            $this->setImage($this->assets->url($applicationSeoSocialMediaImage));
-        }
-        // Fallback to the logo
-        elseif ($applicationLogo !== null) {
-            $this->setImage($this->assets->url($applicationLogo));
-        }
-        // Fallback to the favicon
-        elseif ($applicationFavicon !== null) {
-            $this->setImage($this->assets->url($applicationFavicon));
+        // The logo and favicon are never the social image: core stores them far
+        // below the ~200px platforms require, or as .ico/SVG, which they reject.
+        if ($socialImage !== null) {
+            $this->setImage($socialImage);
+        } elseif ($appIcon !== null) {
+            $this->setImage($appIcon);
+            $this->appIconFallback = $appIcon;
         }
     }
 
@@ -318,6 +318,11 @@ class PageListener
         $documentLanguage = $this->schemaArray['inLanguage'] ?? $locale;
         if ($documentLanguage !== null && !isset($this->metaProperty['og:locale'])) {
             $this->setMetaPropertyTag('og:locale', $this->normaliseLocale($documentLanguage));
+        }
+
+        // A large card crops the square app icon to 2:1.
+        if ($this->appIconFallback !== null && ($this->metaProperty['og:image'] ?? null) === $this->appIconFallback) {
+            $this->setMetaTag('twitter:card', 'summary');
         }
 
         // Describe the social image for preview cards / accessibility, unless set
