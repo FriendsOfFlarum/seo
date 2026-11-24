@@ -88,13 +88,34 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
 
         $this->assertSame('SearchAction', $website['potentialAction']['@type'] ?? null);
         $this->assertSame(
-            'http://localhost/?q={search_term_string}',
+            'http://localhost/opensearch/search?q={search_term_string}',
             $website['potentialAction']['target'] ?? null
         );
         $this->assertSame(
             'required name=search_term_string',
             $website['potentialAction']['query-input'] ?? null
         );
+    }
+
+    /**
+     * `/?q=` only searches when the discussion list is the homepage; core's
+     * OpenSearch route sends the query to wherever the list is.
+     */
+    #[Test]
+    public function search_action_target_reaches_the_discussion_list_when_it_is_not_the_homepage(): void
+    {
+        $this->setting('default_route', '/tags');
+
+        $website = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebSite');
+        $target = str_replace('{search_term_string}', 'hello', $website['potentialAction']['target'] ?? '');
+        parse_str((string) parse_url($target, PHP_URL_QUERY), $query);
+
+        $response = $this->send(
+            $this->request('GET', (string) parse_url($target, PHP_URL_PATH))->withQueryParams($query)
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('http://localhost/all?q=hello', $response->getHeaderLine('Location'));
     }
 
     #[Test]

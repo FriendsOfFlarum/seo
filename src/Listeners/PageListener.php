@@ -69,7 +69,7 @@ class PageListener
 
     public function __construct(
         protected readonly SettingsRepositoryInterface $settings,
-        UrlGenerator $url,
+        protected readonly UrlGenerator $url,
         protected readonly PageManager $pageManager,
         protected readonly Dispatcher $events,
         protected readonly Container $container,
@@ -400,7 +400,9 @@ class PageListener
             'url'             => $this->applicationUrl.'/',
             'potentialAction' => [
                 '@type'       => 'SearchAction',
-                'target'      => $this->applicationUrl.'/?q={search_term_string}',
+                // Core's OpenSearch route redirects to the discussion list, which
+                // is only at `/` when it is the homepage.
+                'target'      => $this->url->to('forum')->route('opensearch.search').'?q={search_term_string}',
                 'query-input' => 'required name=search_term_string',
             ],
         ];
