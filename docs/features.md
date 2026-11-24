@@ -1,18 +1,19 @@
 # Features & configuration
 
 Open the extension's settings from *Administration → Extensions → FoF SEO*. The
-page is organised into a few sections, reachable from the menu at the top:
+page is organised into tabs:
 
 - **Health check** — an audit of your SEO setup (see below).
 - **SEO settings** — the main configuration fields.
 - **Sitemap information** — guidance on installing [fof/sitemap](sitemap-and-robots.md).
 - **Search engine information** — a guide to submitting your site to Google, Bing, Yandex and Yahoo.
 - **Set up SSL** — why a secure connection matters and how to enable it.
+- **Permissions** — who may configure SEO.
 
 ## Health check
 
 The health check lists each SEO technique and shows whether it passes. Items that
-need attention link straight to the relevant setting. It checks, among other
+need attention link to the tab that fixes them. It checks, among other
 things, that you have a forum description and keywords, a secure (HTTPS)
 connection, a social-media image, a sitemap and robots.txt
 ([via fof/sitemap](sitemap-and-robots.md)), and that you've registered with search
@@ -28,7 +29,7 @@ of months.
 | **Forum description** | The site-wide `description` / `og:description` / `twitter:description`. (Shared with Flarum core's basic settings.) |
 | **Forum keywords** | The site-wide `keywords` meta tag. Separate keywords with commas. |
 | **Twitter card size** | Whether shared links render as a large image card (`summary_large_image`) or a small summary card (`summary`). |
-| **Social media image** | The image used when a page is shared on Facebook, Twitter/X, Reddit, etc. A square 1200×1200 image is recommended; otherwise a 1200×630 landscape image. Falls back to your logo, then favicon. |
+| **Social media image** | The image used when a page is shared on Facebook, Twitter/X, Reddit, etc. A 1200×630 landscape PNG or JPEG is recommended. Without one, the forum's app icon (*Appearance*) is used with a small `summary` card on X; without an app icon, pages have no social image. The logo and favicon are never used: Flarum stores them far smaller than social platforms accept, or as `.ico`/SVG. |
 | **Discussion post crawl settings** | Whether search engines index only the first post of a discussion (default) or all posts. See below. |
 | **De-index profile pages** | When enabled, user profile pages emit `noindex, follow` so thin profile pages are kept out of search results, and are left out of the [sitemap](sitemap-and-robots.md). See below. |
 | **De-index tags** | Discussions in chosen tags — and those tags' own listing pages — emit `noindex, follow` and are left out of the [sitemap](sitemap-and-robots.md). Requires [flarum/tags](https://github.com/flarum/tags). See below. |

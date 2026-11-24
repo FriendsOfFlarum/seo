@@ -104,9 +104,13 @@ class SchemaJsonLdTest extends ForumHtmlTestCase
     #[Test]
     public function search_action_target_reaches_the_discussion_list_when_it_is_not_the_homepage(): void
     {
+        $this->extension('flarum-tags');
         $this->setting('default_route', '/tags');
 
-        $website = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebSite');
+        $html = $this->fetchForumHtml('/');
+        $this->assertNotNull($this->findSchemaEntry($html, 'CollectionPage'), 'precondition: the tags page is the homepage');
+
+        $website = $this->findSchemaEntry($html, 'WebSite');
         $target = str_replace('{search_term_string}', 'hello', $website['potentialAction']['target'] ?? '');
         parse_str((string) parse_url($target, PHP_URL_QUERY), $query);
 

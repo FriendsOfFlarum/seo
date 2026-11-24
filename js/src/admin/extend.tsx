@@ -4,6 +4,7 @@ import Button from 'flarum/common/components/Button';
 import Link from 'flarum/common/components/Link';
 import UploadImageButton from 'flarum/common/components/UploadImageButton';
 import extractText from 'flarum/common/utils/extractText';
+import isExtensionEnabled from 'flarum/admin/utils/isExtensionEnabled';
 import type Mithril from 'mithril';
 import SettingsPage from './Pages/SettingsPage';
 import NoindexTagsSetting from './components/Forms/NoindexTagsSetting';
@@ -17,13 +18,13 @@ const field = (label: Mithril.Children, help: Mithril.Children, control?: Mithri
   </div>
 );
 
-const tagsEnabled = (): boolean => {
-  try {
-    return JSON.parse(app.data.settings.extensions_enabled || '[]').includes('flarum-tags');
-  } catch {
-    return false;
-  }
-};
+const indexItem = (id: string, section: string, label: string, help: string) => ({
+  id: `fof-seo-${id}`,
+  section,
+  label: extractText(app.translator.trans(label)),
+  help: extractText(app.translator.trans(help)),
+  link: app.route('extension', { id: 'fof-seo', tab: 'settings' }),
+});
 
 export default [
   new Extend.Admin() //
@@ -141,7 +142,7 @@ export default [
     )
     .customSetting(
       () =>
-        tagsEnabled()
+        isExtensionEnabled('flarum-tags')
           ? field(
               app.translator.trans('fof-seo.admin.settings.indexing.tags_label'),
               app.translator.trans('fof-seo.admin.settings.indexing.tags_help'),
@@ -176,6 +177,19 @@ export default [
       20,
       'links'
     )
+    // Custom settings aren't in the settings registry, so the admin search is
+    // told about them here.
+    .generalIndexItems('settings', () => [
+      indexItem(
+        'social-media-image',
+        'social',
+        'fof-seo.admin.settings.social_media_image.heading',
+        'fof-seo.admin.settings.social_media_image.help_usage'
+      ),
+      indexItem('crawl', 'indexing', 'fof-seo.admin.settings.crawl.heading', 'fof-seo.admin.settings.crawl.help'),
+      indexItem('noindex-tags', 'indexing', 'fof-seo.admin.settings.indexing.tags_label', 'fof-seo.admin.settings.indexing.tags_help'),
+      indexItem('nofollow', 'links', 'fof-seo.admin.settings.nofollow.heading', 'fof-seo.admin.settings.nofollow.help_dofollow'),
+    ])
     .permission(
       () => ({
         icon: 'fas fa-search',

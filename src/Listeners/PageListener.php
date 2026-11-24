@@ -62,8 +62,8 @@ class PageListener
     protected array $metaProperty = [];
 
     /**
-     * The app icon, when it is the page's og:image only because the forum has
-     * no social image of its own.
+     * The app icon, when the forum has no social image and it was set as the
+     * social image fallback; compared with what the page ends up with.
      */
     private ?string $appIconFallback = null;
 
@@ -233,7 +233,8 @@ class PageListener
         $applicationDescription = $this->settings->get('forum_description');
         $socialImage = $this->siteImages->socialImageUrl();
         $appIcon = $this->siteImages->appIconUrl();
-        $logo = $this->siteImages->logoUrl() ?? $appIcon;
+        // Core stores an uploaded logo 90px tall, below Google's 112px minimum.
+        $logo = $appIcon ?? $this->siteImages->logoUrl();
         $twitterCardLargeSize = $this->settings->get('seo_twitter_card_size', 'large') === 'large';
 
         $this
@@ -266,12 +267,16 @@ class PageListener
 
         $this->setSchemaJson('publisher', $publisher);
 
-        // The logo and favicon are never the social image: core stores them far
-        // below the ~200px platforms require, or as .ico/SVG, which they reject.
+        // Not the logo or favicon: core stores them smaller than social platforms
+        // accept (a 90px-tall logo, a 64px favicon), or as .ico/SVG.
         if ($socialImage !== null) {
             $this->setImage($socialImage);
         } elseif ($appIcon !== null) {
-            $this->setImage($appIcon);
+            // Only as the social image: structured data guidelines exclude icons
+            // from a page's `image`.
+            $this
+                ->setMetaPropertyTag('og:image', $appIcon)
+                ->setMetaTag('twitter:image', $appIcon);
             $this->appIconFallback = $appIcon;
         }
     }
@@ -304,6 +309,12 @@ class PageListener
             $this->events->dispatch(new BuildingBreadcrumb($trail, $serverRequest));
         }
 
+        // A large card crops the square app icon to 2:1. Decided before the event
+        // so its listeners can still choose the card.
+        if ($this->appIconFallback !== null && ($this->flarumDocument->meta['twitter:image'] ?? null) === $this->appIconFallback) {
+            $this->setMetaTag('twitter:card', 'summary');
+        }
+
         // Let extensions read and modify the prepared metadata before it is written.
         $this->events->dispatch(
             new PreparingPageMeta(new SeoProperties($this), $this->flarumDocument, $serverRequest)
@@ -318,11 +329,6 @@ class PageListener
         $documentLanguage = $this->schemaArray['inLanguage'] ?? $locale;
         if ($documentLanguage !== null && !isset($this->metaProperty['og:locale'])) {
             $this->setMetaPropertyTag('og:locale', $this->normaliseLocale($documentLanguage));
-        }
-
-        // A large card crops the square app icon to 2:1.
-        if ($this->appIconFallback !== null && ($this->metaProperty['og:image'] ?? null) === $this->appIconFallback) {
-            $this->setMetaTag('twitter:card', 'summary');
         }
 
         // Describe the social image for preview cards / accessibility, unless set

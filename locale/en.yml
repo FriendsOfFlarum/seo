@@ -179,7 +179,7 @@ fof-seo:
 
           social_media:
             label: Set Up a social media image
-            reason: You did not set a social media image for your forum. It is recommended to set one. Your favicon will now be used as preview on social media.
+            reason: You did not set a social media image for your forum. It is recommended to set one. Without it, social media previews use the forum's app icon if one is uploaded, and no image otherwise.
             button: Update image
 
           sitemap:

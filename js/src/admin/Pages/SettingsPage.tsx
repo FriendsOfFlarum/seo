@@ -9,19 +9,53 @@ import RegisterToSearchEngines from './RegisterToSearchEngines';
 import SSLPage from './SSLPage';
 import Sitemap from './Sitemap';
 
+const CORE_SETTINGS = ['forum_description'];
+
 export default class SettingsPage extends ExtensionPage {
   oninit(vnode: Mithril.Vnode<ExtensionPageAttrs, this>) {
     super.oninit(vnode);
 
-    // Links from before the page had native tabs name the tab `?page=`.
+    // Links from before the page had native tabs name the tab `?page=`. The page
+    // is keyed on its route params except `tab`, so it is reopened with `tab`
+    // before anything is edited: a later tab switch would drop `page` and lose
+    // unsaved changes.
     const page = m.route.param('page');
-    if (!this.attrs.tab && typeof page === 'string') this.activePageTab = page;
+    if (!this.attrs.tab && typeof page === 'string') {
+      m.route.set(app.route('extension', { id: this.extension.id, tab: page }), undefined, { replace: true });
+    }
   }
 
   /**
-   * The health check first, then the settings, the informational pages and
-   * core's Permissions tab.
+   * Core's reset deletes every setting the extension registered; the forum
+   * description belongs to the Basics page and is edited here only for
+   * convenience.
    */
+  settingsFormControls(): ItemList<Mithril.Children> {
+    const items = super.settingsFormControls();
+
+    if (items.has('reset')) {
+      const settings = (app.registry.getSettings(this.extension.id) || [])
+        .filter((e): e is Exclude<typeof e, () => Mithril.Children> => typeof e !== 'function')
+        .filter((e) => !CORE_SETTINGS.includes(e.setting))
+        .map((e) => ({ key: e.setting, label: e.label }));
+
+      items.setContent(
+        'reset',
+        this.resetButton(
+          settings,
+          app.translator.trans(
+            'core.admin.extension.reset_settings.title_extension',
+            { extensionTitle: this.extension.extra['flarum-extension'].title },
+            true
+          ),
+          this.extension.id
+        )
+      );
+    }
+
+    return items;
+  }
+
   pageTabItems(): ItemList<TabItem> {
     const items = super.pageTabItems();
 

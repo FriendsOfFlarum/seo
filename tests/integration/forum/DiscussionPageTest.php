@@ -504,10 +504,6 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertSame('https://example.com/custom-social.png', $this->findMetaByName($html, 'twitter:image'));
     }
 
-    /**
-     * The square card is only for the forum's app icon: a discussion's own image
-     * keeps the configured large card.
-     */
     #[Test]
     public function discussion_image_keeps_the_large_card_when_the_app_icon_is_the_fallback(): void
     {

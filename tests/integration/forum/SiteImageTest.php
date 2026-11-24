@@ -12,6 +12,7 @@
 namespace FoF\Seo\Tests\integration\forum;
 
 use Flarum\Extend;
+use FoF\Seo\Event\PreparingPageMeta;
 use FoF\Seo\Tests\integration\ForumHtmlTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -113,16 +114,49 @@ class SiteImageTest extends ForumHtmlTestCase
         $this->assertSame('http://localhost/assets/icon-512-abc.png', $this->publisher($html)['logo'] ?? null);
     }
 
+    /**
+     * Core stores an uploaded logo 90px tall, below Google's 112px minimum for
+     * an Organization logo; the app icon is 512px square.
+     */
     #[Test]
-    public function the_logo_wins_over_the_app_icon_as_publisher_logo(): void
+    public function the_app_icon_wins_over_the_logo_as_publisher_logo(): void
     {
         $this->uploadAppIcon();
         $this->setting('logo_path', 'logo-abc.webp');
 
         $html = $this->fetchForumHtml('/');
 
-        $this->assertSame('http://localhost/assets/logo-abc.webp', $this->publisher($html)['logo'] ?? null);
+        $this->assertSame('http://localhost/assets/icon-512-abc.png', $this->publisher($html)['logo'] ?? null);
         $this->assertSame('http://localhost/assets/icon-512-abc.png', $this->findMetaByProperty($html, 'og:image'));
+    }
+
+    /**
+     * Google's structured data guidelines exclude default and icon images from
+     * a page's `image`.
+     */
+    #[Test]
+    public function the_app_icon_fallback_is_not_the_pages_structured_data_image(): void
+    {
+        $this->uploadAppIcon();
+
+        $webPage = $this->findSchemaEntry($this->fetchForumHtml('/'), 'WebPage');
+
+        $this->assertArrayNotHasKey('image', $webPage ?? []);
+    }
+
+    #[Test]
+    public function a_preparing_page_meta_listener_can_choose_the_card_for_the_app_icon_fallback(): void
+    {
+        $this->uploadAppIcon();
+        $this->extend(
+            (new Extend\Event())->listen(PreparingPageMeta::class, function (PreparingPageMeta $event) {
+                $event->properties->setMetaTag('twitter:card', 'summary_large_image');
+            })
+        );
+
+        $html = $this->fetchForumHtml('/');
+
+        $this->assertSame('summary_large_image', $this->findMetaByName($html, 'twitter:card'));
     }
 
     #[Test]
@@ -140,9 +174,7 @@ class SiteImageTest extends ForumHtmlTestCase
     }
 
     /**
-     * A logo a theme sets replaces the uploaded one on the forum, so it must
-     * replace it in structured data too. An SVG theme logo leaves `logo_path`
-     * holding the old upload.
+     * An SVG theme logo leaves `logo_path` holding the previous upload.
      */
     #[Test]
     public function a_theme_svg_logo_is_the_publisher_logo_and_never_the_social_image(): void
