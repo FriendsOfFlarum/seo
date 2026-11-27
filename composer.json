@@ -27,7 +27,7 @@
         }
     },
     "require": {
-        "flarum/core": "2.x-dev",
+        "flarum/core": "^2.1.0-beta.1",
         "flarum/tags": "*",
         "ext-json": "*"
     },
@@ -106,6 +106,6 @@
         "test:setup": "Sets up a database for use with integration tests. Execute this only once.",
         "test:integration:filter": "Runs integration tests whose name matches: composer test:integration:filter -- ClassName"
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "beta",
     "prefer-stable": true
 }
