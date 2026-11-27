@@ -23,7 +23,7 @@ export default class RegisterToSearchEngines extends Page {
         <p>{app.translator.trans('fof-seo.admin.pages.search_engines.intro')}</p>
         <p>
           {app.translator.trans('fof-seo.admin.pages.search_engines.sitemap_tip', {
-            a: <Link href={app.route('extension', { id: 'fof-seo', page: 'sitemap' })} />,
+            a: <Link href={app.route('extension', { id: 'fof-seo', tab: 'sitemap' })} />,
           })}
         </p>
         <div>

@@ -27,18 +27,19 @@
         }
     },
     "require": {
-        "flarum/core": "^2.0.0",
+        "flarum/core": "^2.1.0-beta.1",
         "flarum/tags": "*",
         "ext-json": "*"
     },
     "require-dev": {
         "flarum/likes": "*",
         "flarum/markdown": "*",
+        "flarum/mcp": "*",
         "fof/pages": "^2.0.0",
         "fof/best-answer": "^2.0.0",
         "fof/gamification": "*",
-        "flarum/phpstan": "^2.0.0",
-        "flarum/testing": "^2.0.0",
+        "flarum/phpstan": "^2.1.0-beta.1",
+        "flarum/testing": "^2.1.0-beta.1",
         "fof/discussion-views": "*",
         "fof/upload": "*",
         "fof/user-directory": "*",
@@ -60,11 +61,15 @@
         "fof/discussion-language": "Sets per-discussion inLanguage in structured data for multi-language forums."
     },
     "extra": {
+        "branch-alias": {
+            "dev-2.x": "2.x-dev"
+        },
         "flarum-extension": {
             "title": "FoF SEO",
             "category": "feature",
             "optional-dependencies": [
                 "flarum/markdown",
+                "flarum/mcp",
                 "fof/pages",
                 "fof/sitemap",
                 "fof/upload",

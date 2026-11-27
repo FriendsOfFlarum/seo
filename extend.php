@@ -59,11 +59,15 @@ return [
     (new Extend\Console())
       ->command(Console\FixSvgSocialImagesCommand::class),
 
-    // Cap how many replies are emitted as schema.org Comment nodes when the
-    // post crawler is enabled. Rendering each reply is the dominant cost on
-    // page load, so bound it; Google only needs the comments shown on the page.
     (new Extend\Settings())
-      ->default('seo_post_crawler_limit', 100),
+      // Cap how many replies are emitted as schema.org Comment nodes when the
+      // post crawler is enabled. Rendering each reply is the dominant cost on
+      // page load, so bound it; Google only needs the comments shown on the page.
+      ->default('seo_post_crawler_limit', 100)
+      // The admin page counts a setting with no value as an unsaved change.
+      ->default('forum_keywords', '')
+      ->default('seo_twitter_card_size', 'large')
+      ->default('seo_noindex_profiles', false),
 
     // FormatLinks sets rel/target on URL tags at render time. Core's
     // Formatter::configureExternalLinks() is what copies them onto the
@@ -123,6 +127,10 @@ return [
       ->whenExtensionEnabled('fof-user-directory', fn () => [
           (new SEO())
             ->addExtender('fof_user_directory', SeoPage\UserDirectoryPage::class),
+      ])
+      ->whenExtensionEnabled('flarum-mcp', fn () => [
+          (new \Flarum\Mcp\Extend\Mcp())
+            ->describe('seoMeta', 'Per-page SEO overrides (title, meta description, keywords, robots directives, Open Graph and Twitter titles, descriptions and images) for a discussion, tag or fof/pages page, identified by objectType (its table, such as discussions) and objectId. Listing, fetching or updating them directly needs the permission to configure SEO; a discussion includes its own.'),
       ])
       ->whenExtensionEnabled('fof-merge-discussions', fn () => [
           (new Extend\Event())

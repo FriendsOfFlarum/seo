@@ -42,6 +42,14 @@ fof-seo:
         add_placeholder: Allow a domain
         duplicate_error: This domain is already present in your do-follow list.
 
+    sections:
+      search_results:
+        label: Search results
+      social:
+        label: Social sharing
+      links:
+        label: Links
+
     settings:
       keywords:
         heading: Forum keywords
@@ -52,7 +60,6 @@ fof-seo:
 
       info:
         overview: This page contains some other settings from around the admin area. However, it's good to have a good overview about these settings. Do not forget to do the SEO check.
-        maintain: Check all your settings when you first setup this extensions. Maintain them to get the best search results.
 
       twitter_card:
         heading: X (formerly Twitter) card size
@@ -62,8 +69,8 @@ fof-seo:
 
       social_media_image:
         heading: Social media image
-        help_size: Expecting a square image. Recommended size is 1200x1200 pixels. Otherwise use a landscape image, recommended size is 1200x630.
-        help_usage: This image will be used by Social Media when a user shares a page on your website (Facebook, X (formerly Twitter), Reddit).
+        help_size: Use a landscape PNG or JPEG image of 1200x630 pixels.
+        help_usage: This image will be used by Social Media when a user shares a page on your website (Facebook, X (formerly Twitter), Reddit). Without one, the forum's app icon is used, with a small card on X.
 
       crawl:
         heading: Discussion post crawl settings
@@ -74,6 +81,7 @@ fof-seo:
         heading: Indexing controls
         profiles_label: De-index profile pages
         profiles_help: When enabled, user profile pages emit a 'noindex' meta tag so they are kept out of search results. Other robots directives are preserved, including any no-follow setting. With FoF Sitemap enabled, profiles are also left out of the sitemap, and its robots.txt stops blocking them, so search engines can read the 'noindex'.
+        tags_label: Noindexed tags
         tags_help: Discussions in the selected tags (and those tags' own listing pages) will be kept out of search results with a 'noindex' meta tag. Other robots directives are preserved, including any no-follow setting. Selecting a parent tag also covers its child tags. With FoF Sitemap enabled, they are also left out of the sitemap, and if its robots.txt blocks tag pages, the noindexed ones are allowed again so search engines can read the 'noindex'.
         tags_button: Select tags
         tags_none_selected: No tags excluded from indexing.
@@ -87,11 +95,6 @@ fof-seo:
       new_tab:
         heading: Open external links in new tab
         help: This extension will also make sure that external links (to other domains) open in a new tab. Currently it is not possible to disable this setting.
-
-      updated:
-        heading: Updated this setting?
-        help: When you think you're ready, click the button below to re-check the status of this setting.
-        button: Back to overview and re-check
 
     pages:
       search_engines:
@@ -176,7 +179,7 @@ fof-seo:
 
           social_media:
             label: Set Up a social media image
-            reason: You did not set a social media image for your forum. It is recommended to set one. Your favicon will now be used as preview on social media.
+            reason: You did not set a social media image for your forum. It is recommended to set one. Without it, social media previews use the forum's app icon if one is uploaded, and no image otherwise.
             button: Update image
 
           sitemap:

@@ -7,31 +7,14 @@
   }
 
   .pull-right {
-      float: right;
-  }
-
-  .seo-menu {
-    background: var(--control-bg);
-    margin-bottom: 15px;
-
-
-    .Button {
-      padding: 12px 13px;
-      border-radius: 0;
-
-      &.item-selected {
-        background: var(--control-bg-darken-10);
-      }
-    }
+      float: inline-end;
   }
 
   .seo-intro {
     line-height: 25px;
   }
 
-  // Keep the page content (and its trailing "I have read this" CTA) from
-  // butting up against the next admin section (GH #154). The CTA floats right,
-  // so clear the float to make the bottom margin apply below it.
+  // The trailing CTA floats; clear it so the bottom margin (GH #154) applies below it.
   .FlarumSeoPage-container {
     margin-bottom: 30px;
 
@@ -71,7 +54,7 @@
 
             i, svg {
               width: 20px;
-              margin-right: 5px;
+              margin-inline-end: 5px;
             }
           }
 
@@ -104,12 +87,10 @@
       }
     }
   }
+}
 
-  .social-media-uploader {
-    img {
-      max-width: 100%;
-    }
-  }
+.social-media-uploader img {
+  max-width: 100%;
 }
 
 @media (min-width: 992px) {
@@ -128,7 +109,7 @@
 
   input[type="text"] {
     flex-grow: 1;
-    margin-right: 10px;
+    margin-inline-end: 10px;
   }
 
   .Button {
@@ -137,7 +118,7 @@
     padding: 8px 13px !important;
 
     i {
-      margin-right: 0;
+      margin-inline-end: 0;
       display: inline-block;
     }
   }

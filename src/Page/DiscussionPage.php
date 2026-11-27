@@ -214,7 +214,8 @@ class DiscussionPage implements PageDriverInterface
         // `dateModified` is when the opening post (the posting itself) was
         // edited, not the last reply; omitted when it never was. This replaces
         // the stored SEO row's time from generateTagsFromMetaData().
-        $this->setFirstPostModified($discussion, $properties);
+        $firstPost = $this->context->firstPost($discussion, $enableLikes, $enableGamification);
+        $this->setFirstPostModified($firstPost, $properties);
 
         $replyCount = max(0, $discussion->comment_count - 1);
         $properties->setSchemaJson('commentCount', $replyCount);
@@ -235,8 +236,6 @@ class DiscussionPage implements PageDriverInterface
                 'userInteractionCount' => (int) $discussion->getAttribute('view_count'),
             ];
         }
-
-        $firstPost = $this->context->firstPost($discussion, $enableLikes, $enableGamification);
 
         if ($firstPost instanceof CommentPost) {
             // Full post text for the `text` property. Render to HTML first so
@@ -334,10 +333,9 @@ class DiscussionPage implements PageDriverInterface
      * Set or remove the page's `dateModified` (and so `article:modified_time`)
      * from the opening post's own edit time.
      */
-    private function setFirstPostModified(FlarumDiscussion $discussion, SeoProperties $properties): void
+    private function setFirstPostModified(?Post $firstPost, SeoProperties $properties): void
     {
-        $firstPost = $discussion->firstPost;
-        $dateModified = $firstPost instanceof Post ? PostDates::modified($firstPost) : null;
+        $dateModified = $firstPost !== null ? PostDates::modified($firstPost) : null;
 
         if ($dateModified !== null) {
             $properties->setSchemaJson('dateModified', $dateModified);

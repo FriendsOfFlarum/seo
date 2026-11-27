@@ -19,7 +19,7 @@
       width: 200px;
       flex-grow: 0;
       flex-shrink: 0;
-      padding-right: 35px;
+      padding-inline-end: 35px;
 
       .SeoItemInfo-title {
         font-weight: bold;
@@ -47,12 +47,12 @@
     position: relative;
 
     .FormControl {
-      padding-right: 100px;
+      padding-inline-end: 100px;
     }
 
     .ManagedText {
       position: absolute;
-      right: 10px;
+      inset-inline-end: 10px;
       top: 8px;
       background-color: rgb(0, 114, 255);
       color: white;
@@ -63,7 +63,7 @@
 
     .UploadButton {
       position: absolute;
-      right: 3px;
+      inset-inline-end: 3px;
       top: 4px;
       padding: 4px 10px;
     }
@@ -93,7 +93,7 @@
     display: inline-block;
     padding: 0.1em 0.5em;
     vertical-align: bottom;
-    margin-right: 5px;
+    margin-inline-end: 5px;
     margin-bottom: 5px;
 
     &.SeoTagDisabled {
@@ -113,16 +113,15 @@
     .SeoTags-dropdown {
       position: absolute;
       top: 30px;
-      left: 0;
-      right: 0;
+      inset-inline: 0;
       visibility: hidden;
       opacity: 0;
       transition: all 250ms ease-in-out;
       z-index: 999;
       background: var(--body-bg);
       padding: 13px 13px 8px;
-      border-bottom-left-radius: 8px;
-      border-bottom-right-radius: 8px;
+      border-end-start-radius: 8px;
+      border-end-end-radius: 8px;
 
       .Checkbox {
         margin-bottom: 15px;
@@ -131,8 +130,8 @@
 
     &.SeoTags-dropdown-open {
       .SeoTags {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
       }
 
       .SeoTags-dropdown {

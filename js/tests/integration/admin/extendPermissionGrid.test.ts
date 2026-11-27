@@ -15,7 +15,7 @@ beforeAll(() => {
   });
   loadTranslations();
 
-  // Mirrors the permission `src/admin/extend.ts` registers; that file pulls in tags through the settings page.
+  // Mirrors the permission `src/admin/extend.tsx` registers; that file imports the tags picker.
   app.registry.for('fof-seo').registerPermission(
     {
       icon: 'fas fa-search',

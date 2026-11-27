@@ -504,6 +504,22 @@ class DiscussionPageTest extends ForumHtmlTestCase
         $this->assertSame('https://example.com/custom-social.png', $this->findMetaByName($html, 'twitter:image'));
     }
 
+    #[Test]
+    public function discussion_image_keeps_the_large_card_when_the_app_icon_is_the_fallback(): void
+    {
+        $this->setting('app_icon_paths', json_encode(['icon-512.png' => 'icon-512-abc.png']));
+        $this->seedDiscussion(title: 'Has an image', slug: 'has-image', metaOverrides: [
+            'auto_update_data'        => 0,
+            'open_graph_image'        => 'https://example.com/custom-social.png',
+            'open_graph_image_source' => 'custom',
+        ]);
+
+        $html = $this->fetchForumHtml('/d/1-has-image');
+
+        $this->assertSame('https://example.com/custom-social.png', $this->findMetaByProperty($html, 'og:image'));
+        $this->assertSame('summary_large_image', $this->findMetaByName($html, 'twitter:card'));
+    }
+
     /**
      * A discussion with no custom SeoMeta still gets a description generated
      * from its first post, not the forum-wide description.

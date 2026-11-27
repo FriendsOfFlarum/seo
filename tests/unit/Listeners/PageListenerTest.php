@@ -17,9 +17,9 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\Testing\unit\TestCase;
 use FoF\Seo\Listeners\PageListener;
 use FoF\Seo\Page\PageManager;
+use FoF\Seo\SiteImages;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Filesystem\Cloud;
 use Mockery as m;
 
 class PageListenerTest extends TestCase
@@ -40,18 +40,13 @@ class PageListenerTest extends TestCase
         $url = m::mock(UrlGenerator::class);
         $url->shouldReceive('to')->with('forum')->andReturn($forumUrl);
 
-        $filesystem = m::mock();
-        $filesystem->shouldReceive('disk')->with('flarum-assets')->andReturn(m::mock(Cloud::class));
-
-        $container = m::mock(Container::class);
-        $container->shouldReceive('make')->with('filesystem')->andReturn($filesystem);
-
         return new PageListener(
             m::mock(SettingsRepositoryInterface::class),
             $url,
             m::mock(PageManager::class),
             m::mock(Dispatcher::class),
-            $container,
+            m::mock(Container::class),
+            m::mock(SiteImages::class),
         );
     }
 
