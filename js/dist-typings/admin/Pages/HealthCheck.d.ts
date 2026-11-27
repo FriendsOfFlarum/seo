@@ -16,7 +16,7 @@ export default class HealthCheck extends Page {
     tagsAvailable(): JSX.Element;
     registeredSearchEngines(): JSX.Element;
     reviewAgain(): JSX.Element;
-    getSettingUrl(setting?: string): string;
+    settingsUrl(): string;
     passed(passed: PassState): Mithril.Children;
     notPassedError(passed: PassState, reason: Mithril.Children, buttonText?: Mithril.Children, url?: string | (() => void)): Mithril.Children;
     saveSingleSetting(setting: string, value: unknown): void;

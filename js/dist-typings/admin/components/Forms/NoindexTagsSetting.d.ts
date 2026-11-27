@@ -7,7 +7,7 @@ import type Mithril from 'mithril';
  *
  * Reuses flarum/tags' own `TagSelectionModal` for the picker. The selection is
  * persisted as a JSON array of tag IDs. Only rendered when flarum/tags is
- * enabled (see SeoSettings#tagsEnabled).
+ * enabled.
  */
 export default class NoindexTagsSetting extends Component {
     loading: boolean;
